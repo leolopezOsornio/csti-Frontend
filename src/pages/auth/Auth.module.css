@@ -1,0 +1,299 @@
+/* File: CSTI/static/css/auth.css */
+:root {
+    --csti-dark: #0A0A45;
+    --csti-cyan: #00B5E2;
+    --csti-gray: #f4f6f9;
+    --text-color: #333;
+    --text-muted: #666;
+    --brand-primary: #00B5E2;
+}
+
+body {
+    background-color: var(--csti-gray);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+}
+
+/* --- Layout General --- */
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 15px; /* Padding pequeño para móviles */
+    box-sizing: border-box;
+}
+
+/* Fondo Tecnológico */
+.auth-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: url('../../assets/img/fondo_circuitos.jpg');
+    background-size: cover;
+    background-position: center;
+    opacity: 1; 
+    pointer-events: none;
+}
+
+/* --- Tarjeta (Card) --- */
+.auth-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 450px; 
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(10, 10, 69, 0.3);
+    text-align: center;
+    position: relative;
+    box-sizing: border-box; /* Vital para responsividad */
+}
+
+/* Logo */
+.auth-logo {
+    width: 120px;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Títulos y Headers */
+.auth-card h1, .auth-card h2, .auth-title {
+    color: var(--csti-dark);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+.auth-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.auth-header { margin-bottom: 20px; }
+
+/* Icono Circular */
+.auth-icon-circle {
+    width: 70px;
+    height: 70px;
+    background: var(--csti-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 28px;
+}
+
+/* --- Pasos (Steps) --- */
+.step-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 8px; /* Gap reducido para móviles */
+}
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.step-item.active {
+    color: var(--csti-cyan);
+    font-weight: 700;
+}
+.step-line {
+    width: 20px;
+    height: 2px;
+    background: #e2e8f0;
+}
+.step-line.active { background: var(--csti-cyan); }
+
+/* --- Formularios --- */
+.auth-form { text-align: left; }
+.form-group { margin-bottom: 20px; position: relative; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
+
+.form-label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.text-center { text-align: center; }
+
+.form-input {
+    width: 100%;
+    height: 48px; /* Altura fija para inputs */
+    padding: 0 15px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--text-color);
+    background: #f9f9f9;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    border-color: var(--csti-cyan);
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 181, 226, 0.1);
+}
+
+.code-input {
+    text-align: center;
+    font-size: 1.5rem;
+    letter-spacing: 8px;
+    font-weight: 700;
+    color: var(--csti-dark);
+}
+
+.password-wrapper, .input-group { position: relative; }
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    z-index: 2;
+}
+
+/* --- BOTONES UNIFICADOS (Solución de tamaños) --- */
+.btn-auth, .btn-primary, .btn-link {
+    width: 100%;
+    height: 48px; /* Altura fija idéntica para todos */
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; /* Centrado perfecto flex */
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+.btn-auth:active, .btn-primary:active, .btn-link:active { 
+    transform: scale(0.98); 
+}
+
+/* Estilo Botón Acción (Cyan/Dark) */
+.btn-dark {
+    background-color: var(--csti-dark);
+    color: #ffffff;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.btn-dark:hover {
+    background-color: #0d0d5e;
+    box-shadow: 0 4px 15px rgba(10, 10, 69, 0.3);
+}
+
+.btn-cyan, .btn-action, .btn-primary {
+    background-color: var(--csti-cyan);
+    color: #ffffff;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.btn-cyan:hover, .btn-action:hover, .btn-primary:hover {
+    background-color: #0099c0;
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
+}
+
+/* Estilo Botón Secundario (Link/Cancelar/Volver) */
+.btn-link {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: none; /* No mayúsculas para acciones secundarias */
+}
+.btn-link:hover { 
+    background: #f8fafc; 
+    color: var(--csti-dark);
+    border-color: #cbd5e1;
+}
+
+.resend-container { text-align: center; margin-top: 15px; font-size: 0.9rem; }
+.btn-resend {
+    background: none;
+    border: none;
+    color: var(--csti-cyan);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 0.9rem;
+}
+
+/* Footer y Links Login */
+.auth-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+}
+.forgot-link, .link-cyan { color: var(--csti-cyan); text-decoration: none; font-weight: 600; }
+.auth-footer { margin-top: 25px; font-size: 0.95rem; color: var(--text-muted); }
+.link-dark { color: var(--csti-dark); font-weight: 700; text-decoration: none; }
+
+/* --- RESPONSIVIDAD (Móviles y Tablets) --- */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 30px 20px; /* Menos padding interno */
+        width: 100%;
+    }
+
+    .auth-card h1, .auth-card h2, .auth-title {
+        font-size: 1.5rem; /* Título más pequeño */
+    }
+
+    .form-row {
+        flex-direction: column; /* Inputs de nombre uno debajo de otro */
+        gap: 0;
+    }
+
+    .step-item span {
+        display: none; /* Ocultar texto "Email/Código/Nueva" si no cabe, dejar iconos */
+    }
+    
+    /* Mostrar texto solo en el paso activo si se desea, o dejar solo iconos */
+    .step-item.active span {
+        display: inline; 
+    }
+
+    /* Ajustar botones laterales (Volver/Verificar) */
+    .auth-card form > div[style*="display: flex"] {
+        gap: 10px; /* Asegurar espacio */
+    }
+    
+    /* Login actions stack */
+    .auth-actions {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .forgot-link {
+        align-self: flex-start;
+    }
+}
