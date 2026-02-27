@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
 
-// Componentes temporales para que veas que funciona (luego los borramos)
-import Login from '../pages/auth/Login/Login'; // Asegúrate de agregar esta importación arriba
-import Register from '../pages/auth/Register/Register'; // Asegúrate de agregar esta importación arriba
+// Componentes de autenticación
+import Login from '../pages/auth/Login/Login'; 
+import Register from '../pages/auth/Register/Register'; 
+import RecoverPassword from '../pages/auth/RecoverPassword/RecoverPassword'; 
+import VerifyAccount from '../pages/auth/VerifyAccount/VerifyAccount'; 
 
 export const AppRouter = () => {
   return (
@@ -16,6 +18,8 @@ export const AppRouter = () => {
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Register />} />
+          <Route path="/recuperar-password" element={<RecoverPassword />} />
+          <Route path="/verificar-cuenta" element={<VerifyAccount />} />
         </Route>
 
         {/* === RUTAS PRIVADAS === */}
