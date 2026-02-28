@@ -1,6 +1,7 @@
 // src/pages/auth/Login/Login.tsx
-import { useContext, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useContext, useState, useEffect } from 'react'; // Agregamos useEffect
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Agregamos useLocation
+import Swal from 'sweetalert2'; // Importamos SweetAlert2
 import styles from '../Auth.module.css';
 import logoCsti from '../../../assets/img/logo_csti.png';
 import { authService } from '../../../services/authService';
@@ -9,14 +10,30 @@ import { AuthContext } from '../../../contexts/AuthContext';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation(); // Hook para atrapar variables de la URL
 
   const { login } = useContext(AuthContext);
 
-  // Estados para capturar los inputs y posibles errores
-  const [email, setEmail] = useState('');
+  // 1. INICIALIZAMOS EL CORREO AUTOMÁTICAMENTE si viene de VerifyAccount
+  const [email, setEmail] = useState(location.state?.email || '');
   const [password, setPassword] = useState('');
   const [errorMensaje, setErrorMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  // 2. EFECTO PARA MOSTRAR LA ALERTA DE BIENVENIDA
+  useEffect(() => {
+    if (location.state?.accountVerified) {
+      Swal.fire({
+        icon: 'info', // O puedes usar 'success'
+        title: '¡Casi listo!',
+        text: 'Ingresa tu contraseña para acceder a tu nueva cuenta.',
+        confirmButtonColor: '#212529', // Gris oscuro como tu botón de login
+      });
+
+      // Limpiamos el historial para que la alerta no vuelva a salir si el usuario recarga la página (F5)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const togglePassword = () => {
     setShowPassword(!showPassword);
@@ -31,11 +48,11 @@ const Login = () => {
     try {
       // Llamamos a nuestro servicio
       const data = await authService.login(email, password);
-      
+
       login(data.access);
 
       // Si el login fue exitoso, redirigimos al catálogo o home
-      navigate('/home'); 
+      navigate('/home');
 
     } catch (error: any) {
       // Manejo de errores basado en las respuestas de Django
@@ -75,13 +92,13 @@ const Login = () => {
         <form className={styles['auth-form']} onSubmit={handleSubmit}>
           <div className={styles['form-group']}>
             <label htmlFor="login_email" className={styles['form-label']}>Correo Electrónico</label>
-            <input 
-              type="email" 
-              id="login_email" 
-              name="email" 
-              className={styles['form-input']} 
-              placeholder="ejemplo@csti.com" 
-              required 
+            <input
+              type="email"
+              id="login_email"
+              name="email"
+              className={styles['form-input']}
+              placeholder="ejemplo@csti.com"
+              required
               value={email} // Vinculamos el estado
               onChange={(e) => setEmail(e.target.value)} // Actualizamos el estado al escribir
             />
@@ -90,18 +107,18 @@ const Login = () => {
           <div className={styles['form-group']}>
             <label htmlFor="login_pass" className={styles['form-label']}>Contraseña</label>
             <div className={styles['password-wrapper']}>
-              <input 
-                type={showPassword ? "text" : "password"} 
-                id="login_pass" 
-                name="password" 
-                className={styles['form-input']} 
-                placeholder="••••••••" 
-                required 
+              <input
+                type={showPassword ? "text" : "password"}
+                id="login_pass"
+                name="password"
+                className={styles['form-input']}
+                placeholder="••••••••"
+                required
                 value={password} // Vinculamos el estado
                 onChange={(e) => setPassword(e.target.value)} // Actualizamos el estado al escribir
               />
-              <i 
-                className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`} 
+              <i
+                className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`}
                 onClick={togglePassword}
               ></i>
             </div>
