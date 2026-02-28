@@ -1,13 +1,16 @@
 // src/pages/auth/Login/Login.tsx
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../Auth.module.css';
 import logoCsti from '../../../assets/img/logo_csti.png';
 import { authService } from '../../../services/authService';
+import { AuthContext } from '../../../contexts/AuthContext';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  const { login } = useContext(AuthContext);
 
   // Estados para capturar los inputs y posibles errores
   const [email, setEmail] = useState('');
@@ -27,8 +30,10 @@ const Login = () => {
 
     try {
       // Llamamos a nuestro servicio
-      await authService.login(email, password);
+      const data = await authService.login(email, password);
       
+      login(data.access);
+
       // Si el login fue exitoso, redirigimos al catálogo o home
       navigate('/home'); 
 
