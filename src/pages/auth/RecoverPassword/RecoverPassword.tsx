@@ -20,6 +20,49 @@ const RecoverPassword = () => {
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
 
+  // --- LÓGICA DE VALIDACIÓN VISUAL (Misma que en Registro) ---
+  const passLength = password.length >= 8;
+  const passUpper = /[A-Z]/.test(password);
+  const passLower = /[a-z]/.test(password);
+  const passNum = /[0-9]/.test(password);
+  const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const passMatch = password && password === password2;
+
+  const reqStyle = (isValid: boolean) => ({
+    color: isValid ? '#28a745' : '#dc3545',
+    fontSize: '0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    marginTop: '5px'
+  });
+
+  const renderPasswordFeedback = () => {
+    if (!password) return null; // No mostrar nada si está vacío
+
+    const faltantes = [];
+    if (!passLength) faltantes.push("8 caracteres");
+    if (!passUpper) faltantes.push("mayúscula");
+    if (!passLower) faltantes.push("minúscula");
+    if (!passNum) faltantes.push("número");
+    if (!passSpecial) faltantes.push("carácter especial");
+
+    if (faltantes.length === 0) {
+      return (
+        <span style={reqStyle(true)}>
+          <i className="fi fi-br-check"></i> ¡Contraseña segura!
+        </span>
+      );
+    }
+
+    return (
+      <span style={reqStyle(false)}>
+        <i className="fi fi-br-cross-small"></i> Falta: {faltantes.join(', ')}.
+      </span>
+    );
+  };
+
+
   // --- PASO 1: ENVIAR CORREO ---
   const handleSolicitarCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,9 +114,20 @@ const RecoverPassword = () => {
   const handleRestablecer = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación rápida frontend
-    if (password !== password2) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: 'Las contraseñas no coinciden.', confirmButtonColor: '#00b8d4' });
+    // Validación rápida frontend (evitamos peticiones si la contraseña es insegura o no coincide)
+    let frontendErrors = [];
+    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
+      frontendErrors.push("La contraseña no cumple con los requisitos de seguridad.");
+    }
+    if (!passMatch) frontendErrors.push("Las contraseñas no coinciden.");
+
+    if (frontendErrors.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Verifica tus datos',
+        html: frontendErrors.join('<br>'),
+        confirmButtonColor: '#00b8d4',
+      });
       return;
     }
 
@@ -87,13 +141,13 @@ const RecoverPassword = () => {
         text: 'Tu contraseña ha sido cambiada con éxito.',
         confirmButtonColor: '#00b8d4',
       });
-      navigate('/login'); // Lo mandamos a iniciar sesión
+      // Navegamos al login y le pasamos el email para que se autocomplete, igual que en el registro
+      navigate('/login', { state: { email: email } }); 
 
     } catch (error: any) {
-      // Django devuelve una lista de errores de validación de contraseña, los mostramos bonitos:
       let mensajeError = 'No se pudo actualizar la contraseña.';
       if (error.response?.data?.errores) {
-        mensajeError = error.response.data.errores.join('<br>'); // Unimos los errores con saltos de línea HTML
+        mensajeError = error.response.data.errores.join('<br>');
       } else if (error.response?.data?.error) {
         mensajeError = error.response.data.error;
       }
@@ -101,7 +155,7 @@ const RecoverPassword = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Contraseña Insegura',
-        html: mensajeError, // Usamos 'html' en lugar de 'text' para que interprete los <br>
+        html: mensajeError,
         confirmButtonColor: '#00b8d4',
       });
     } finally {
@@ -215,7 +269,7 @@ const RecoverPassword = () => {
               <p className={styles['auth-subtitle']}>Crea una nueva contraseña segura para tu cuenta.</p>
             </div>
             <form onSubmit={handleRestablecer} className={styles['auth-form']}>
-              <div className={styles['form-group']}>
+              <div className={styles['form-group']} style={{ marginBottom: password ? '5px' : '15px' }}>
                 <label className={styles['form-label']}>Nueva Contraseña</label>
                 <div className={styles['password-wrapper']}>
                   <input 
@@ -229,7 +283,10 @@ const RecoverPassword = () => {
                   />
                   <i className={`fi ${showPassword1 ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`} onClick={() => setShowPassword1(!showPassword1)}></i>
                 </div>
+                {/* LÍNEA INTELIGENTE DE RETROALIMENTACIÓN */}
+                {renderPasswordFeedback()}
               </div>
+
               <div className={styles['form-group']}>
                 <label className={styles['form-label']}>Confirmar Contraseña</label>
                 <div className={styles['password-wrapper']}>
@@ -243,6 +300,13 @@ const RecoverPassword = () => {
                   />
                   <i className={`fi ${showPassword2 ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`} onClick={() => setShowPassword2(!showPassword2)}></i>
                 </div>
+                {/* Indicador visual de coincidencia */}
+                {password2 && (
+                  <span style={reqStyle(!!passMatch)}>
+                     <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
+                     {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                  </span>
+                )}
               </div>
               
               <div style={{ display: 'flex', gap: '10px' }}>

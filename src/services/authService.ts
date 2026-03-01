@@ -91,4 +91,15 @@ export const authService = {
             throw error;
         }
     },
+
+    // NUEVO: Obtener los datos del usuario logueado
+    getUserProfile: async () => {
+        try {
+            // Usar 'api' para que el interceptor inyecte el JWT automáticamente
+            const response = await api.get('/accounts/api/perfil/');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
