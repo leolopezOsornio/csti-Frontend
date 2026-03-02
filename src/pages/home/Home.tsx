@@ -1,59 +1,83 @@
 // src/pages/Home/Home.tsx
-import { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { catalogService } from '../../services/catalogService';
+
+// Importamos nuestros bloques modulares
+import Hero from '../../components/Hero/Hero';
+import CategoryGrid from '../../components/CategoryGrid/CategoryGrid';
+import ProductCarousel from '../../components/ProductCarousel/ProductCarousel';
+
+/**
+ * PÁGINA: Home
+ * UBICACIÓN: src/pages/Home/Home.tsx
+ * * FUNCIÓN: 
+ * Actúa como el "Controlador" o "Padre" de la vista principal. 
+ * Su única responsabilidad lógica es hacer la petición HTTP al backend (Django) mediante 
+ * el catalogService para obtener el JSON con todas las secciones. 
+ * Maneja el estado de carga (loading) y, una vez que tiene los datos, los distribuye 
+ * pasándolos como "props" (propiedades) a los componentes modulares hijos 
+ * (Hero, CategoryGrid, ProductCarousel) para que ellos se encarguen de dibujarlos.
+ */
 
 const Home = () => {
-  const { isAuthenticated, user, logout, isLoading } = useContext(AuthContext); 
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: '50px', textAlign: 'center' }}>
-        <h2>Cargando sesión... ⏳</h2>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const response = await catalogService.getHomeSections();
+        setData(response);
+      } catch (error) {
+        console.error("Error cargando el Home", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
+
+  if (loading) return <div style={{ textAlign: 'center', padding: '50px' }}>Cargando catálogo... ⏳</div>;
+  if (!data) return <div style={{ textAlign: 'center', padding: '50px' }}>Error al cargar la información.</div>;
 
   return (
-    <div style={{ padding: '50px', textAlign: 'center' }}>
-      <h1>Catálogo de Productos 🛒</h1>
-      <p>Cualquiera puede ver esta página, logueado o no.</p>
+    <div className="home-container">
+      {/* 1. Hero Banners */}
+      <Hero />
       
-      {isAuthenticated && user ? (
-        <div style={{ marginTop: '30px', padding: '20px', border: '2px solid green', borderRadius: '10px', backgroundColor: '#f0fff0' }}>
-          <p style={{ color: 'green', fontSize: '1.2rem', marginBottom: '10px' }}>
-            🟢 <strong>¡Sesión Activa!</strong>
-          </p>
-          
-          <div style={{ textAlign: 'left', display: 'inline-block', backgroundColor: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #c3e6cb' }}>
-            <p><strong>ID:</strong> {user.id}</p>
-            <p><strong>Nombre:</strong> {user.first_name}</p>
-            <p><strong>Apellidos:</strong> {user.last_name}</p>
-            <p><strong>Correo:</strong> {user.email}</p>
-          </div>
-          
-          <br />
+      <div id="catalogo-start" style={{ paddingTop: '40px' }}></div>
+      
+      {/* 2. Categorías */}
+      <CategoryGrid categorias={data.categorias_destacadas} />
 
-          <button 
-            onClick={logout} 
-            style={{ padding: '10px 20px', marginTop: '20px', cursor: 'pointer', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px' }}
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-      ) : (
-        <div style={{ marginTop: '30px', padding: '20px', border: '2px solid gray', borderRadius: '10px', backgroundColor: '#f8f9fa' }}>
-          <p style={{ color: 'gray', fontSize: '1.2rem', marginBottom: '10px' }}>
-            ⚪ <strong>Eres un invitado.</strong>
-          </p>
-          <p>Solo puedes ver los productos. Para comprar o ver tu perfil, por favor inicia sesión.</p>
-          <Link to="/login">
-            <button style={{ padding: '10px 20px', marginTop: '15px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}>
-              Ir a Iniciar Sesión
-            </button>
-          </Link>
-        </div>
-      )}
+      {/* 3. Ofertas (Productos) */}
+      <ProductCarousel 
+        titulo="Ofertas Destacadas" 
+        items={data.ofertas_destacadas} 
+        tipo="producto"
+      />
+      
+      {/* 4. Más Vendidos (Productos) */}
+      <ProductCarousel 
+        titulo="Más Vendidos" 
+        items={data.mas_vendidos} 
+        tipo="producto"
+      />
+
+      {/* 5. Novedades (Productos) */}
+      <ProductCarousel 
+        titulo="Nuevos Productos" 
+        items={data.nuevos_productos} 
+        tipo="producto"
+      />
+
+      {/* 6. Marcas */}
+      <ProductCarousel 
+        titulo="Marcas Destacadas" 
+        items={data.marcas_destacadas} 
+        tipo="marca"
+      />
     </div>
   );
 };
