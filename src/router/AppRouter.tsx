@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
 
+import MainLayout from '../components/Layout/MainLayout'; // <-- Importamos el Layout
+
 import Login from '../pages/auth/Login/Login'; 
 import Register from '../pages/auth/Register/Register'; 
 import RecoverPassword from '../pages/auth/RecoverPassword/RecoverPassword'; 
@@ -14,7 +16,7 @@ export const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         
-        {/* === RUTAS ESTRICTAMENTE PÚBLICAS (Para invitados) === */}
+        {/* === RUTAS ESTRICTAMENTE PÚBLICAS (Sin Navbar ni Footer) === */}
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Register />} />
@@ -22,17 +24,21 @@ export const AppRouter = () => {
           <Route path="/verificar-cuenta" element={<VerifyAccount />} />
         </Route>
 
-        {/* === RUTAS ESTRICTAMENTE PRIVADAS (Para usuarios logueados) === */}
-        <Route element={<PrivateRoutes />}>
-          {/* Aquí agregar verdaderas rutas privadas después */}
-          {/* <Route path="/perfil" element={<Perfil />} /> */}
-          {/* <Route path="/carrito" element={<Carrito />} /> */}
+        {/* === RUTAS CON NAVBAR Y FOOTER === */}
+        <Route element={<MainLayout />}>
+          
+          {/* Rutas Privadas (Requieren login) */}
+          <Route element={<PrivateRoutes />}>
+            {/* <Route path="/perfil" element={<Perfil />} /> */}
+            {/* <Route path="/carrito" element={<Carrito />} /> */}
+          </Route>
+
+          {/* Rutas Abiertas (Home, Listado, Detalle, etc.) */}
+          <Route path="/home" element={<Home />} />
+          
         </Route>
 
-        {/* === RUTAS ABIERTAS / MIXTAS (Libre acceso) === */}
-        <Route path="/home" element={<Home />} />
-
-        {/* CATCH-ALL: Es mejor mandar a los perdidos al catálogo en lugar del login */}
+        {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/home" replace />} />
         
       </Routes>
