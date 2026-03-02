@@ -12,6 +12,7 @@ import VerifyAccount from '../pages/auth/VerifyAccount/VerifyAccount';
 import Home from '../pages/home/Home';
 import BrandDetail from '../pages/BrandDetail/BrandDetail';
 import ProductDetail from '../pages/ProductDetail/ProductDetail';
+import ProductList from '../pages/ProductList/ProductList';
 
 export const AppRouter = () => {
   return (
@@ -39,6 +40,7 @@ export const AppRouter = () => {
           <Route path="/home" element={<Home />} />
           <Route path="/marca/:slug" element={<BrandDetail />} />
           <Route path="/producto/:clave" element={<ProductDetail />} />
+          <Route path="/listado" element={<ProductList />} />
 
         </Route>
 
