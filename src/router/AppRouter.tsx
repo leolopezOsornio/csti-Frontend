@@ -3,19 +3,21 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
 
-import MainLayout from '../components/Layout/MainLayout'; // <-- Importamos el Layout
+import MainLayout from '../components/Layout/MainLayout';
 
-import Login from '../pages/auth/Login/Login'; 
-import Register from '../pages/auth/Register/Register'; 
-import RecoverPassword from '../pages/auth/RecoverPassword/RecoverPassword'; 
-import VerifyAccount from '../pages/auth/VerifyAccount/VerifyAccount'; 
+import Login from '../pages/auth/Login/Login';
+import Register from '../pages/auth/Register/Register';
+import RecoverPassword from '../pages/auth/RecoverPassword/RecoverPassword';
+import VerifyAccount from '../pages/auth/VerifyAccount/VerifyAccount';
 import Home from '../pages/home/Home';
+import BrandDetail from '../pages/BrandDetail/BrandDetail';
+import ProductDetail from '../pages/ProductDetail/ProductDetail';
 
 export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        
+
         {/* === RUTAS ESTRICTAMENTE PÚBLICAS (Sin Navbar ni Footer) === */}
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<Login />} />
@@ -26,7 +28,7 @@ export const AppRouter = () => {
 
         {/* === RUTAS CON NAVBAR Y FOOTER === */}
         <Route element={<MainLayout />}>
-          
+
           {/* Rutas Privadas (Requieren login) */}
           <Route element={<PrivateRoutes />}>
             {/* <Route path="/perfil" element={<Perfil />} /> */}
@@ -35,12 +37,14 @@ export const AppRouter = () => {
 
           {/* Rutas Abiertas (Home, Listado, Detalle, etc.) */}
           <Route path="/home" element={<Home />} />
-          
+          <Route path="/marca/:slug" element={<BrandDetail />} />
+          <Route path="/producto/:clave" element={<ProductDetail />} />
+
         </Route>
 
         {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/home" replace />} />
-        
+
       </Routes>
     </BrowserRouter>
   );
