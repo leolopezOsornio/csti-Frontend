@@ -1,0 +1,200 @@
+/* File: CSTI/static/css/hero.css */
+
+:root {
+    --hero-dark: #0A0A45;
+    --hero-light-blue: #004e92;
+    --hero-cyan: #00B5E2;
+    --hero-text: #ffffff;
+}
+
+.hero-wrapper {
+    background: linear-gradient(90deg, var(--hero-dark) 0%, var(--hero-light-blue) 100%);
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    /* Espacio entre el Navbar y el Hero */
+    margin-top: 30px; 
+    border-radius: 8px; /* Opcional: esquinas un poco redondeadas */
+}
+
+/* Contenedor interno para alinear con el resto de la página */
+.hero-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+/* --- LADO IZQUIERDO: TEXTO --- */
+.hero-content {
+    flex: 1;
+    max-width: 600px;
+    z-index: 2; /* Asegura que el texto esté sobre cualquier decoración */
+}
+
+.hero-title {
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--hero-text);
+    font-size: 3rem; /* Grande e impactante */
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+
+.hero-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 300;
+    margin-bottom: 35px;
+    line-height: 1.5;
+}
+
+/* Botón CTA (Call to Action) */
+.hero-btn {
+    display: inline-block;
+    background-color: var(--hero-cyan);
+    color: #fff;
+    padding: 15px 40px;
+    border-radius: 50px; /* Bordes totalmente redondos */
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.4); /* Resplandor cyan */
+}
+
+.hero-btn:hover {
+    background-color: #0088c0; /* Un poco más oscuro al hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 181, 226, 0.6);
+}
+
+/* --- LADO DERECHO: IMAGEN --- */
+.hero-image-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.hero-img {
+    max-width: 100%;
+    height: auto;
+    /* Efecto "Flotante" con sombra suave */
+    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Animación de flotación suave */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}
+
+/* --- PUNTOS DE NAVEGACIÓN (Slider UI) --- */
+.hero-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.dot.active {
+    background-color: var(--hero-cyan);
+    border-color: var(--hero-cyan);
+    width: 30px; /* El activo es más largo */
+    border-radius: 10px;
+}
+
+/* =========================================
+   Animación para el cambio de slide
+   ========================================= */
+.fade-anim {
+    animation: fadeInSlide 0.8s ease-in-out;
+}
+
+@keyframes fadeInSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   Layout Invertido (Imagen Izq - Texto Der)
+   Solo aplica en escritorio (min-width: 993px)
+   ========================================= */
+@media (min-width: 993px) {
+    .hero-container.reverse-layout {
+        flex-direction: row-reverse; /* Invierte el orden: Imagen <-> Texto */
+    }
+
+    /* Opcional: Si se requiere que el texto se alinee a la derecha cuando está a la derecha */
+    .hero-container.reverse-layout .hero-content {
+        text-align: right;
+        align-items: flex-end; /* Si usas flex column en el contenido */
+    }
+}
+
+/* =========================================
+   RESPONSIVIDAD (Móvil y Tablet)
+   ========================================= */
+@media (max-width: 992px) {
+    .hero-wrapper {
+        min-height: auto; /* Altura flexible */
+        padding: 60px 0;
+    }
+
+    .hero-container {
+        flex-direction: column-reverse; /* Imagen arriba o abajo (preferencia visual) */
+        text-align: center;
+        gap: 40px;
+    }
+
+    .hero-content {
+        max-width: 100%;
+    }
+
+    .hero-title {
+        font-size: 2.2rem;
+    }
+
+    .hero-image-wrapper {
+        width: 80%;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 1.8rem;
+    }
+    
+    .hero-img {
+        max-width: 100%; /* Imagen completa en móvil */
+    }
+}

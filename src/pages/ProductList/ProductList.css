@@ -1,0 +1,382 @@
+/* src/pages/ProductList/ProductList.css */
+
+.pl-page-container {
+  display: flex;
+  gap: 24px;
+  padding: 30px;
+  max-width: 1300px;
+  margin: 0 auto;
+  background-color: #f8f9fa; /* Fondo general sutil */
+  min-height: 100vh;
+}
+
+/* === SIDEBAR (Filtros) === */
+.pl-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  height: fit-content;
+}
+
+.pl-sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #1a1a1a;
+}
+
+.pl-filter-group {
+  margin-bottom: 24px;
+}
+
+.pl-filter-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.pl-filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pl-filter-list li {
+  margin-bottom: 8px;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pl-filter-list li:hover {
+  color: #00b4d8;
+}
+
+/* Checkboxes personalizados */
+.pl-checkbox {
+  accent-color: #00b4d8;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Rango de precio */
+.pl-price-range {
+  width: 100%;
+  accent-color: #00b4d8;
+}
+.pl-price-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* === CONTENIDO PRINCIPAL === */
+.pl-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Bar */
+.pl-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pl-breadcrumb {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.pl-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.pl-sort-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Grid de Productos */
+.pl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+/* Tarjeta de Producto (ProductItem) */
+.pl-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.pl-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  border-color: #e9ecef;
+}
+
+.pl-card-brand {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.pl-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
+.pl-card-title {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 15px;
+  line-height: 1.4;
+  flex-grow: 1; /* Empuja el footer hacia abajo */
+}
+
+.pl-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.pl-card-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.pl-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botones Cian */
+.pl-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pl-btn-cart {
+  background-color: #00b4d8;
+  color: white;
+}
+.pl-btn-cart:hover { background-color: #0096b4; }
+
+.pl-btn-fav {
+  background-color: #e0f7fa;
+  color: #00b4d8;
+}
+.pl-btn-fav:hover {
+  background-color: #00b4d8;
+  color: white;
+}
+
+/* Paginación */
+.pl-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.pl-page-btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  border: none;
+  background: white;
+  color: #00b4d8;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.pl-page-btn.active {
+  background: #001f3f; /* Azul oscuro como en la imagen */
+  color: white;
+}
+
+/* =========================================
+   DISEÑO RESPONSIVO (Media Queries)
+   ========================================= */
+
+/* Pantallas medianas (Laptops pequeñas y Tablets horizontales) */
+@media (max-width: 1024px) {
+  .pl-page-container {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .pl-sidebar {
+    width: 220px; /* Reducimos un poco el ancho del sidebar */
+    padding: 16px;
+  }
+  
+  .pl-grid {
+    /* Reducimos el tamaño mínimo para que quepan más tarjetas sin aplastarse */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+/* Pantallas pequeñas (Tablets verticales y Móviles grandes) */
+@media (max-width: 768px) {
+  .pl-page-container {
+    flex-direction: column; /* El sidebar pasa a estar arriba de los productos */
+    padding: 15px;
+  }
+
+  .pl-sidebar {
+    width: 100%; /* El sidebar toma todo el ancho disponible */
+    height: auto;
+    margin-bottom: 10px;
+  }
+
+  /* Reorganizamos la barra superior para que no se desborde el texto */
+  .pl-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .pl-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .pl-grid {
+    /* Ajustamos para que se vean 2 columnas en móviles grandes */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+  }
+
+  /* Ajustes finos a la tarjeta para pantallas chicas */
+  .pl-card-title {
+    font-size: 0.85rem; 
+  }
+  
+  .pl-card-img {
+    height: 120px; /* Reducimos un poco la imagen de los artículos nuevos */
+  }
+  
+  .pl-card-price {
+    font-size: 1.1rem;
+  }
+}
+
+/* Teléfonos muy pequeños (Móviles en vertical) */
+@media (max-width: 480px) {
+  .pl-grid {
+    /* Forzamos 1 sola columna para que la información se lea claramente */
+    grid-template-columns: 1fr;
+  }
+
+  .pl-topbar-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pl-sort-select {
+    width: 100%; /* El selector de orden toma todo el ancho */
+    margin-left: 0 !important;
+    margin-top: 5px;
+  }
+}
+
+/* === ESTILOS PARA EL BOTÓN DE FILTROS MÓVIL === */
+.pl-mobile-filter-btn {
+  display: none; /* Oculto por defecto en PC y Tablets */
+  width: 100%;
+  padding: 12px;
+  background-color: #001f3f; /* Azul oscuro que usas en tu paginación */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 15px;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+.pl-mobile-filter-btn:hover {
+  background-color: #003366;
+}
+
+/* En PC, el contenedor siempre se muestra */
+.pl-sidebar-wrapper {
+  display: block;
+}
+
+/* === ACTUALIZACIÓN DE MEDIA QUERIES === */
+@media (max-width: 768px) {
+  /* Mostrar el botón en móviles */
+  .pl-mobile-filter-btn {
+    display: block; 
+  }
+  
+  /* Ocultar los filtros por defecto */
+  .pl-sidebar-wrapper {
+    display: none; 
+  }
+  
+  /* Mostrar los filtros solo cuando tiene la clase 'open' */
+  .pl-sidebar-wrapper.open {
+    display: block; 
+    animation: fadeInDown 0.3s ease-in-out; /* Opcional: una pequeña animación */
+  }
+}
+
+/* Opcional: Animación para que no aparezca de golpe */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
