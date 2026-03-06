@@ -1,8 +1,11 @@
 // src/pages/ProductDetail/ProductDetail.tsx
 import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { catalogService } from '../../services/catalogService';
+import { cartService } from '../../services/cartService';
 import { AuthContext } from '../../contexts/AuthContext';
+import { CartContext } from '../../contexts/CartContext';
 import './ProductDetail.css';
 
 /**
@@ -17,7 +20,8 @@ import './ProductDetail.css';
 const ProductDetail = () => {
   const { clave } = useParams<{ clave: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useContext(AuthContext); // Para saber si puede agregar al carrito
+  const { isAuthenticated } = useContext(AuthContext);
+  const { refreshCart } = useContext(CartContext);
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +42,7 @@ const ProductDetail = () => {
         if (response.cva_data.imagenes_hd && response.cva_data.imagenes_hd.length > 0) {
           setMainImage(response.cva_data.imagenes_hd[0]);
         } else {
-            setMainImage(response.producto_local.imagen || '/img/no-image.png');
+          setMainImage(response.producto_local.imagen || '/img/no-image.png');
         }
       } catch (err) {
         setError("Este producto no está disponible actualmente o no existe.");
@@ -54,15 +58,40 @@ const ProductDetail = () => {
     setQty((prev) => Math.max(1, prev + change)); // Evita que baje de 1
   };
 
-  const handleAddToCart = (e: React.FormEvent) => {
+  const handleAddToCart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
-        alert("Debes iniciar sesión para agregar al carrito.");
-        navigate('/login');
-        return;
+      Swal.fire({
+        title: '¡Inicia sesión!',
+        text: 'Debes iniciar sesión para agregar productos al carrito.',
+        icon: 'warning',
+        confirmButtonColor: '#00b4d8'
+      });
+      return;
     }
-    // TODO: Lógica de carrito
-    console.log(`Agregando ${qty} unidades del producto ${data.producto_local.id}`);
+
+    try {
+      // Usamos el ID del producto_local y la cantidad (qty) seleccionada
+      await cartService.addToCart(data.producto_local.id, qty);
+      await refreshCart(); // Actualizamos el badge del Navbar
+
+      Swal.fire({
+        title: '¡Añadido al carrito!',
+        text: `Agregaste ${qty} unidad(es) de ${data.producto_local.descripcion.substring(0, 30)}...`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#00b4d8',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ir a mi carrito',
+        cancelButtonText: 'Seguir comprando'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/carrito');
+        }
+      });
+    } catch (error: any) {
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo agregar al carrito', 'error');
+    }
   };
 
   if (loading) return <div style={{ textAlign: 'center', padding: '50px' }}>Cargando producto... ⏳</div>;
@@ -71,9 +100,9 @@ const ProductDetail = () => {
 
   const { producto_local, cva_data } = data;
   // Obtener stock seguro (el array de inventario manda el total al final usualmente, o podemos usar el local como fallback)
-  const stock = cva_data.inventario?.length > 0 
-                ? cva_data.inventario[cva_data.inventario.length - 1].disponible 
-                : producto_local.disponible;
+  const stock = cva_data.inventario?.length > 0
+    ? cva_data.inventario[cva_data.inventario.length - 1].disponible
+    : producto_local.disponible;
 
   return (
     <section className="producto-detalle">
@@ -82,7 +111,7 @@ const ProductDetail = () => {
       </button>
 
       <div className="pdp-top-grid">
-        
+
         {/* GALERÍA DE IMÁGENES */}
         <div className="gallery-container">
           <div className="main-image-wrapper">
@@ -92,9 +121,9 @@ const ProductDetail = () => {
           {cva_data.imagenes_hd && cva_data.imagenes_hd.length > 1 && (
             <div className="thumbs-row">
               {cva_data.imagenes_hd.slice(0, 4).map((img: string, idx: number) => (
-                <div 
-                  key={idx} 
-                  className={`thumb-btn ${mainImage === img ? 'active' : ''}`} 
+                <div
+                  key={idx}
+                  className={`thumb-btn ${mainImage === img ? 'active' : ''}`}
                   onClick={() => setMainImage(img)}
                 >
                   <img src={img} className="thumb-img" alt="Thumbnail" />
@@ -109,7 +138,7 @@ const ProductDetail = () => {
           <div className="brand-kicker">{producto_local.marca || "MARCA"}</div>
 
           <h1 className="product-title" style={{ fontSize: '1.5rem', marginBottom: '15px' }}>
-              {producto_local.descripcion}
+            {producto_local.descripcion}
           </h1>
 
           <div className="meta-data">
@@ -134,12 +163,12 @@ const ProductDetail = () => {
             <form onSubmit={handleAddToCart} className="cart-form">
               <div className="quantity-selector">
                 <button type="button" className="qty-btn" onClick={() => handleQtyChange(-1)}>-</button>
-                <input 
-                  type="number" 
-                  value={qty} 
-                  onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))} 
-                  min="1" 
-                  className="qty-input" 
+                <input
+                  type="number"
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  min="1"
+                  className="qty-input"
                 />
                 <button type="button" className="qty-btn" onClick={() => handleQtyChange(1)}>+</button>
               </div>
@@ -185,7 +214,7 @@ const ProductDetail = () => {
 
         <div className={`tab-content ${activeTab === 'warranty' ? 'active' : ''}`}>
           <p style={{ color: '#555' }}>
-            Todos nuestros productos cuentan con garantía directa de fabricante. 
+            Todos nuestros productos cuentan con garantía directa de fabricante.
             Para más información, consulte nuestra política de devoluciones y garantías.
           </p>
         </div>

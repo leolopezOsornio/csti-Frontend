@@ -2,6 +2,7 @@
 import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { CartContext } from '../../contexts/CartContext';
 import MegaMenu from './MegaMenu';
 import './Navbar.css';
 
@@ -22,6 +23,7 @@ import {
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
+  const { cartItemsCount } = useContext(CartContext);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
@@ -90,7 +92,9 @@ const Navbar = () => {
 
             <Link to="/carrito" className="icon-link cart-link" title="Mi Carrito">
               <FontAwesomeIcon icon={faCartShopping} />
-              <span className="cart-badge">0</span>
+              {cartItemsCount > 0 && (
+                <span className="cart-badge">{cartItemsCount}</span>
+              )}
             </Link>
 
             {isAuthenticated && user ? (
