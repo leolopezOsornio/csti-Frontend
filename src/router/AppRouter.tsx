@@ -15,6 +15,12 @@ import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import ProductList from '../pages/ProductList/ProductList';
 import Cart from '../pages/cart/Cart';
 
+import Profile from '../pages/Profile/Profile';
+import MyProfile from '../pages/Profile/components/MyProfile/MyProfile';
+import MyAddresses from '../pages/Profile/components/MyAddresses/MyAddresses';
+import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
+import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
+
 export const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -35,6 +41,14 @@ export const AppRouter = () => {
           <Route element={<PrivateRoutes />}>
             {/* <Route path="/perfil" element={<Perfil />} /> */}
             <Route path="/carrito" element={<Cart />} />
+            
+            {/* Rutas Anidadas para el Perfil de Usuario */}
+            <Route path="/perfil" element={<Profile />}>
+              <Route index element={<MyProfile />} /> {/* Ruta por defecto: /perfil */}
+              <Route path="direcciones" element={<MyAddresses />} /> {/* /perfil/direcciones */}
+              <Route path="pedidos" element={<MyOrders />} /> {/* /perfil/pedidos */}
+              <Route path="deseos" element={<Wishlist />} /> {/* /perfil/deseos */}
+            </Route>
           </Route>
 
           {/* Rutas Abiertas (Home, Listado, Detalle, etc.) */}
