@@ -13,6 +13,7 @@ import Home from '../pages/home/Home';
 import BrandDetail from '../pages/BrandDetail/BrandDetail';
 import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import ProductList from '../pages/ProductList/ProductList';
+import Cart from '../pages/cart/Cart';
 
 export const AppRouter = () => {
   return (
@@ -33,7 +34,7 @@ export const AppRouter = () => {
           {/* Rutas Privadas (Requieren login) */}
           <Route element={<PrivateRoutes />}>
             {/* <Route path="/perfil" element={<Perfil />} /> */}
-            {/* <Route path="/carrito" element={<Carrito />} /> */}
+            <Route path="/carrito" element={<Cart />} />
           </Route>
 
           {/* Rutas Abiertas (Home, Listado, Detalle, etc.) */}
