@@ -2,10 +2,14 @@
 import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 import { catalogService } from '../../services/catalogService';
 import { cartService } from '../../services/cartService';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
+import { WishlistContext } from '../../contexts/WishlistContext';
 import './ProductDetail.css';
 
 /**
@@ -22,6 +26,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useContext(AuthContext);
   const { refreshCart } = useContext(CartContext);
+  const { wishlistIds, toggleWishlist } = useContext(WishlistContext);
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +99,26 @@ const ProductDetail = () => {
     }
   };
 
+  const handleToggleFav = async () => {
+    if (!isAuthenticated) {
+      Swal.fire({
+        title: '¡Inicia sesión!', text: 'Debes iniciar sesión para usar la lista de deseos.', icon: 'warning', confirmButtonColor: '#00b4d8'
+      });
+      return;
+    }
+    try {
+      const added = await toggleWishlist(data.producto_local.id);
+      Swal.fire({
+        toast: true, position: 'top-end',
+        icon: added ? 'success' : 'info',
+        title: added ? 'Agregado a favoritos ❤️' : 'Quitado de favoritos 🤍',
+        showConfirmButton: false, timer: 2000
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   if (loading) return <div style={{ textAlign: 'center', padding: '50px' }}>Cargando producto... ⏳</div>;
   if (error) return <div className="detalle-error"><i className="fa-solid fa-triangle-exclamation"></i> {error}</div>;
   if (!data) return null;
@@ -103,6 +128,8 @@ const ProductDetail = () => {
   const stock = cva_data.inventario?.length > 0
     ? cva_data.inventario[cva_data.inventario.length - 1].disponible
     : producto_local.disponible;
+
+  const isFav = wishlistIds.includes(producto_local.id);
 
   return (
     <section className="producto-detalle">
@@ -156,8 +183,17 @@ const ProductDetail = () => {
           </div>
 
           <div className="buy-box">
-            <button type="button" className="btn-fav-lg">
-              <i className="fa-regular fa-heart"></i> Favorito
+            <button
+              type="button"
+              className="btn-fav-lg"
+              onClick={handleToggleFav}
+              style={{
+                borderColor: isFav ? '#ff4757' : '#ced4da',
+                color: isFav ? '#ff4757' : '#495057'
+              }}
+            >
+              <FontAwesomeIcon icon={isFav ? faHeartSolid : faHeartRegular} />
+              {isFav ? ' En Deseos' : ' Favorito'}
             </button>
 
             <form onSubmit={handleAddToCart} className="cart-form">

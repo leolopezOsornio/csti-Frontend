@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
+import { WishlistContext } from '../../contexts/WishlistContext';
 import MegaMenu from './MegaMenu';
 import './Navbar.css';
 
@@ -24,6 +25,7 @@ import {
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const { cartItemsCount } = useContext(CartContext);
+  const { wishlistIds } = useContext(WishlistContext);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
@@ -74,7 +76,7 @@ const Navbar = () => {
           <div className="header-center">
             <form className="search-bar" onSubmit={handleSearch}>
               <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
-              <input 
+              <input
                 type="text"
                 className="search-input"
                 placeholder="Buscar Productos..."
@@ -86,8 +88,14 @@ const Navbar = () => {
           </div>
 
           <div className="header-right">
-            <Link to="/mis-pedidos" className="icon-link" title="Mis Favoritos">
+            
+            <Link to="/perfil/deseos" className="icon-link" title="Mis Favoritos">
               <FontAwesomeIcon icon={faHeart} />
+              {wishlistIds.length > 0 && (
+                <span className="cart-badge" style={{ backgroundColor: '#ff4757' }}>
+                  {wishlistIds.length}
+                </span>
+              )}
             </Link>
 
             <Link to="/carrito" className="icon-link cart-link" title="Mi Carrito">
