@@ -1,5 +1,5 @@
 // src/pages/Profile/components/Wishlist/Wishlist.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faTrashCan } from '@fortawesome/free-solid-svg-icons';
@@ -7,12 +7,18 @@ import Swal from 'sweetalert2';
 
 import { wishlistService } from '../../../../services/wishlistService';
 import { cartService } from '../../../../services/cartService';
+
+import { WishlistContext } from '../../../../contexts/WishlistContext';
+import { CartContext } from '../../../../contexts/CartContext';
 import './Wishlist.css';
 
 const Wishlist = () => {
   const navigate = useNavigate();
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { refreshWishlist } = useContext(WishlistContext);
+  const { refreshCart } = useContext(CartContext);
 
   const fetchWishlist = async () => {
     try {
@@ -39,7 +45,7 @@ const Wishlist = () => {
     
     try {
       await cartService.addToCart(producto.id, 1);
-      // Aquí idealmente también llamarías a refreshCart() del CartContext
+      await refreshCart();
       Swal.fire({
         toast: true, position: 'top-end', icon: 'success', 
         title: 'Agregado al carrito', showConfirmButton: false, timer: 2000
@@ -69,7 +75,9 @@ const Wishlist = () => {
         try {
           await wishlistService.removeItem(itemId);
           // Filtramos el estado local para no recargar la página entera
-          setWishlist(wishlist.filter(item => item.id !== itemId)); 
+          setWishlist(wishlist.filter(item => item.id !== itemId));
+          await refreshWishlist();
+           
           Swal.fire({
             toast: true, position: 'top-end', icon: 'info', 
             title: 'Producto eliminado', showConfirmButton: false, timer: 2000
