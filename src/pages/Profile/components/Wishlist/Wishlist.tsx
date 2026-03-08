@@ -1,64 +1,57 @@
 // src/pages/Profile/components/Wishlist/Wishlist.tsx
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
-import './Wishlist.css';
 
-// MOCK DATA: Simulando la estructura que nos devolverá el backend
-const mockWishlist = [
-  {
-    id: 101, // ID del registro en la lista de deseos
-    producto: {
-      id: 55,
-      clave: 'LT-8492',
-      codigo_fabricante: 'HP-ENVY-14',
-      marca: 'HP',
-      descripcion: 'Laptop HP Envy 14" Intel Core i7, 16GB RAM, 512GB SSD, Windows 11 Home',
-      precio: 24500.00,
-      imagen: '/img/laptop.png',
-      disponible: 12,
-    }
-  },
-  {
-    id: 102,
-    producto: {
-      id: 88,
-      clave: 'MN-9921',
-      codigo_fabricante: 'DELL-U2723QE',
-      marca: 'DELL',
-      descripcion: 'Monitor Dell UltraSharp 27" 4K USB-C Hub Monitor',
-      precio: 12999.00,
-      imagen: '/img/laptop.png',
-      disponible: 0, // Simulamos un producto sin stock
-    }
-  }
-];
+import { wishlistService } from '../../../../services/wishlistService';
+import { cartService } from '../../../../services/cartService';
+import './Wishlist.css';
 
 const Wishlist = () => {
   const navigate = useNavigate();
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Manejador para ir al detalle del producto
+  const fetchWishlist = async () => {
+    try {
+      setLoading(true);
+      const data = await wishlistService.getWishlist();
+      setWishlist(data.items);
+    } catch (error) {
+      console.error("Error al cargar lista de deseos", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
   const goToDetail = (clave: string) => {
     navigate(`/producto/${clave}`);
   };
 
-  // Manejador para simular agregar al carrito
-  const handleAddToCart = (e: React.MouseEvent, producto: any) => {
-    e.stopPropagation(); // Evita que el clic en el botón te lleve al detalle
+  const handleAddToCart = async (e: React.MouseEvent, producto: any) => {
+    e.stopPropagation(); 
     
-    // Aquí a futuro llamaremos a cartService.addToCart(...)
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: 'Agregado al carrito',
-      showConfirmButton: false,
-      timer: 2000
-    });
+    try {
+      await cartService.addToCart(producto.id, 1);
+      // Aquí idealmente también llamarías a refreshCart() del CartContext
+      Swal.fire({
+        toast: true, position: 'top-end', icon: 'success', 
+        title: 'Agregado al carrito', showConfirmButton: false, timer: 2000
+      });
+    } catch (error: any) {
+      Swal.fire({
+        toast: true, position: 'top-end', icon: 'error', 
+        title: error.response?.data?.error || 'Error al agregar', showConfirmButton: false, timer: 3000
+      });
+    }
   };
 
-  // Manejador para simular eliminación
   const handleRemove = (e: React.MouseEvent, itemId: number) => {
     e.stopPropagation();
     
@@ -71,24 +64,33 @@ const Wishlist = () => {
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Sí, quitar',
       cancelButtonText: 'Cancelar'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // Aquí a futuro llamaremos al endpoint de eliminar del backend
-        Swal.fire({
-          toast: true, position: 'top-end', icon: 'info', title: 'Producto eliminado', showConfirmButton: false, timer: 2000
-        });
+        try {
+          await wishlistService.removeItem(itemId);
+          // Filtramos el estado local para no recargar la página entera
+          setWishlist(wishlist.filter(item => item.id !== itemId)); 
+          Swal.fire({
+            toast: true, position: 'top-end', icon: 'info', 
+            title: 'Producto eliminado', showConfirmButton: false, timer: 2000
+          });
+        } catch (error) {
+           console.error("Error al quitar item", error);
+        }
       }
     });
   };
+
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando favoritos... ⏳</div>;
 
   return (
     <>
       <h1 style={{ marginBottom: '5px' }}>Lista de Deseos</h1>
       <p style={{ color: '#6c757d', marginBottom: '20px' }}>Tus productos favoritos guardados.</p>
       
-      {mockWishlist.length > 0 ? (
+      {wishlist.length > 0 ? (
         <div className="wishlist-container">
-          {mockWishlist.map((item) => (
+          {wishlist.map((item) => (
             <article 
               key={item.id} 
               className="wishlist-item" 
@@ -96,7 +98,7 @@ const Wishlist = () => {
             >
               
               <div className="wl-img-wrapper">
-                <img src={item.producto.imagen} alt={item.producto.clave} className="wl-img" />
+                <img src={item.producto.imagen || '/img/no-image.png'} alt={item.producto.clave} className="wl-img" />
               </div>
 
               <div className="wl-details">
@@ -104,7 +106,6 @@ const Wishlist = () => {
                   <div className="wl-brand">{item.producto.marca}</div>
                   <h3 className="wl-title">{item.producto.descripcion}</h3>
                   <div className="wl-meta">
-                    <span>Modelo: <strong>{item.producto.codigo_fabricante}</strong></span>
                     <span>Clave: <strong>{item.producto.clave}</strong></span>
                   </div>
                 </div>
@@ -118,23 +119,19 @@ const Wishlist = () => {
 
               <div className="wl-actions">
                 <div className="wl-price">
-                  ${item.producto.precio.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ${Number(item.producto.precio).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
                 
                 <button 
                   className="wl-btn-cart" 
-                  disabled={item.producto.disponible === 0}
+                  disabled={item.producto.disponible <= 0}
                   onClick={(e) => handleAddToCart(e, item.producto)}
-                  title={item.producto.disponible === 0 ? "Sin stock" : "Agregar al carrito"}
+                  title={item.producto.disponible <= 0 ? "Sin stock" : "Agregar al carrito"}
                 >
-                  <FontAwesomeIcon icon={faCartShopping} /> 
-                  Agregar
+                  <FontAwesomeIcon icon={faCartShopping} /> Agregar
                 </button>
 
-                <button 
-                  className="wl-btn-remove" 
-                  onClick={(e) => handleRemove(e, item.id)}
-                >
+                <button className="wl-btn-remove" onClick={(e) => handleRemove(e, item.id)}>
                   <FontAwesomeIcon icon={faTrashCan} /> Quitar
                 </button>
               </div>
