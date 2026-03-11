@@ -3,7 +3,7 @@ import { useContext, useState, useEffect } from 'react'; // Agregamos useEffect
 import { Link, useNavigate, useLocation } from 'react-router-dom'; // Agregamos useLocation
 import Swal from 'sweetalert2'; // Importamos SweetAlert2
 import styles from '../Auth.module.css';
-import logoCsti from '../../../assets/img/logo_csti.png';
+import logoCsti from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
 import { AuthContext } from '../../../contexts/AuthContext';
 

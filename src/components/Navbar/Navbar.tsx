@@ -46,7 +46,7 @@ const Navbar = () => {
             </a>
             <span className="separator">|</span>
             <a href="mailto:ventas@csti.mx">
-              <FontAwesomeIcon icon={faEnvelope} /> ventas@csti.mx
+              <FontAwesomeIcon icon={faEnvelope} /> ventas@csti.com.mx
             </a>
           </div>
           <div className="top-bar__right">
@@ -65,7 +65,7 @@ const Navbar = () => {
 
           <div className="header-left">
             <Link to="/home" className="brand">
-              <img src="/img/logo_csti.png" alt="CSTI" className="brand__logo" />
+              <img src="/img/Fasterclick2.webp" alt="CSTI" className="brand__logo" />
             </Link>
 
             <div className="categories-wrapper">

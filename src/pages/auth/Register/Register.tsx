@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import logoCsti from '../../../assets/img/logo_csti.png';
+import logoCsti from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
 
 const Register = () => {
