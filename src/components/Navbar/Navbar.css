@@ -1,0 +1,222 @@
+/* File: CSTI/static/css/navbar.css */
+
+:root {
+    --nav-dark-blue: #0A0A45;
+    --nav-cyan: #00B5E2;
+    --nav-dark-hover: #0056b3;
+    --nav-gray: #f5f5f5;
+    --nav-border: #e0e0e0;
+}
+
+/* Reset básico */
+.header-wrapper {
+    width: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    background: #fff;
+    /* IMPORTANTE: Esto define el límite para el menú móvil */
+    position: relative; 
+    z-index: 1000;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* --- TOP BAR --- */
+.top-bar {
+    background-color: var(--nav-dark-blue);
+    color: #fff;
+    font-size: 0.85rem;
+    padding: 8px 0;
+}
+.top-bar__inner { display: flex; justify-content: space-between; align-items: center; }
+.top-bar a { color: #fff; text-decoration: none; margin-right: 15px; transition: color 0.2s; }
+.top-bar a:hover { color: var(--nav-cyan); }
+.separator { margin-right: 15px; opacity: 0.5; }
+
+/* --- MAIN HEADER --- */
+.main-header {
+    background-color: #fff;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--nav-border);
+}
+.main-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap; 
+}
+
+/* 1. IZQUIERDA */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.brand__logo { height: 45px; width: auto; }
+
+/* 2. CENTRO (BUSCADOR) */
+.header-center {
+    flex-grow: 1;
+    max-width: 600px;
+}
+.search-bar {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--nav-dark-blue);
+    border-radius: 50px;
+    padding: 3px;
+    background: #fff;
+}
+.search-icon { margin-left: 15px; color: #666; }
+.search-input {
+    flex-grow: 1; border: none; padding: 10px; outline: none; font-size: 1rem;
+}
+.search-btn {
+    background-color: #0d47a1; color: white; border: none; padding: 10px 25px;
+    border-radius: 50px; font-weight: bold; cursor: pointer; transition: background 0.2s;
+}
+.search-btn:hover { background-color: var(--nav-dark-blue); }
+
+/* 3. DERECHA (ICONOS) */
+.header-right {
+    display: flex; align-items: center; gap: 20px;
+}
+.icon-link {
+    color: #333; text-decoration: none; font-size: 1.2rem;
+    display: flex; align-items: center; gap: 8px; position: relative;
+}
+.icon-link:hover { color: var(--nav-cyan); }
+.cart-badge {
+    position: absolute; top: -8px; right: -10px;
+    background-color: var(--nav-cyan); color: white;
+    font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px;
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+}
+.user-dropdown { display: flex; align-items: center; gap: 15px; }
+.user-name, .login-text { font-size: 0.9rem; font-weight: 600; }
+.logout-link { color: #d32f2f; }
+
+/* --- MEGA MENU BASE (Escritorio) --- */
+.mega-menu-wrapper {
+    position: relative; /* En escritorio, el menú sale relativo al botón */
+}
+.mega-trigger-btn {
+    background-color: #0d47a1; color: white; border: none; padding: 10px 20px;
+    border-radius: 25px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.mega-menu {
+    display: none; position: absolute; top: 100%; left: 0;
+    width: 800px; /* Ancho fijo en escritorio */
+    background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 8px; margin-top: 10px; border: 1px solid #eee; z-index: 1100;
+}
+/* Activar menú */
+.mega-menu-wrapper:hover .mega-menu, .mega-menu-wrapper.open .mega-menu {
+    display: block; animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Layout interno menú */
+.mega-layout { display: flex; height: 400px; }
+.mega-sidebar { width: 250px; background: #f8f9fa; border-right: 1px solid #eee; overflow-y: auto; }
+.mega-cat {
+    display: block; width: 100%; text-align: left; padding: 12px 20px;
+    background: none; border: none; cursor: pointer; font-size: 0.95rem; color: #333;
+    border-left: 3px solid transparent;
+}
+.mega-cat:hover, .mega-cat.is-active {
+    background: #fff; color: var(--nav-cyan); border-left-color: var(--nav-cyan); font-weight: bold;
+}
+.mega-panels-wrapper { flex: 1; padding: 20px; overflow-y: auto; }
+.mega-panel { display: none; }
+.mega-panel.active { display: block; }
+.mega-title { margin-top: 0; color: var(--nav-dark-blue); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+.mega-brands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.brand-chip {
+    display: block; padding: 8px; background: #fff; border: 1px solid #eee;
+    border-radius: 6px; text-align: center; color: #555; text-decoration: none; font-size: 0.9rem;
+}
+.brand-chip:hover { border-color: var(--nav-cyan); color: var(--nav-cyan); }
+
+/* =========================================
+   MEDIA QUERIES (Responsive)
+   ========================================= */
+
+/* iPad Mini y Tablets (Menos de 1024px) */
+@media (max-width: 1024px) {
+    .top-bar { display: none; }
+
+    .mega-menu-wrapper {
+        position: static; 
+    }
+    
+    .mega-menu {
+        width: 100%;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+    
+    .mega-trigger-btn { padding: 10px; border-radius: 50%; }
+    .mega-btn-text { display: none; }
+}
+
+/* Móviles (Menos de 768px) */
+@media (max-width: 768px) {
+    .main-header__inner { gap: 15px; }
+
+    .header-left { order: 1; flex: 1; }
+    .header-right { order: 2; gap: 15px; }
+    
+    .header-center { 
+        order: 3; 
+        width: 100%; 
+        max-width: 100%;
+        margin: 0; 
+        flex-basis: 100%; 
+    }
+
+    .brand__logo { height: 35px; }
+    .user-name, .login-text { display: none; }
+
+    .mega-layout {
+        flex-direction: column;
+        height: auto;
+        max-height: 80vh;
+    }
+    
+    .mega-sidebar {
+        width: 100%;
+        height: 120px;
+        border-right: none;
+        border-bottom: 2px solid var(--nav-cyan);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .mega-panels-wrapper {
+        padding: 15px;
+        min-height: 200px;
+    }
+
+    /* 🔥 FIX PARA EL BUSCADOR EN MÓVILES PEQUEÑOS (iPhone X, SE, etc) */
+    
+    /* 1. Ajustamos el botón para que sea menos ancho */
+    .search-btn {
+        padding: 10px 15px; /* Reducimos padding lateral (era 25px) */
+        font-size: 0.9rem;  /* Texto un poco más pequeño */
+    }
+
+    /* 2. Truco vital para que el input no empuje el botón fuera */
+    .search-input {
+        min-width: 0; /* PERMITE QUE EL INPUT SE ENCOJA SI FALTA ESPACIO */
+        width: 100%;  /* Asegura que intente llenar el espacio disponible */
+    }
+}
