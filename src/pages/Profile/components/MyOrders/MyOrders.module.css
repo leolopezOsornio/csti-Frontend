@@ -1,0 +1,141 @@
+.pageTitle {
+    font-size: 1.8rem;
+    color: var(--color-secondary);
+    margin-bottom: 25px;
+    font-weight: 800;
+}
+
+.ordersList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.orderCard {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: var(--shadow-soft);
+}
+
+.orderHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.orderId {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+.statusPill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.processing {
+    background: rgba(255, 193, 7, 0.15);
+    color: #b7791f;
+}
+
+.delivered {
+    background: rgba(46, 213, 115, 0.14);
+    color: #1f8f4d;
+}
+
+.orderBody {
+    margin-bottom: 18px;
+}
+
+.orderDate {
+    font-size: 0.95rem;
+    color: var(--color-text-light);
+    margin-bottom: 12px;
+}
+
+.orderPreview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.orderThumbs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.thumbMini {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    background: var(--color-background-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 6px;
+}
+
+.moreItems {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+    font-weight: 600;
+}
+
+.orderFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.orderTotal {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--color-secondary);
+}
+
+.btnDetails {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-secondary);
+    color: var(--color-white);
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: var(--transition-base);
+}
+
+.btnDetails:hover {
+    opacity: 0.92;
+}
+
+@media (max-width: 640px) {
+    .orderCard {
+        padding: 18px;
+    }
+
+    .orderFooter {
+        align-items: stretch;
+    }
+
+    .btnDetails {
+        width: 100%;
+    }
+}

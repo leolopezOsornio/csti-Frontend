@@ -1,9 +1,8 @@
-// src/pages/auth/Register/Register.tsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import logoCsti from '../../../assets/img/Fasterclick1.png';
+import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
 
 const Register = () => {
@@ -15,18 +14,17 @@ const Register = () => {
     last_name: '',
     email: '',
     password: '',
-    password2: ''
+    password2: '',
   });
 
   const [cargando, setCargando] = useState(false);
 
-  const togglePassword = () => setShowPassword(!showPassword);
+  const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // --- LÓGICA DE VALIDACIÓN VISUAL ---
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
   const passLength = formData.password.length >= 8;
   const passUpper = /[A-Z]/.test(formData.password);
@@ -35,26 +33,24 @@ const Register = () => {
   const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
   const passMatch = formData.password && formData.password === formData.password2;
 
-  // Renderizador condicional de estilos para los indicadores
   const reqStyle = (isValid: boolean) => ({
-    color: isValid ? '#28a745' : '#dc3545', 
+    color: isValid ? '#28a745' : '#dc3545',
     fontSize: '0.75rem',
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
-    marginTop: '5px'
+    marginTop: '5px',
   });
 
-  // FUNCIÓN PARA LA LÍNEA INTELIGENTE DE CONTRASEÑA
   const renderPasswordFeedback = () => {
-    if (!formData.password) return null; // No mostrar nada si está vacío
+    if (!formData.password) return null;
 
     const faltantes = [];
-    if (!passLength) faltantes.push("8 caracteres");
-    if (!passUpper) faltantes.push("mayúscula");
-    if (!passLower) faltantes.push("minúscula");
-    if (!passNum) faltantes.push("número");
-    if (!passSpecial) faltantes.push("carácter especial");
+    if (!passLength) faltantes.push('8 caracteres');
+    if (!passUpper) faltantes.push('mayúscula');
+    if (!passLower) faltantes.push('minúscula');
+    if (!passNum) faltantes.push('número');
+    if (!passSpecial) faltantes.push('carácter especial');
 
     if (faltantes.length === 0) {
       return (
@@ -75,13 +71,19 @@ const Register = () => {
     e.preventDefault();
     setCargando(true);
 
-    let frontendErrors = [];
+    const frontendErrors = [];
 
-    if (!isEmailValid) frontendErrors.push("El formato del correo electrónico es inválido.");
-    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
-      frontendErrors.push("La contraseña no cumple con los requisitos de seguridad.");
+    if (!isEmailValid) {
+      frontendErrors.push('El formato del correo electrónico es inválido.');
     }
-    if (!passMatch) frontendErrors.push("Las contraseñas no coinciden.");
+
+    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
+      frontendErrors.push('La contraseña no cumple con los requisitos de seguridad.');
+    }
+
+    if (!passMatch) {
+      frontendErrors.push('Las contraseñas no coinciden.');
+    }
 
     if (frontendErrors.length > 0) {
       Swal.fire({
@@ -96,28 +98,28 @@ const Register = () => {
 
     try {
       const response = await authService.register(formData);
-      
-      if (response.mensaje && response.mensaje.includes("Cuenta inactiva actualizada")) {
-         await Swal.fire({
+
+      if (response.mensaje && response.mensaje.includes('Cuenta inactiva actualizada')) {
+        await Swal.fire({
           icon: 'info',
-          title: 'Cuenta Reactivada',
-          text: 'Tu cuenta estaba inactiva. Hemos actualizado tus datos y enviado un nuevo código.',
+          title: 'Cuenta reactivada',
+          text: 'Tu cuenta estaba inactiva. Actualizamos tus datos y enviamos un nuevo código.',
           confirmButtonColor: '#00b8d4',
         });
       } else {
-         await Swal.fire({
+        await Swal.fire({
           icon: 'success',
-          title: '¡Registro Exitoso!',
-          text: 'Te hemos enviado un código de verificación por correo electrónico.',
+          title: '¡Registro exitoso!',
+          text: 'Te enviamos un código de verificación por correo electrónico.',
           confirmButtonColor: '#00b8d4',
         });
       }
 
       navigate('/verificar-cuenta', { state: { email: formData.email } });
-
     } catch (error: any) {
-      let backendErrors = "Ocurrió un error inesperado al registrar.";
-      if (error.response && error.response.data && error.response.data.errores) {
+      let backendErrors = 'Ocurrió un error inesperado al registrar.';
+
+      if (error.response?.data?.errores) {
         backendErrors = error.response.data.errores.join('<br>');
       }
 
@@ -136,9 +138,16 @@ const Register = () => {
     <div className={styles['auth-wrapper']}>
       <div className={styles['auth-background']}></div>
 
-      <div className={`${styles['auth-card']} animate__animated animate__fadeInUp`} style={{ maxWidth: '500px' }}>
+      <div
+        className={`${styles['auth-card']} animate__animated animate__fadeInUp`}
+        style={{ maxWidth: '500px' }}
+      >
         <Link to="/home">
-          <img src={logoCsti} alt="CSTI Logo" className={styles['auth-logo']} />
+          <img
+            src={logoFasterClick}
+            alt="Faster Click Logo"
+            className={styles['auth-logo']}
+          />
         </Link>
 
         <h1>Crear Cuenta</h1>
@@ -146,60 +155,131 @@ const Register = () => {
         <form className={styles['auth-form']} onSubmit={handleSubmit}>
           <div className={styles['form-row']}>
             <div className={styles['form-group']}>
-              <label htmlFor="id_nombre" className={styles['form-label']}>Nombre</label>
-              <input type="text" id="id_nombre" name="first_name" value={formData.first_name} onChange={handleChange} className={styles['form-input']} required />
+              <label htmlFor="id_nombre" className={styles['form-label']}>
+                Nombre
+              </label>
+              <input
+                type="text"
+                id="id_nombre"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                className={styles['form-input']}
+                required
+              />
             </div>
+
             <div className={styles['form-group']}>
-              <label htmlFor="id_apellidos" className={styles['form-label']}>Apellidos</label>
-              <input type="text" id="id_apellidos" name="last_name" value={formData.last_name} onChange={handleChange} className={styles['form-input']} required />
+              <label htmlFor="id_apellidos" className={styles['form-label']}>
+                Apellidos
+              </label>
+              <input
+                type="text"
+                id="id_apellidos"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                className={styles['form-input']}
+                required
+              />
             </div>
           </div>
 
-          <div className={styles['form-group']} style={{ marginBottom: formData.email && !isEmailValid ? '5px' : '15px' }}>
-            <label htmlFor="id_email" className={styles['form-label']}>Correo Electrónico</label>
-            <input type="email" id="id_email" name="email" value={formData.email} onChange={handleChange} className={styles['form-input']} required />
-            {/* Solo mostramos error si escribió algo y está mal. Si está bien, no saturamos la vista */}
+          <div
+            className={styles['form-group']}
+            style={{ marginBottom: formData.email && !isEmailValid ? '5px' : '15px' }}
+          >
+            <label htmlFor="id_email" className={styles['form-label']}>
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              id="id_email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={styles['form-input']}
+              placeholder="ejemplo@fasterclick.com"
+              required
+            />
+
             {formData.email && !isEmailValid && (
               <span style={reqStyle(false)}>
-                <i className="fi fi-br-cross-small"></i> Formato inválido (ej. usuario@dominio.com)
+                <i className="fi fi-br-cross-small"></i>
+                Formato inválido (ej. usuario@dominio.com)
               </span>
             )}
           </div>
 
-          <div className={styles['form-group']} style={{ marginBottom: formData.password ? '5px' : '15px' }}>
-            <label htmlFor="id_password" className={styles['form-label']}>Contraseña</label>
+          <div
+            className={styles['form-group']}
+            style={{ marginBottom: formData.password ? '5px' : '15px' }}
+          >
+            <label htmlFor="id_password" className={styles['form-label']}>
+              Contraseña
+            </label>
+
             <div className={styles['password-wrapper']}>
-              <input 
-                type={showPassword ? "text" : "password"} 
-                id="id_password" name="password" value={formData.password} onChange={handleChange} 
-                className={styles['form-input']} required 
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="id_password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={styles['form-input']}
+                placeholder="Crea una contraseña segura"
+                required
               />
-              <i className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`} onClick={togglePassword}></i>
+
+              <i
+                className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`}
+                onClick={togglePassword}
+              ></i>
             </div>
-            {/* LÍNEA INTELIGENTE DE RETROALIMENTACIÓN */}
+
             {renderPasswordFeedback()}
           </div>
 
           <div className={styles['form-group']}>
-            <label htmlFor="id_password2" className={styles['form-label']}>Confirmar Contraseña</label>
+            <label htmlFor="id_password2" className={styles['form-label']}>
+              Confirmar Contraseña
+            </label>
+
             <div className={styles['password-wrapper']}>
-              <input type="password" id="id_password2" name="password2" value={formData.password2} onChange={handleChange} className={styles['form-input']} required />
+              <input
+                type="password"
+                id="id_password2"
+                name="password2"
+                value={formData.password2}
+                onChange={handleChange}
+                className={styles['form-input']}
+                placeholder="Repite tu contraseña"
+                required
+              />
             </div>
+
             {formData.password2 && (
               <span style={reqStyle(!!passMatch)}>
-                 <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
-                 {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
+                {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
               </span>
             )}
           </div>
 
-          <button type="submit" className={`${styles['btn-auth']} ${styles['btn-cyan']}`} disabled={cargando}>
+          <button
+            type="submit"
+            className={`${styles['btn-auth']} ${styles['btn-cyan']}`}
+            disabled={cargando}
+          >
             {cargando ? 'Registrando...' : 'Registrarse'}
           </button>
         </form>
 
         <p className={styles['auth-footer']}>
-          ¿Ya tienes cuenta? <Link to="/login" className={styles['link-dark']}>Inicia Sesión aquí</Link>
+          ¿Ya tienes cuenta?{' '}
+          <Link to="/login" className={styles['link-dark']}>
+            Inicia sesión aquí
+          </Link>
         </p>
       </div>
     </div>

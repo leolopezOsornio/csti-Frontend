@@ -3,17 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../services/catalogService';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import './BrandDetail.css';
-
-/**
- * PÁGINA: BrandDetail
- * UBICACIÓN: src/pages/BrandDetail/BrandDetail.tsx
- * * FUNCIÓN:
- * Renderiza la vista de una marca específica. Usa useParams() para leer
- * el 'slug' de la URL y useSearchParams() para leer la página actual.
- * Pide al backend la información de la marca y la lista de sus productos,
- * renderizándolos en una cuadrícula (grid) y manejando la paginación.
- */
+import styles from './BrandDetail.module.css';
 
 const BrandDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -27,53 +17,68 @@ const BrandDetail = () => {
   useEffect(() => {
     const fetchBrand = async () => {
       if (!slug) return;
+
       setLoading(true);
       setError(null);
+
       try {
         const response = await catalogService.getBrandDetail(slug, page);
         setData(response);
       } catch (err) {
-        setError("No se encontraron productos para esta marca o la marca no existe.");
+        setError('No se encontraron productos para esta marca o la marca no existe.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchBrand();
-  }, [slug, page]); // Se vuelve a ejecutar si cambia el slug o la página
+  }, [slug, page]);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
-    window.scrollTo(0, 0); // Sube la pantalla al cambiar de página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '50px' }}>Cargando marca... ⏳</div>;
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        Cargando marca... ⏳
+      </div>
+    );
+  }
+
   if (error) return <p className="catalogo-error">{error}</p>;
   if (!data) return null;
 
   const { marca, productos, paginacion } = data;
 
   return (
-    <section className="catalogo-container marca-page">
-      <header className="marca-header">
+    <section className={styles['marca-page']}>
+      <header className={styles['marca-header']}>
         {marca.logo_url && (
-          <img src={marca.logo_url} alt={marca.name} className="marca-header__logo" />
+          <img
+            src={marca.logo_url}
+            alt={marca.name}
+            className={styles['marca-header__logo']}
+          />
         )}
+
         <div>
-          <h1 className="marca-header__title">{marca.name}</h1>
-          <p className="marca-header__sub">Productos de esta marca en CSTI</p>
+          <h1 className={styles['marca-header__title']}>{marca.name}</h1>
+          <p className={styles['marca-header__sub']}>
+            Productos de esta marca en FastClick
+          </p>
         </div>
       </header>
 
       {productos && productos.length > 0 ? (
-        <section className="bloque">
-          <div className="bloque__header">
-            <h2 className="bloque__titulo">TODOS LOS PRODUCTOS</h2>
+        <section>
+          <div>
+            <h2>Todos los productos</h2>
           </div>
 
-          <div className="grid-marca">
+          <div className={styles['grid-marca']}>
             {productos.map((p: any) => (
-              // Reutilizamos nuestro componente modular
               <ProductCard key={p.clave} producto={p} />
             ))}
           </div>
@@ -82,21 +87,26 @@ const BrandDetail = () => {
         <p className="catalogo-error">No se encontraron productos para esta marca.</p>
       )}
 
-      {/* PAGINACIÓN */}
       {paginacion && paginacion.total_paginas > 1 && (
-        <div className="paginacion">
+        <div className={styles.paginacion}>
           {paginacion.pagina_actual > 1 && (
-            <button className="btn-pag" onClick={() => handlePageChange(paginacion.pagina_actual - 1)}>
+            <button
+              className={styles['btn-pag']}
+              onClick={() => handlePageChange(paginacion.pagina_actual - 1)}
+            >
               ← Anterior
             </button>
           )}
 
-          <span className="pagina-info">
+          <span className={styles['pagina-info']}>
             Página {paginacion.pagina_actual} de {paginacion.total_paginas}
           </span>
 
           {paginacion.pagina_actual < paginacion.total_paginas && (
-            <button className="btn-pag" onClick={() => handlePageChange(paginacion.pagina_actual + 1)}>
+            <button
+              className={styles['btn-pag']}
+              onClick={() => handlePageChange(paginacion.pagina_actual + 1)}
+            >
               Siguiente →
             </button>
           )}

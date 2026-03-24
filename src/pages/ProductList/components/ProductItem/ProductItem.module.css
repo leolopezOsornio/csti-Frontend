@@ -1,0 +1,107 @@
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    border-color: #e9ecef;
+}
+
+.cardBrand {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.cardImg {
+    width: 100%;
+    height: 140px;
+    object-fit: contain;
+    margin-bottom: 15px;
+}
+
+.cardTitle {
+    font-size: 0.9rem;
+    color: #333;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    flex-grow: 1;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.cardPrice {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.cardActions {
+    display: flex;
+    gap: 8px;
+}
+
+.actionBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btnCart {
+    background-color: #00b4d8;
+    color: white;
+}
+
+.btnCart:hover {
+    background-color: #0096b4;
+}
+
+.btnFav {
+    background-color: #e0f7fa;
+    color: #00b4d8;
+}
+
+.btnFav:hover {
+    background-color: #00b4d8;
+    color: white;
+}
+
+.iconFavActive {
+    color: #ff4757;
+}
+
+@media (max-width: 768px) {
+    .cardTitle {
+        font-size: 0.85rem;
+    }
+
+    .cardImg {
+        height: 120px;
+    }
+
+    .cardPrice {
+        font-size: 1.1rem;
+    }
+}
