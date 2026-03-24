@@ -1,0 +1,111 @@
+.catalogoLink {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.cardProd {
+    position: relative;
+    background: var(--color-white);
+    border-radius: 18px;
+    padding: 15px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    transition:
+        transform var(--transition-base),
+        box-shadow var(--transition-base),
+        border-color var(--transition-base);
+}
+
+.cardProd:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.12);
+    border-color: var(--color-primary);
+}
+
+.badgeOffer {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #e74c3c;
+    color: var(--color-white);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.cardProdImg {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    margin-bottom: 10px;
+    background: var(--color-background-soft);
+    border-radius: var(--radius-md);
+}
+
+.cardProdTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.4;
+    min-height: 44px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.catalogoMarca {
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin: 0 0 10px;
+}
+
+.catalogoPrecioContainer {
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.catalogoPrecio {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: #1e40af;
+}
+
+.priceOld {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.priceNew {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .cardProd {
+        padding: 14px;
+    }
+
+    .cardProdImg {
+        height: 145px;
+    }
+
+    .cardProdTitle {
+        font-size: 14px;
+        min-height: 40px;
+    }
+
+    .catalogoPrecio {
+        font-size: 16px;
+    }
+
+    .priceNew {
+        font-size: 1rem;
+    }
+}

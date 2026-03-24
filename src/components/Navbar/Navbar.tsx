@@ -1,12 +1,10 @@
-// src/components/Navbar/Navbar.tsx
 import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
 import MegaMenu from './MegaMenu';
-import './Navbar.css';
-
+import styles from '../Navbar/Navbar.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPhone,
@@ -17,10 +15,7 @@ import {
   faCartShopping,
   faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  faHeart,
-  faUser,
-} from '@fortawesome/free-regular-svg-icons';
+import { faHeart, faUser } from '@fortawesome/free-regular-svg-icons';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -37,19 +32,20 @@ const Navbar = () => {
   };
 
   return (
-    <header className="header-wrapper">
-      <div className="top-bar">
-        <div className="container top-bar__inner">
-          <div className="top-bar__left">
+    <header className={styles.headerWrapper}>
+      <div className={styles.topBar}>
+        <div className={`container ${styles.topBarInner}`}>
+          <div className={styles.topBarLeft}>
             <a href="tel:+524421234567">
               <FontAwesomeIcon icon={faPhone} /> 442 123 4567
             </a>
-            <span className="separator">|</span>
-            <a href="mailto:ventas@csti.mx">
+            <span className={styles.separator}>|</span>
+            <a href="mailto:ventas@csti.com.mx">
               <FontAwesomeIcon icon={faEnvelope} /> ventas@csti.com.mx
             </a>
           </div>
-          <div className="top-bar__right">
+
+          <div className={styles.topBarRight}>
             <a href="#">
               <FontAwesomeIcon icon={faHandshake} /> Conócenos
             </a>
@@ -60,76 +56,95 @@ const Navbar = () => {
         </div>
       </div>
 
-      <div className="main-header">
-        <div className="container main-header__inner">
-
-          <div className="header-left">
-            <Link to="/home" className="brand">
-              <img src="/img/Fasterclick2.webp" alt="CSTI" className="brand__logo" />
+      <div className={styles.mainHeader}>
+        <div className={`container ${styles.mainHeaderInner}`}>
+          <div className={styles.headerLeft}>
+            <Link to="/home" className={styles.brand}>
+              <img
+                src="/img/Fasterclick2.webp"
+                alt="CSTI"
+                className={styles.brandLogo}
+              />
             </Link>
 
-            <div className="categories-wrapper">
+            <div className={styles.categoriesWrapper}>
               <MegaMenu />
             </div>
           </div>
 
-          <div className="header-center">
-            <form className="search-bar" onSubmit={handleSearch}>
-              <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
+          <div className={styles.headerCenter}>
+            <form className={styles.searchBar} onSubmit={handleSearch}>
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className={styles.searchIcon}
+              />
               <input
                 type="text"
-                className="search-input"
-                placeholder="Buscar Productos..."
+                className={styles.searchInput}
+                placeholder="Buscar productos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <button className="search-btn" type="submit">Buscar</button>
+              <button className={styles.searchBtn} type="submit">
+                Buscar
+              </button>
             </form>
           </div>
 
-          <div className="header-right">
-            
-            <Link to="/perfil/deseos" className="icon-link" title="Mis Favoritos">
+          <div className={styles.headerRight}>
+            <Link
+              to="/perfil/deseos"
+              className={styles.iconLink}
+              title="Mis Favoritos"
+            >
               <FontAwesomeIcon icon={faHeart} />
               {wishlistIds.length > 0 && (
-                <span className="cart-badge" style={{ backgroundColor: '#ff4757' }}>
+                <span className={`${styles.cartBadge} ${styles.wishlistBadge}`}>
                   {wishlistIds.length}
                 </span>
               )}
             </Link>
 
-            <Link to="/carrito" className="icon-link cart-link" title="Mi Carrito">
+            <Link
+              to="/carrito"
+              className={`${styles.iconLink} ${styles.cartLink}`}
+              title="Mi Carrito"
+            >
               <FontAwesomeIcon icon={faCartShopping} />
               {cartItemsCount > 0 && (
-                <span className="cart-badge">{cartItemsCount}</span>
+                <span className={styles.cartBadge}>{cartItemsCount}</span>
               )}
             </Link>
 
             {isAuthenticated && user ? (
-              <div className="user-dropdown">
-                <Link to="/perfil" className="icon-link user-link">
+              <div className={styles.userDropdown}>
+                <Link to="/perfil" className={`${styles.iconLink} ${styles.userLink}`}>
                   <FontAwesomeIcon icon={faUser} />
-                  <span className="user-name">
+                  <span className={styles.userName}>
                     Hola, {user.first_name || user.email.split('@')[0]}
                   </span>
                 </Link>
+
                 <button
                   onClick={logout}
-                  className="icon-link logout-link"
+                  className={`${styles.iconLink} ${styles.logoutLink}`}
                   title="Cerrar Sesión"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  type="button"
                 >
                   <FontAwesomeIcon icon={faRightFromBracket} />
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="icon-link user-link" title="Iniciar Sesión">
+              <Link
+                to="/login"
+                className={`${styles.iconLink} ${styles.userLink}`}
+                title="Iniciar Sesión"
+              >
                 <FontAwesomeIcon icon={faUser} />
-                <span className="login-text">Entrar</span>
+                <span className={styles.loginText}>Entrar</span>
               </Link>
             )}
           </div>
-
         </div>
       </div>
     </header>

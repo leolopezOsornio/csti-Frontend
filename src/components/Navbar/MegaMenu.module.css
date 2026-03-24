@@ -1,0 +1,204 @@
+.megaMenuWrapper {
+    position: relative;
+}
+
+.megaTriggerBtn {
+    background-color: #0d47a1;
+    color: var(--color-white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition:
+        background-color var(--transition-base),
+        transform var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.megaTriggerBtn:hover {
+    background-color: var(--color-secondary);
+    transform: translateY(-1px);
+}
+
+.megaBtnText {
+    display: inline-block;
+}
+
+.megaMenu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 800px;
+    background: var(--color-white);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    z-index: 1100;
+    overflow: hidden;
+}
+
+.open .megaMenu {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.megaLayout {
+    display: flex;
+    height: 400px;
+}
+
+.megaSidebar {
+    width: 250px;
+    background: #f8f9fa;
+    border-right: 1px solid #eeeeee;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.megaCat {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    border-left: 3px solid transparent;
+    transition:
+        background-color var(--transition-base),
+        color var(--transition-base),
+        border-color var(--transition-base);
+}
+
+.megaCat:hover,
+.isActive {
+    background: var(--color-white);
+    color: var(--color-primary);
+    border-left-color: var(--color-primary);
+    font-weight: 700;
+}
+
+.megaPanelsWrapper {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.megaPanel {
+    display: none;
+}
+
+.active {
+    display: block;
+}
+
+.megaTitle {
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    color: var(--color-secondary);
+    border-bottom: 2px solid #eeeeee;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.megaBrandsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.brandChip {
+    display: block;
+    padding: 8px;
+    background: var(--color-white);
+    border: 1px solid #eeeeee;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    color: var(--color-text-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition:
+        border-color var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.brandChip:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 1024px) {
+    .megaMenuWrapper {
+        position: static;
+    }
+
+    .megaMenu {
+        width: 100%;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .megaTriggerBtn {
+        padding: 10px;
+        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        justify-content: center;
+    }
+
+    .megaBtnText {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .megaLayout {
+        flex-direction: column;
+        height: auto;
+        max-height: 80vh;
+    }
+
+    .megaSidebar {
+        width: 100%;
+        height: 120px;
+        border-right: none;
+        border-bottom: 2px solid var(--color-primary);
+    }
+
+    .megaPanelsWrapper {
+        padding: 15px;
+        min-height: 200px;
+    }
+
+    .megaMenu {
+        top: calc(100% + 8px);
+    }
+}
