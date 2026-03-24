@@ -1,0 +1,13 @@
+.homeContainer {
+    width: 100%;
+}
+
+.catalogoStart {
+    padding-top: 40px;
+}
+
+.stateMessage {
+    text-align: center;
+    padding: 50px;
+    color: var(--color-text-light);
+}

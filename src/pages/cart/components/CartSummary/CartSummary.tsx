@@ -1,6 +1,6 @@
 // src/pages/cart/components/CartSummary.tsx
 import Swal from 'sweetalert2';
-import styles from './CartSummary.module.css';
+import styles from '../CartSummary/CartSummary.module.css';
 
 interface CartSummaryProps {
   total: number;

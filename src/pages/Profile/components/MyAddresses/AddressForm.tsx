@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { addressService } from '../../../../services/addressService';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import styles from './MyAddresses.module.css';
+import styles from '../MyAddresses/MyAddresses.module.css';
 
 interface AddressFormProps {
   addressToEdit?: any | null;

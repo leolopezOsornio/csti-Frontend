@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { AuthContext } from '../../contexts/AuthContext';
-import styles from './Profile.module.css';
+import styles from '../Profile/Profile.module.css';
 
 const Profile = () => {
   const { logout } = useContext(AuthContext);

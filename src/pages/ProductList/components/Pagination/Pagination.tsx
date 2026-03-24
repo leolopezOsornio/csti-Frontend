@@ -1,6 +1,6 @@
 // src/pages/ProductList/components/Pagination.tsx
 import { useSearchParams } from 'react-router-dom';
-import styles from './Pagination.module.css';
+import styles from '../Pagination/Pagination.module.css';
 
 interface PaginationProps {
   totalPages: number;

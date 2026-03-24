@@ -10,7 +10,7 @@ import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
 import { cartService } from '../../../../services/cartService';
 
-import styles from './ProductItem.module.css';
+import styles from '../ProductItem/ProductItem.module.css';
 
 interface ProductItemProps {
   product: any;

@@ -7,7 +7,7 @@ import { wishlistService } from '../../../../services/wishlistService';
 import { cartService } from '../../../../services/cartService';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
 import { CartContext } from '../../../../contexts/CartContext';
-import styles from './Wishlist.module.css';
+import styles from '../Wishlist/Wishlist.module.css';
 
 const Wishlist = () => {
   const navigate = useNavigate();

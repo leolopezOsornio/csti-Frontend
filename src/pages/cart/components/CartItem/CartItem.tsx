@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
-import styles from './CartItem.module.css';
+import styles from '../CartItem/CartItem.module.css';
 
 interface CartItemProps {
   item: any;

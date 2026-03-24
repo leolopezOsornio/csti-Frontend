@@ -1,6 +1,6 @@
 // src/pages/cart/components/EmptyCart.tsx
 import { Link } from 'react-router-dom';
-import styles from './EmptyCart.module.css';
+import styles from '../EmptyCart/EmptyCart.module.css';
 
 const EmptyCart = () => {
   return (

@@ -12,7 +12,7 @@ import {
 import { profileService } from '../../../../services/profileService';
 import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
-import styles from './MyProfile.module.css';
+import styles from '../MyProfile/MyProfile.module.css';
 
 const MyProfile = () => {
   const navigate = useNavigate();

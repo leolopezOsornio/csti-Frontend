@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faHouse, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { addressService } from '../../../../services/addressService';
 import AddressForm from './AddressForm';
-import styles from './MyAddresses.module.css';
+import styles from '../MyAddresses/MyAddresses.module.css';
 
 const MyAddresses = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
