@@ -1,5 +1,6 @@
 // src/pages/ProductList/components/Pagination.tsx
 import { useSearchParams } from 'react-router-dom';
+import styles from './Pagination.module.css';
 
 interface PaginationProps {
   totalPages: number;
@@ -14,32 +15,32 @@ const Pagination = ({ totalPages, currentPage }: PaginationProps) => {
   const handlePageChange = (page: number) => {
     searchParams.set('page', page.toString());
     setSearchParams(searchParams);
-    window.scrollTo(0, 0); // Regresa al inicio al cambiar página
+    window.scrollTo(0, 0);
   };
 
-  // Generamos un arreglo simple de páginas [1, 2, 3...]
   const pagesArray = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
-    <div className="pl-pagination">
+    <div className={styles.pagination}>
       {currentPage > 1 && (
-        <button className="pl-page-btn" onClick={() => handlePageChange(currentPage - 1)}>
+        <button className={styles.pageBtn} onClick={() => handlePageChange(currentPage - 1)} type="button">
           &lt;
         </button>
       )}
 
-      {pagesArray.map(page => (
-        <button 
+      {pagesArray.map((page) => (
+        <button
           key={page}
-          className={`pl-page-btn ${page === currentPage ? 'active' : ''}`}
+          className={`${styles.pageBtn} ${page === currentPage ? styles.active : ''}`}
           onClick={() => handlePageChange(page)}
+          type="button"
         >
           {page}
         </button>
       ))}
 
       {currentPage < totalPages && (
-        <button className="pl-page-btn" onClick={() => handlePageChange(currentPage + 1)}>
+        <button className={styles.pageBtn} onClick={() => handlePageChange(currentPage + 1)} type="button">
           &gt;
         </button>
       )}

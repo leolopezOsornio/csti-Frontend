@@ -2,27 +2,22 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../services/catalogService';
-
-import FilterSidebar from './components/FilterSidebar';
-import TopBar from './components/TopBar';
-import ProductItem from './components/ProductItem';
-import Pagination from './components/Pagination';
-
+import FilterSidebar from './components/FilterSidebar/FilterSidebar';
+import TopBar from './components/TopBar/TopBar';
+import ProductItem from './components/ProductItem/ProductItem';
+import Pagination from './components/Pagination/Pagination';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
-import './ProductList.css';
+import styles from './ProductList.module.css';
 
 const ProductList = () => {
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get('desc');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  // Estados reales para almacenar los datos del backend
   const [productos, setProductos] = useState<any[]>([]);
   const [paginacion, setPaginacion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cada vez que cambia la URL (búsqueda, filtro, paginación), se ejecuta este useEffect
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -31,7 +26,7 @@ const ProductList = () => {
         setProductos(data.resultados);
         setPaginacion(data.paginacion);
       } catch (error) {
-        console.error("Error al cargar la lista de productos", error);
+        console.error('Error al cargar la lista de productos', error);
       } finally {
         setLoading(false);
       }
@@ -41,46 +36,45 @@ const ProductList = () => {
   }, [searchParams]);
 
   return (
-    <div className="pl-page-container">
-      
-      <div className="pl-sidebar-section">
-        <button 
-          className="pl-mobile-filter-btn"
+    <div className={styles.pageContainer}>
+      <div className={styles.sidebarSection}>
+        <button
+          className={styles.mobileFilterBtn}
           onClick={() => setIsFilterOpen(!isFilterOpen)}
+          type="button"
         >
-          <FontAwesomeIcon icon={faFilter} /> 
+          <FontAwesomeIcon icon={faFilter} />
           {isFilterOpen ? ' Ocultar Filtros' : ' Mostrar Filtros'}
         </button>
 
-        <div className={`pl-sidebar-wrapper ${isFilterOpen ? 'open' : ''}`}>
+        <div className={`${styles.sidebarWrapper} ${isFilterOpen ? styles.open : ''}`}>
           <FilterSidebar />
         </div>
       </div>
 
-      <div className="pl-content">
-        
+      <div className={styles.content}>
         {searchTerm && (
-          <h2 style={{ marginBottom: '15px', color: '#333' }}>
+          <h2 className={styles.searchTitle}>
             Resultados para: "{searchTerm}"
           </h2>
         )}
 
-        <TopBar 
-          totalItems={paginacion?.total_productos || 0} 
-          currentPage={paginacion?.pagina_actual || 1} 
+        <TopBar
+          totalItems={paginacion?.total_productos || 0}
+          currentPage={paginacion?.pagina_actual || 1}
         />
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '50px', fontSize: '1.2rem', color: '#666' }}>
+          <div className={styles.loadingState}>
             Buscando productos... ⏳
           </div>
         ) : productos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '50px', color: '#dc3545' }}>
+          <div className={styles.emptyState}>
             <h3>No se encontraron productos</h3>
             <p>Intenta con otros filtros o términos de búsqueda.</p>
           </div>
         ) : (
-          <div className="pl-grid">
+          <div className={styles.grid}>
             {productos.map((prod) => (
               <ProductItem key={prod.clave} product={prod} />
             ))}
@@ -88,13 +82,12 @@ const ProductList = () => {
         )}
 
         {paginacion && !loading && (
-          <Pagination 
-            totalPages={paginacion.total_paginas} 
-            currentPage={paginacion.pagina_actual} 
+          <Pagination
+            totalPages={paginacion.total_paginas}
+            currentPage={paginacion.pagina_actual}
           />
         )}
       </div>
-
     </div>
   );
 };

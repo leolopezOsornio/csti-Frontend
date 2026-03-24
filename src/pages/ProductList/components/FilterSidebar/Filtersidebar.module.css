@@ -1,0 +1,99 @@
+.sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    height: fit-content;
+}
+
+.sidebarTitle {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+}
+
+.filterGroup {
+    margin-bottom: 24px;
+}
+
+.filterTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.filterList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.filterItem {
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filterItem:hover {
+    color: #00b4d8;
+}
+
+.activeText {
+    color: #00b4d8;
+}
+
+.checkbox {
+    accent-color: #00b4d8;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.priceRange {
+    width: 100%;
+    accent-color: #00b4d8;
+}
+
+.priceLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.toggleBtn {
+    background: none;
+    border: none;
+    color: #00b4d8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.clearBtn {
+    background: none;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    padding: 5px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+    }
+}

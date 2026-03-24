@@ -1,107 +1,325 @@
-/* File: CSTI/static/css/auth.css */
-:root {
-    --csti-dark: #0A0A45;
-    --csti-cyan: #00B5E2;
-    --csti-gray: #f4f6f9;
-    --text-color: #333;
-    --text-muted: #666;
-    --brand-primary: #00B5E2;
-}
+/* =========================
+   LAYOUT GENERAL AUTH
+========================= */
 
-body {
-    background-color: var(--csti-gray);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-}
-
-/* --- Layout General --- */
 .auth-wrapper {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 15px; /* Padding pequeño para móviles */
-    box-sizing: border-box;
+    padding: 15px;
+    isolation: isolate;
 }
 
-/* Fondo Tecnológico */
 .auth-background {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    background-image: url('../../assets/img/fondo_circuitos.jpg');
+    inset: 0;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(10, 10, 69, 0.18), rgba(10, 10, 69, 0.18)),
+        url('../../assets/img/fondo_circuitos.jpg');
     background-size: cover;
     background-position: center;
-    opacity: 1; 
+    background-repeat: no-repeat;
     pointer-events: none;
 }
 
-/* --- Tarjeta (Card) --- */
 .auth-card {
-    background: #ffffff;
-    width: 100%;
-    max-width: 450px; 
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(10, 10, 69, 0.3);
-    text-align: center;
     position: relative;
-    box-sizing: border-box; /* Vital para responsividad */
+    z-index: 1;
+    width: 100%;
+    max-width: 450px;
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 30px rgba(10, 10, 69, 0.22);
+    text-align: center;
+    backdrop-filter: blur(2px);
 }
 
-/* Logo */
 .auth-logo {
     width: 120px;
-    margin-bottom: 20px;
+    margin: 0 auto 20px;
     display: block;
-    margin-left: auto;
-    margin-right: auto;
 }
 
-/* Títulos y Headers */
-.auth-card h1, .auth-card h2, .auth-title {
-    color: var(--csti-dark);
+/* =========================
+   HEADERS / TITLES
+========================= */
+
+.auth-card h1,
+.auth-card h2,
+.auth-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--color-secondary);
     font-size: 1.8rem;
     font-weight: 700;
-    margin-bottom: 10px;
-    margin-top: 0;
+}
+
+.auth-header {
+    margin-bottom: 20px;
 }
 
 .auth-subtitle {
-    color: var(--text-muted);
+    margin-bottom: 25px;
+    color: var(--color-text-light);
     font-size: 0.95rem;
     line-height: 1.5;
-    margin-bottom: 25px;
 }
 
-.auth-header { margin-bottom: 20px; }
-
-/* Icono Circular */
 .auth-icon-circle {
     width: 70px;
     height: 70px;
-    background: var(--csti-dark);
+    margin: 0 auto 20px;
     border-radius: 50%;
+    background: var(--color-secondary);
+    color: var(--color-white);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    color: white;
     font-size: 28px;
 }
 
-/* --- Pasos (Steps) --- */
+/* =========================
+   FORMULARIOS
+========================= */
+
+.auth-form {
+    text-align: left;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.form-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 15px;
+    border: 1px solid #e1e1e1;
+    border-radius: var(--radius-md);
+    background: #f9f9f9;
+    color: var(--color-text);
+    font-size: 1rem;
+    transition: var(--transition-base);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-white);
+    box-shadow: 0 0 0 3px rgba(0, 181, 226, 0.1);
+}
+
+.form-input::placeholder {
+    color: #9aa4b2;
+}
+
+.code-input {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: var(--color-secondary);
+}
+
+.password-wrapper,
+.input-group {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: #999;
+    cursor: pointer;
+}
+
+/* =========================
+   CHECKBOX / ACTIONS
+========================= */
+
+.auth-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+}
+
+.remember-me {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-light);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.remember-me input {
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+/* =========================
+   BOTONES AUTH
+========================= */
+
+.btn-auth,
+.btn-primary,
+.btn-link,
+.btn-dark,
+.btn-cyan,
+.btn-action {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition-base);
+}
+
+.btn-auth:disabled,
+.btn-primary:disabled,
+.btn-link:disabled,
+.btn-dark:disabled,
+.btn-cyan:disabled,
+.btn-action:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-auth:active,
+.btn-primary:active,
+.btn-link:active,
+.btn-dark:active,
+.btn-cyan:active,
+.btn-action:active {
+    transform: scale(0.98);
+}
+
+.btn-dark {
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-dark:hover {
+    background-color: #0d0d5e;
+    box-shadow: 0 4px 15px rgba(10, 10, 69, 0.3);
+}
+
+.btn-cyan,
+.btn-action,
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-cyan:hover,
+.btn-action:hover,
+.btn-primary:hover {
+    background-color: #0099c0;
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
+}
+
+.btn-link {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-light);
+    font-weight: 600;
+    text-transform: none;
+}
+
+.btn-link:hover {
+    background: var(--color-background-soft);
+    border-color: #cbd5e1;
+    color: var(--color-secondary);
+}
+
+.btn-resend {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* =========================
+   LINKS / FOOTER
+========================= */
+
+.forgot-link,
+.link-cyan {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.link-dark {
+    color: var(--color-secondary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-footer {
+    margin-top: 25px;
+    color: var(--color-text-light);
+    font-size: 0.95rem;
+}
+
+/* =========================
+   RECOVER / VERIFY STEPS
+========================= */
+
 .step-container {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    gap: 8px;
     margin-bottom: 30px;
-    gap: 8px; /* Gap reducido para móviles */
 }
+
 .step-item {
     display: flex;
     align-items: center;
@@ -110,189 +328,85 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
 }
-.step-item.active {
-    color: var(--csti-cyan);
-    font-weight: 700;
-}
+
 .step-line {
     width: 20px;
     height: 2px;
     background: #e2e8f0;
 }
-.step-line.active { background: var(--csti-cyan); }
 
-/* --- Formularios --- */
-.auth-form { text-align: left; }
-.form-group { margin-bottom: 20px; position: relative; }
-.form-row { display: flex; gap: 15px; }
-.form-row .form-group { flex: 1; }
-
-.form-label {
-    display: block;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-.text-center { text-align: center; }
-
-.form-input {
-    width: 100%;
-    height: 48px; /* Altura fija para inputs */
-    padding: 0 15px;
-    border: 1px solid #e1e1e1;
-    border-radius: 8px;
-    font-size: 1rem;
-    color: var(--text-color);
-    background: #f9f9f9;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
+.stepActive {
+    color: var(--color-primary);
+    font-weight: 700;
 }
 
-.form-input:focus {
-    border-color: var(--csti-cyan);
-    background: #fff;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 181, 226, 0.1);
+.stepLineActive {
+    background: var(--color-primary);
 }
 
-.code-input {
+.step-item.active {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.step-line.active {
+    background: var(--color-primary);
+}
+
+.resend-container {
+    margin-top: 15px;
     text-align: center;
-    font-size: 1.5rem;
-    letter-spacing: 8px;
-    font-weight: 700;
-    color: var(--csti-dark);
-}
-
-.password-wrapper, .input-group { position: relative; }
-.toggle-password {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #999;
-    z-index: 2;
-}
-
-/* --- BOTONES UNIFICADOS (Solución de tamaños) --- */
-.btn-auth, .btn-primary, .btn-link {
-    width: 100%;
-    height: 48px; /* Altura fija idéntica para todos */
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex; /* Centrado perfecto flex */
-    justify-content: center;
-    align-items: center;
-    box-sizing: border-box;
-    text-decoration: none;
-}
-
-.btn-auth:active, .btn-primary:active, .btn-link:active { 
-    transform: scale(0.98); 
-}
-
-/* Estilo Botón Acción (Cyan/Dark) */
-.btn-dark {
-    background-color: var(--csti-dark);
-    color: #ffffff;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.btn-dark:hover {
-    background-color: #0d0d5e;
-    box-shadow: 0 4px 15px rgba(10, 10, 69, 0.3);
-}
-
-.btn-cyan, .btn-action, .btn-primary {
-    background-color: var(--csti-cyan);
-    color: #ffffff;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.btn-cyan:hover, .btn-action:hover, .btn-primary:hover {
-    background-color: #0099c0;
-    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
-}
-
-/* Estilo Botón Secundario (Link/Cancelar/Volver) */
-.btn-link {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    color: var(--text-muted);
-    font-weight: 600;
-    text-transform: none; /* No mayúsculas para acciones secundarias */
-}
-.btn-link:hover { 
-    background: #f8fafc; 
-    color: var(--csti-dark);
-    border-color: #cbd5e1;
-}
-
-.resend-container { text-align: center; margin-top: 15px; font-size: 0.9rem; }
-.btn-resend {
-    background: none;
-    border: none;
-    color: var(--csti-cyan);
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: underline;
     font-size: 0.9rem;
+    color: var(--color-text-light);
 }
 
-/* Footer y Links Login */
-.auth-actions {
+/* =========================
+   UTILIDADES AUTH
+========================= */
+
+.auth-inline-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    font-size: 0.9rem;
+    gap: 10px;
 }
-.forgot-link, .link-cyan { color: var(--csti-cyan); text-decoration: none; font-weight: 600; }
-.auth-footer { margin-top: 25px; font-size: 0.95rem; color: var(--text-muted); }
-.link-dark { color: var(--csti-dark); font-weight: 700; text-decoration: none; }
 
-/* --- RESPONSIVIDAD (Móviles y Tablets) --- */
+.auth-inline-actions>* {
+    flex: 1;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 576px) {
     .auth-card {
-        padding: 30px 20px; /* Menos padding interno */
         width: 100%;
+        padding: 30px 20px;
     }
 
-    .auth-card h1, .auth-card h2, .auth-title {
-        font-size: 1.5rem; /* Título más pequeño */
+    .auth-card h1,
+    .auth-card h2,
+    .auth-title {
+        font-size: 1.5rem;
     }
 
     .form-row {
-        flex-direction: column; /* Inputs de nombre uno debajo de otro */
+        flex-direction: column;
         gap: 0;
     }
 
     .step-item span {
-        display: none; /* Ocultar texto "Email/Código/Nueva" si no cabe, dejar iconos */
-    }
-    
-    /* Mostrar texto solo en el paso activo si se desea, o dejar solo iconos */
-    .step-item.active span {
-        display: inline; 
+        display: none;
     }
 
-    /* Ajustar botones laterales (Volver/Verificar) */
-    .auth-card form > div[style*="display: flex"] {
-        gap: 10px; /* Asegurar espacio */
+    .step-item.active span {
+        display: inline;
     }
-    
-    /* Login actions stack */
+
     .auth-actions {
         flex-direction: column;
-        gap: 10px;
         align-items: flex-start;
     }
+
     .forgot-link {
         align-self: flex-start;
     }

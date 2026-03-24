@@ -1,0 +1,108 @@
+/* ===== Página de Marca ===== */
+.marca-page {
+    max-width: 1300px;
+    margin: 30px auto;
+    padding: 0 16px 40px;
+}
+
+/* ===== Encabezado ===== */
+.marca-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 35px;
+    padding: 24px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+}
+
+.marca-header__logo {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: var(--color-background-soft);
+    padding: 10px;
+    flex-shrink: 0;
+}
+
+.marca-header__title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--color-secondary);
+}
+
+.marca-header__sub {
+    margin: 6px 0 0;
+    color: var(--color-text-light);
+    font-size: 15px;
+}
+
+/* ===== Grid ===== */
+.grid-marca {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    margin-top: 20px;
+}
+
+/* ===== Paginación ===== */
+.paginacion {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.btn-pag {
+    background: var(--color-secondary);
+    color: var(--color-white);
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    transition: var(--transition-base);
+}
+
+.btn-pag:hover {
+    opacity: 0.92;
+    box-shadow: var(--shadow-soft);
+}
+
+.pagina-info {
+    color: var(--color-text-light);
+    font-weight: 600;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 680px) {
+    .marca-page {
+        margin: 20px auto;
+        padding: 0 14px 30px;
+    }
+
+    .marca-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+        padding: 20px;
+    }
+
+    .marca-header__logo {
+        width: 100px;
+        height: 100px;
+    }
+
+    .marca-header__title {
+        font-size: 26px;
+    }
+
+    .grid-marca {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+    }
+}

@@ -1,17 +1,33 @@
-/* src/pages/Profile/components/Wishlist/Wishlist.css */
-
-.wishlist-container {
+.wishlistContainer {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 20px;
 }
 
-.wishlist-item {
+.loadingState {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-light);
+}
+
+.pageTitle {
+  margin-bottom: 5px;
+  font-size: 1.8rem;
+  color: var(--color-secondary);
+  font-weight: 800;
+}
+
+.pageSubtitle {
+  color: var(--color-text-light);
+  margin-bottom: 20px;
+}
+
+.wishlistItem {
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #e9ecef;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px 24px;
   gap: 24px;
@@ -20,48 +36,48 @@
   position: relative;
 }
 
-.wishlist-item:hover {
+.wishlistItem:hover {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border-color: #d0ebff;
 }
 
-.wl-img-wrapper {
+.wlImgWrapper {
   width: 100px;
   height: 100px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: var(--color-background-soft);
+  border-radius: var(--radius-md);
   padding: 10px;
 }
 
-.wl-img {
+.wlImg {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-.wl-details {
+.wlDetails {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-.wl-brand {
+.wlBrand {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6c757d;
+  color: var(--color-text-light);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
 
-.wl-title {
+.wlTitle {
   font-size: 1rem;
-  color: #212529;
+  color: var(--color-text);
   font-weight: 600;
   margin: 0 0 8px 0;
   line-height: 1.4;
@@ -71,33 +87,33 @@
   overflow: hidden;
 }
 
-.wl-meta {
+.wlMeta {
   display: flex;
   gap: 16px;
   font-size: 0.85rem;
   color: #495057;
 }
 
-.wl-meta span strong {
+.wlMeta span strong {
   font-weight: 600;
   color: #343a40;
 }
 
-.wl-stock {
+.wlStock {
   font-size: 0.85rem;
   font-weight: 600;
   margin-top: 8px;
 }
 
-.wl-stock.in-stock {
-  color: #2b8a3e; /* Verde oscuro */
+.inStock {
+  color: #2b8a3e;
 }
 
-.wl-stock.out-of-stock {
-  color: #c92a2a; /* Rojo oscuro */
+.outOfStock {
+  color: #c92a2a;
 }
 
-.wl-actions {
+.wlActions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -106,37 +122,37 @@
   min-width: 140px;
 }
 
-.wl-price {
+.wlPrice {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-dark);
 }
 
-.wl-btn-cart {
-  background-color: #00b4d8;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+.wlBtnCart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-white);
   font-size: 0.9rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  transition: var(--transition-base);
 }
 
-.wl-btn-cart:hover {
+.wlBtnCart:hover {
   background-color: #0096b4;
 }
 
-.wl-btn-cart:disabled {
+.wlBtnCart:disabled {
   background-color: #ced4da;
   cursor: not-allowed;
 }
 
-.wl-btn-remove {
+.wlBtnRemove {
   background: none;
   border: none;
   color: #adb5bd;
@@ -148,20 +164,42 @@
   gap: 6px;
 }
 
-.wl-btn-remove:hover {
+.wlBtnRemove:hover {
   color: #fa5252;
 }
 
-/* Responsividad para móviles */
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  background-color: var(--color-background-soft);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.emptyIcon {
+  font-size: 40px;
+  color: #dee2e6;
+  margin-bottom: 15px;
+}
+
+.emptyTitle {
+  color: #495057;
+  margin-bottom: 6px;
+}
+
+.emptyText {
+  color: #868e96;
+}
+
 @media (max-width: 768px) {
-  .wishlist-item {
+  .wishlistItem {
     flex-direction: column;
     align-items: flex-start;
     padding: 16px;
     gap: 16px;
   }
-  
-  .wl-actions {
+
+  .wlActions {
     width: 100%;
     flex-direction: row;
     justify-content: space-between;
