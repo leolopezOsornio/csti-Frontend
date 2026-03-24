@@ -1,0 +1,49 @@
+.catalogoLink {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.brandCard {
+    scroll-snap-align: start;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-soft);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.brandCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card);
+}
+
+.brandLogo {
+    width: 100%;
+    max-width: 180px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 10px;
+    background: var(--color-background-soft);
+    border-radius: var(--radius-md);
+}
+
+.brandName {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-secondary);
+    margin: 6px 0 2px;
+    text-align: center;
+}
+
+.brandCta {
+    font-size: 13px;
+    color: var(--color-primary);
+    font-weight: 600;
+}

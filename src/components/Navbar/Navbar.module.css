@@ -1,0 +1,263 @@
+.headerWrapper {
+    width: 100%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background: var(--color-white);
+    position: relative;
+    z-index: 1000;
+}
+
+/* =========================
+   TOP BAR
+========================= */
+.topBar {
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+    font-size: 0.85rem;
+    padding: 8px 0;
+}
+
+.topBarInner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.topBarLeft,
+.topBarRight {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.topBar a {
+    color: var(--color-white);
+    text-decoration: none;
+    transition: color var(--transition-base);
+}
+
+.topBar a:hover {
+    color: var(--color-primary);
+}
+
+.separator {
+    opacity: 0.5;
+}
+
+/* =========================
+   MAIN HEADER
+========================= */
+.mainHeader {
+    background-color: var(--color-white);
+    padding: 15px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mainHeaderInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* =========================
+   LEFT
+========================= */
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.brandLogo {
+    height: 45px;
+    width: auto;
+}
+
+.categoriesWrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* =========================
+   CENTER / SEARCH
+========================= */
+.headerCenter {
+    flex-grow: 1;
+    max-width: 600px;
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--color-secondary);
+    border-radius: 50px;
+    padding: 3px;
+    background: var(--color-white);
+}
+
+.searchIcon {
+    margin-left: 15px;
+    color: var(--color-text-light);
+}
+
+.searchInput {
+    flex-grow: 1;
+    min-width: 0;
+    border: none;
+    padding: 10px;
+    outline: none;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--color-text);
+}
+
+.searchBtn {
+    background-color: #0d47a1;
+    color: var(--color-white);
+    border: none;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+
+.searchBtn:hover {
+    background-color: var(--color-secondary);
+}
+
+/* =========================
+   RIGHT / ICONS
+========================= */
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.iconLink {
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: color var(--transition-base);
+}
+
+.iconLink:hover {
+    color: var(--color-primary);
+}
+
+.cartLink {
+    position: relative;
+}
+
+.cartBadge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    font-size: 0.7rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+}
+
+.wishlistBadge {
+    background-color: #ff4757;
+}
+
+.userDropdown {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.userLink {
+    white-space: nowrap;
+}
+
+.userName,
+.loginText {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.logoutLink {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #d32f2f;
+    padding: 0;
+}
+
+.logoutLink:hover {
+    color: #b71c1c;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1024px) {
+    .topBar {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .mainHeaderInner {
+        gap: 15px;
+    }
+
+    .headerLeft {
+        order: 1;
+        flex: 1;
+    }
+
+    .headerRight {
+        order: 2;
+        gap: 15px;
+    }
+
+    .headerCenter {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        flex-basis: 100%;
+    }
+
+    .brandLogo {
+        height: 35px;
+    }
+
+    .userName,
+    .loginText {
+        display: none;
+    }
+
+    .searchBtn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+
+    .searchInput {
+        width: 100%;
+        min-width: 0;
+    }
+}

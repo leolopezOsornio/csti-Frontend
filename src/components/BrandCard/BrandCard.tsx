@@ -1,14 +1,14 @@
-// src/components/BrandCard/BrandCard.tsx
 import { Link } from 'react-router-dom';
-import './BrandCard.css';
+import styles from '../BrandCard/BrandCard.module.css';
 
 /**
  * COMPONENTE: BrandCard
  * UBICACIÓN: src/components/BrandCard/BrandCard.tsx
- * * FUNCIÓN: 
- * Representa la unidad visual de una marca destacada. Recibe un objeto "brand" 
- * y renderiza su logotipo centrado. Funciona como un enlace que redirigirá al usuario 
- * al detalle de esa marca para ver todos los productos asociados a ella.
+ *
+ * FUNCIÓN:
+ * Representa la unidad visual de una marca destacada.
+ * Recibe un objeto "brand" y renderiza su logotipo centrado.
+ * Funciona como enlace hacia la página de la marca.
  */
 
 interface BrandCardProps {
@@ -22,15 +22,21 @@ interface BrandCardProps {
 
 const BrandCard = ({ brand }: BrandCardProps) => {
   return (
-    <Link to={`/marca/${brand.slug}`} className="catalogo-link">
-      <article className="brand-card">
-        <img 
-          src={brand.logo_url || '/img/brand-placeholder.png'} 
-          alt={brand.name} 
-          className="brand-logo" 
+    <Link to={`/marca/${brand.slug}`} className={styles.catalogoLink}>
+      <article className={styles.brandCard}>
+        <img
+          src={brand.logo_url || '/img/brand-placeholder.png'}
+          alt={brand.name}
+          className={styles.brandLogo}
         />
-        <h3 className="brand-name">{brand.name}</h3>
-        <span className="brand-cta">Ver productos</span>
+
+        <h3 className={styles.brandName}>
+          {brand.name}
+        </h3>
+
+        <span className={styles.brandCta}>
+          Ver productos
+        </span>
       </article>
     </Link>
   );

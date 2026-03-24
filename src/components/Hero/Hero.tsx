@@ -1,36 +1,34 @@
-// src/components/Hero/Hero.tsx
-import { useState, useEffect } from 'react';
-import './Hero.css';
+import { useEffect, useState } from 'react';
+import styles from '../Hero/Hero.module.css';
 
 /**
  * COMPONENTE: Hero
  * UBICACIÓN: src/components/Hero/Hero.tsx
- * * FUNCIÓN: 
- * Renderiza el carrusel principal (banner) de la página de inicio. 
- * Es un componente con estado interno (useState) que lleva el control de qué 
- * "slide" se está mostrando actualmente. Utiliza el hook useEffect para crear un 
- * intervalo que cambia la imagen automáticamente cada 6 segundos, simulando 
- * el comportamiento del Vanilla JS original.
+ *
+ * FUNCIÓN:
+ * Renderiza el carrusel principal (banner) de la página de inicio.
+ * Es un componente con estado interno que controla qué slide se muestra.
+ * Cambia automáticamente cada 6 segundos y permite navegación manual con dots.
  */
 
 const slides = [
   {
-    title: "Equipa tu empresa con la mejor tecnología.",
-    subtitle: "Accede al catálogo más completo de Laptops, Servidores y Redes...",
-    btnText: "Ver Ofertas Ahora",
-    btnLink: "#catalogo-start",
-    img: "/img/laptop.png",
-    layout: "normal"
+    title: 'Equipa tu empresa con la mejor tecnología.',
+    subtitle:
+      'Accede al catálogo más completo de Laptops, Servidores y Redes...',
+    btnText: 'Ver Ofertas Ahora',
+    btnLink: '#catalogo-start',
+    img: '/img/laptop.png',
+    layout: 'normal',
   },
   {
-    title: "Servidores de Alto Rendimiento HP y Dell.",
-    subtitle: "Potencia tu infraestructura con soluciones escalables.",
-    btnText: "Cotizar Servidores",
-    btnLink: "#catalogo-start",
-    img: "/img/laptop.png",
-    layout: "reverse"
-  }
-  // Agregar sliders adicionales aquí si es necesario
+    title: 'Servidores de Alto Rendimiento HP y Dell.',
+    subtitle: 'Potencia tu infraestructura con soluciones escalables.',
+    btnText: 'Cotizar Servidores',
+    btnLink: '#catalogo-start',
+    img: '/img/laptop.png',
+    layout: 'reverse',
+  },
 ];
 
 const Hero = () => {
@@ -40,34 +38,42 @@ const Hero = () => {
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
     }, 6000);
-    return () => clearInterval(timer); // Limpieza del intervalo
+
+    return () => clearInterval(timer);
   }, []);
 
   const slide = slides[currentIndex];
 
   return (
-    <section className="hero-wrapper">
-      <div className={`hero-container ${slide.layout === 'reverse' ? 'reverse-layout' : ''}`}>
-        
-        {/* Usamos key para forzar la re-animación de CSS cuando cambia el index */}
-        <div key={`content-${currentIndex}`} className="hero-content fade-anim">
-          <h1 className="hero-title">{slide.title}</h1>
-          <p className="hero-subtitle">{slide.subtitle}</p>
-          <a href={slide.btnLink} className="hero-btn">{slide.btnText}</a>
+    <section className={styles.heroWrapper}>
+      <div
+        className={`${styles.heroContainer} ${slide.layout === 'reverse' ? styles.reverseLayout : ''
+          }`}
+      >
+        <div key={`content-${currentIndex}`} className={`${styles.heroContent} ${styles.fadeAnim}`}>
+          <h1 className={styles.heroTitle}>{slide.title}</h1>
+          <p className={styles.heroSubtitle}>{slide.subtitle}</p>
+          <a href={slide.btnLink} className={styles.heroBtn}>
+            {slide.btnText}
+          </a>
         </div>
-        
-        <div key={`img-${currentIndex}`} className="hero-image-wrapper fade-anim">
-          <img src={slide.img} alt="Hardware CSTI" className="hero-img" />
+
+        <div
+          key={`img-${currentIndex}`}
+          className={`${styles.heroImageWrapper} ${styles.fadeAnim}`}
+        >
+          <img src={slide.img} alt="Hardware CSTI" className={styles.heroImg} />
         </div>
-        
       </div>
-      
-      <div className="hero-dots">
+
+      <div className={styles.heroDots}>
         {slides.map((_, idx) => (
-          <span 
-            key={idx} 
-            className={`dot ${idx === currentIndex ? 'active' : ''}`} 
+          <button
+            key={idx}
+            type="button"
+            className={`${styles.dot} ${idx === currentIndex ? styles.active : ''}`}
             onClick={() => setCurrentIndex(idx)}
+            aria-label={`Ir al slide ${idx + 1}`}
           />
         ))}
       </div>

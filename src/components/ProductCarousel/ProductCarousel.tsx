@@ -1,17 +1,16 @@
-// src/components/ProductCarousel/ProductCarousel.tsx
 import { useRef } from 'react';
 import ProductCard from '../ProductCard/ProductCard';
-import BrandCard from '../BrandCard/BrandCard'; // <-- Importamos la nueva tarjeta
-import './ProductCarousel.css';
+import BrandCard from '../BrandCard/BrandCard';
+import styles from '../ProductCarousel/ProductCarousel.module.css';
 
 /**
  * COMPONENTE: ProductCarousel
  * UBICACIÓN: src/components/ProductCarousel/ProductCarousel.tsx
- * * FUNCIÓN: 
- * Contenedor horizontal deslizable (slider). Utiliza el hook useRef para acceder 
- * directamente al elemento del DOM y permitir el scroll horizontal mediante botones.
- * Es un componente altamente reutilizable: dependiendo del prop "tipo" ('producto' o 'marca'), 
- * decide qué componente hijo iterar (ProductCard o BrandCard) para llenar la cinta.
+ *
+ * FUNCIÓN:
+ * Contenedor horizontal deslizable (slider).
+ * Usa useRef para controlar el scroll horizontal mediante botones.
+ * Dependiendo del prop "tipo" renderiza ProductCard o BrandCard.
  */
 
 interface ProductCarouselProps {
@@ -20,7 +19,11 @@ interface ProductCarouselProps {
   tipo?: 'producto' | 'marca';
 }
 
-const ProductCarousel = ({ titulo, items, tipo = 'producto' }: ProductCarouselProps) => {
+const ProductCarousel = ({
+  titulo,
+  items,
+  tipo = 'producto',
+}: ProductCarouselProps) => {
   const cintaRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direccion: 'izq' | 'der') => {
@@ -33,23 +36,41 @@ const ProductCarousel = ({ titulo, items, tipo = 'producto' }: ProductCarouselPr
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="bloque">
-      <div className="bloque__header">
-        <h2 className="bloque__titulo">{titulo.toUpperCase()}</h2>
+    <section className={styles.bloque}>
+      <div className={styles.bloqueHeader}>
+        <h2 className={styles.bloqueTitulo}>{titulo.toUpperCase()}</h2>
       </div>
 
-      <button className="ctrl flecha izq" onClick={() => scroll('izq')}>&#10094;</button>
-      <button className="ctrl flecha der" onClick={() => scroll('der')}>&#10095;</button>
+      <button
+        type="button"
+        className={`${styles.ctrl} ${styles.flecha} ${styles.izq}`}
+        onClick={() => scroll('izq')}
+        aria-label={`Desplazar ${titulo} a la izquierda`}
+      >
+        &#10094;
+      </button>
 
-      <div className="cinta" ref={cintaRef}>
-        {items.map((item, idx) => (
+      <button
+        type="button"
+        className={`${styles.ctrl} ${styles.flecha} ${styles.der}`}
+        onClick={() => scroll('der')}
+        aria-label={`Desplazar ${titulo} a la derecha`}
+      >
+        &#10095;
+      </button>
+
+      <div className={styles.cinta} ref={cintaRef}>
+        {items.map((item, idx) =>
           tipo === 'producto' ? (
-            <ProductCard key={item.clave || idx} producto={item} />
+            <div className={styles.item} key={item.clave || idx}>
+              <ProductCard producto={item} />
+            </div>
           ) : (
-            // Usamos nuestro componente dedicado
-            <BrandCard key={item.id || idx} brand={item} />
+            <div className={styles.item} key={item.id || idx}>
+              <BrandCard brand={item} />
+            </div>
           )
-        ))}
+        )}
       </div>
     </section>
   );

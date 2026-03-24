@@ -1,15 +1,14 @@
-// src/components/ProductCard/ProductCard.tsx
 import { Link } from 'react-router-dom';
-import './ProductCard.css';
+import styles from '../ProductCard/ProductCard.module.css';
 
 /**
  * COMPONENTE: ProductCard
  * UBICACIÓN: src/components/ProductCard/ProductCard.tsx
- * * FUNCIÓN: 
- * Representa la unidad visual mínima de un producto. Recibe un objeto "producto" como prop 
- * y se encarga de renderizar su imagen, título recortado, marca y precio. 
- * Contiene la lógica condicional visual para detectar si el producto tiene un descuento 
- * activo y, de ser así, renderizar la etiqueta roja de porcentaje y tachar el precio viejo.
+ *
+ * FUNCIÓN:
+ * Representa la unidad visual mínima de un producto.
+ * Recibe un objeto "producto" y renderiza su imagen, título, marca y precio.
+ * Si el producto tiene descuento, muestra badge de oferta y precio anterior tachado.
  */
 
 interface ProductCardProps {
@@ -17,36 +16,47 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ producto }: ProductCardProps) => {
-  // Determinamos si es una oferta basándonos en si trae porcentaje_descuento del backend
-  const esOferta = producto.porcentaje_descuento && producto.porcentaje_descuento > 0;
+  const esOferta =
+    producto.porcentaje_descuento && producto.porcentaje_descuento > 0;
+
+  const titulo =
+    producto.descripcion?.length > 60
+      ? `${producto.descripcion.substring(0, 60)}...`
+      : producto.descripcion;
 
   return (
-    <Link to={`/producto/${producto.clave}`} className="catalogo-link">
-      <article className="catalogo-card card-prod" style={{ position: 'relative' }}>
-        
+    <Link to={`/producto/${producto.clave}`} className={styles.catalogoLink}>
+      <article className={styles.cardProd}>
         {esOferta && (
-          <div className="badge-offer">-{Math.round(producto.porcentaje_descuento)}%</div>
+          <div className={styles.badgeOffer}>
+            -{Math.round(producto.porcentaje_descuento)}%
+          </div>
         )}
 
-        <img 
-          src={producto.imagen || '/img/no-image.png'} 
-          alt={producto.descripcion} 
-          className="catalogo-img card-prod__img" 
+        <img
+          src={producto.imagen || '/img/no-image.png'}
+          alt={producto.descripcion}
+          className={styles.cardProdImg}
         />
-        
-        <h3 className="catalogo-nombre card-prod__title">
-          {producto.descripcion.substring(0, 60)}{producto.descripcion.length > 60 ? '...' : ''}
-        </h3>
-        <p className="catalogo-marca">{producto.marca}</p>
-        
-        <div className="catalogo-precio-container">
+
+        <h3 className={styles.cardProdTitle}>{titulo}</h3>
+
+        <p className={styles.catalogoMarca}>{producto.marca}</p>
+
+        <div className={styles.catalogoPrecioContainer}>
           {esOferta ? (
             <>
-              <span className="price-old">${Number(producto.precio_regular).toFixed(2)}</span>
-              <span className="price-new">${Number(producto.precio_oferta).toFixed(2)}</span>
+              <span className={styles.priceOld}>
+                ${Number(producto.precio_regular).toFixed(2)}
+              </span>
+              <span className={styles.priceNew}>
+                ${Number(producto.precio_oferta).toFixed(2)}
+              </span>
             </>
           ) : (
-            <p className="catalogo-precio">${Number(producto.precio).toFixed(2)}</p>
+            <p className={styles.catalogoPrecio}>
+              ${Number(producto.precio).toFixed(2)}
+            </p>
           )}
         </div>
       </article>
