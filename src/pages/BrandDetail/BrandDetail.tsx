@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../services/catalogService';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import styles from './BrandDetail.module.css';
+import styles from '../BrandDetail/BrandDetail.module.css';
 
 const BrandDetail = () => {
   const { slug } = useParams<{ slug: string }>();

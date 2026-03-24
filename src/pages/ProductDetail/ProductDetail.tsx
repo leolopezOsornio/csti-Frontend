@@ -9,7 +9,7 @@ import { cartService } from '../../services/cartService';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
-import styles from './ProductDetail.module.css';
+import styles from '../ProductDetail/ProductDetail.module.css';
 
 const ProductDetail = () => {
   const { clave } = useParams<{ clave: string }>();

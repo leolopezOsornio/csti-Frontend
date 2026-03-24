@@ -8,7 +8,7 @@ import ProductItem from './components/ProductItem/ProductItem';
 import Pagination from './components/Pagination/Pagination';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
-import styles from './ProductList.module.css';
+import styles from '../ProductList/ProductList.module.css';
 
 const ProductList = () => {
   const [searchParams] = useSearchParams();

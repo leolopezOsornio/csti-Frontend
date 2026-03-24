@@ -1,6 +1,6 @@
 // src/pages/ProductList/components/TopBar.tsx
 import { useSearchParams } from 'react-router-dom';
-import styles from './TopBar.module.css';
+import styles from '../TopBar/TopBar.module.css';
 
 interface TopBarProps {
   totalItems: number;

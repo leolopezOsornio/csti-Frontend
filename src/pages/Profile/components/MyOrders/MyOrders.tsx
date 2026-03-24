@@ -1,5 +1,5 @@
 // src/pages/Profile/components/MyOrders/MyOrders.tsx
-import styles from './MyOrders.module.css';
+import styles from '../MyOrders/MyOrders.module.css';
 
 const MyOrders = () => {
   return (

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../../../services/catalogService';
-import styles from './FilterSidebar.module.css';
+import styles from '../FilterSidebar/Filtersidebar.module.css';
 
 const FilterSidebar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
