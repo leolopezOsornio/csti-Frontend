@@ -104,7 +104,7 @@ const Footer = () => {
       <div className={styles.footerBottom}>
         <div className={`container ${styles.footerBottomInner}`}>
           <p className={styles.copyrightText}>
-            © {currentYear} CSTI Soluciones en TI. Todos los derechos reservados.
+            © {currentYear} FasterClick. Todos los derechos reservados.
           </p>
 
           <div className={styles.footerLegal}>
