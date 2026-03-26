@@ -110,7 +110,7 @@ const Login = () => {
                 id="login_pass"
                 name="password"
                 className={styles['form-input']}
-                placeholder="••••••••"
+                placeholder="Ingresa tu contraseña"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
