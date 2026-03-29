@@ -28,9 +28,8 @@ const Footer = () => {
           </Link>
 
           <p className={styles.footerDesc}>
-            Empresa Mexicana, radicada en el Estado de Querétaro con 10 años de
-            experiencia en la renta/venta de equipos de impresión, tanto para
-            oficina como para la industria.
+            Tu tienda en linea de confianza para equipos, laptops, consumibles de
+            impresión y periféricos. Calidad y servicio para tu área de cómputo.
           </p>
 
           <div className={styles.socialBlock}>
@@ -57,19 +56,8 @@ const Footer = () => {
           <ul className={styles.footerLinks}>
             <li><Link to="/home">Inicio</Link></li>
             <li><Link to="/home">Catálogo</Link></li>
-            <li><a href="#">Servicios</a></li>
             <li><a href="#">Conócenos</a></li>
             <li><a href="#">Contacto</a></li>
-          </ul>
-        </div>
-
-        <div className={styles.supportCol}>
-          <h3 className={styles.footerHeading}>Ofertamos</h3>
-          <ul className={styles.footerLinks}>
-            <li><a href="#">Impresión Térmica</a></li>
-            <li><a href="#">Impresión Laser</a></li>
-            <li><a href="#">Impresión en Plotter</a></li>
-            <li><a href="#">Soporte Técnico</a></li>
           </ul>
         </div>
 
