@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import { authService } from '../../../services/authService';
+import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
+import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
 
 const RecoverPassword = () => {
   const navigate = useNavigate();
@@ -19,11 +21,8 @@ const RecoverPassword = () => {
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
 
-  const passLength = password.length >= 8;
-  const passUpper = /[A-Z]/.test(password);
-  const passLower = /[a-z]/.test(password);
-  const passNum = /[0-9]/.test(password);
-  const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  // Validación robusta
+  const { isValid: isPasswordValid } = usePasswordValidation(password);
   const passMatch = password && password === password2;
 
   const reqStyle = (isValid: boolean) => ({
@@ -34,31 +33,6 @@ const RecoverPassword = () => {
     gap: '5px',
     marginTop: '5px',
   });
-
-  const renderPasswordFeedback = () => {
-    if (!password) return null;
-
-    const faltantes = [];
-    if (!passLength) faltantes.push('8 caracteres');
-    if (!passUpper) faltantes.push('mayúscula');
-    if (!passLower) faltantes.push('minúscula');
-    if (!passNum) faltantes.push('número');
-    if (!passSpecial) faltantes.push('carácter especial');
-
-    if (faltantes.length === 0) {
-      return (
-        <span style={reqStyle(true)}>
-          <i className="fi fi-br-check"></i> ¡Contraseña segura!
-        </span>
-      );
-    }
-
-    return (
-      <span style={reqStyle(false)}>
-        <i className="fi fi-br-cross-small"></i> Falta: {faltantes.join(', ')}.
-      </span>
-    );
-  };
 
   const handleSolicitarCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,25 +94,7 @@ const RecoverPassword = () => {
   const handleRestablecer = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const frontendErrors = [];
-
-    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
-      frontendErrors.push('La contraseña no cumple con los requisitos de seguridad.');
-    }
-
-    if (!passMatch) {
-      frontendErrors.push('Las contraseñas no coinciden.');
-    }
-
-    if (frontendErrors.length > 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Verifica tus datos',
-        html: frontendErrors.join('<br>'),
-        confirmButtonColor: '#00b8d4',
-      });
-      return;
-    }
+    if (!isPasswordValid || !passMatch) return;
 
     setCargando(true);
 
@@ -347,7 +303,7 @@ const RecoverPassword = () => {
                   ></i>
                 </div>
 
-                {renderPasswordFeedback()}
+                <PasswordFeedback password={password} />
               </div>
 
               <div className={styles['form-group']}>
@@ -361,6 +317,7 @@ const RecoverPassword = () => {
                     className={styles['form-input']}
                     placeholder="Repite la contraseña"
                     required
+                    disabled={!isPasswordValid}
                   />
 
                   <i
@@ -393,7 +350,7 @@ const RecoverPassword = () => {
                 <button
                   type="submit"
                   className={`${styles['btn-dark']} ${styles['btn-auth']}`}
-                  disabled={cargando}
+                  disabled={cargando || !isPasswordValid || !passMatch}
                 >
                   {cargando ? 'Guardando...' : 'Cambiar Contraseña'}
                 </button>

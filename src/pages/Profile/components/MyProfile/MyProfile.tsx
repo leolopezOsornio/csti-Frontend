@@ -13,6 +13,8 @@ import { profileService } from '../../../../services/profileService';
 import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
 import styles from '../MyProfile/MyProfile.module.css';
+import { usePasswordValidation } from '../../../../hooks/usePasswordValidation';
+import PasswordFeedback from '../../../../components/Passwords/PasswordFeedback';
 
 const MyProfile = () => {
   const navigate = useNavigate();
@@ -26,6 +28,10 @@ const MyProfile = () => {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Validación robusta
+  const { isValid: isPasswordValid } = usePasswordValidation(newPassword);
+  const passMatch = newPassword && newPassword === confirmPassword;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -70,10 +76,7 @@ const MyProfile = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
-      Swal.fire('Error', 'Las nuevas contraseñas no coinciden', 'error');
-      return;
-    }
+    if (!isPasswordValid || !passMatch) return;
 
     try {
       await profileService.changePassword({
@@ -237,16 +240,18 @@ const MyProfile = () => {
               />
             </div>
 
-            <div className={styles.fieldGroup}>
+            <div className={styles.fieldGroup} style={{ marginBottom: newPassword ? '10px' : '20px' }}>
               <label className={styles.label}>Nueva Contraseña</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
+                placeholder="Crea una contraseña segura"
                 className="input"
+                disabled={!oldPassword}
               />
+              <PasswordFeedback password={newPassword} />
             </div>
 
             <div className={styles.fieldGroup}>
@@ -258,10 +263,28 @@ const MyProfile = () => {
                 required
                 placeholder="Vuelve a escribir la nueva contraseña"
                 className="input"
+                disabled={!isPasswordValid}
               />
+              {confirmPassword && (
+                <span style={{
+                  color: passMatch ? '#28a745' : '#dc3545',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  marginTop: '5px'
+                }}>
+                  <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
+                  {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                </span>
+              )}
             </div>
 
-            <button type="submit" className={`${styles.fullWidthBtn} btn`}>
+            <button
+              type="submit"
+              className={`${styles.fullWidthBtn} btn`}
+              disabled={!oldPassword || !isPasswordValid || !passMatch}
+            >
               Actualizar Contraseña
             </button>
           </form>
@@ -270,5 +293,6 @@ const MyProfile = () => {
     </div>
   );
 };
+
 
 export default MyProfile;

@@ -4,6 +4,8 @@ import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
+import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
+import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +21,9 @@ const Register = () => {
 
   const [cargando, setCargando] = useState(false);
 
+  // Hook de validación robusta
+  const { isValid: isPasswordValid } = usePasswordValidation(formData.password);
+
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,11 +31,6 @@ const Register = () => {
   };
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-  const passLength = formData.password.length >= 8;
-  const passUpper = /[A-Z]/.test(formData.password);
-  const passLower = /[a-z]/.test(formData.password);
-  const passNum = /[0-9]/.test(formData.password);
-  const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
   const passMatch = formData.password && formData.password === formData.password2;
 
   const reqStyle = (isValid: boolean) => ({
@@ -41,31 +41,6 @@ const Register = () => {
     gap: '5px',
     marginTop: '5px',
   });
-
-  const renderPasswordFeedback = () => {
-    if (!formData.password) return null;
-
-    const faltantes = [];
-    if (!passLength) faltantes.push('8 caracteres');
-    if (!passUpper) faltantes.push('mayúscula');
-    if (!passLower) faltantes.push('minúscula');
-    if (!passNum) faltantes.push('número');
-    if (!passSpecial) faltantes.push('carácter especial');
-
-    if (faltantes.length === 0) {
-      return (
-        <span style={reqStyle(true)}>
-          <i className="fi fi-br-check"></i> ¡Contraseña segura!
-        </span>
-      );
-    }
-
-    return (
-      <span style={reqStyle(false)}>
-        <i className="fi fi-br-cross-small"></i> Falta: {faltantes.join(', ')}.
-      </span>
-    );
-  };
 
   const getLevenshteinDistance = (a: string, b: string): number => {
     const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
@@ -96,7 +71,6 @@ const Register = () => {
 
     for (const domain of commonDomains) {
       const distance = getLevenshteinDistance(userDomain, domain);
-      // Si la distancia es pequeña (1-3 cambios), probablemente sea un error
       if (distance >= 1 && distance <= 3) {
         return `Parece un error tipográfico. ¿Quisiste decir @${domain}?`;
       }
@@ -104,27 +78,25 @@ const Register = () => {
     return null;
   };
 
+  // Bloqueo de UX: Formulario completo
+  const isFormValid =
+    formData.first_name.trim() !== '' &&
+    formData.last_name.trim() !== '' &&
+    isEmailValid &&
+    isPasswordValid &&
+    passMatch;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
+
     setCargando(true);
 
     const frontendErrors = [];
 
-    if (!isEmailValid) {
-      frontendErrors.push('El formato del correo electrónico es inválido.');
-    } else {
-      const typoError = checkEmailTypo(formData.email);
-      if (typoError) {
-        frontendErrors.push(typoError);
-      }
-    }
-
-    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
-      frontendErrors.push('La contraseña no cumple con los requisitos de seguridad.');
-    }
-
-    if (!passMatch) {
-      frontendErrors.push('Las contraseñas no coinciden.');
+    const typoError = checkEmailTypo(formData.email);
+    if (typoError) {
+      frontendErrors.push(typoError);
     }
 
     if (frontendErrors.length > 0) {
@@ -279,7 +251,7 @@ const Register = () => {
               ></i>
             </div>
 
-            {renderPasswordFeedback()}
+            <PasswordFeedback password={formData.password} />
           </div>
 
           <div className={styles['form-group']}>
@@ -297,6 +269,7 @@ const Register = () => {
                 className={styles['form-input']}
                 placeholder="Repite tu contraseña"
                 required
+                disabled={!isPasswordValid}
               />
             </div>
 
@@ -311,7 +284,7 @@ const Register = () => {
           <button
             type="submit"
             className={`${styles['btn-auth']} ${styles['btn-cyan']}`}
-            disabled={cargando}
+            disabled={cargando || !isFormValid}
           >
             {cargando ? 'Registrando...' : 'Registrarse'}
           </button>
