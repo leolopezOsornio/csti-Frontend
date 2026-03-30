@@ -6,6 +6,7 @@ import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
+import { checkEmailTypo } from '../../../utils/emailValidation';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +31,8 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+  const emailError = checkEmailTypo(formData.email);
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email);
   const passMatch = formData.password && formData.password === formData.password2;
 
   const reqStyle = (isValid: boolean) => ({
@@ -42,47 +44,11 @@ const Register = () => {
     marginTop: '5px',
   });
 
-  const getLevenshteinDistance = (a: string, b: string): number => {
-    const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
-      Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-    );
-
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
-        );
-      }
-    }
-    return matrix[a.length][b.length];
-  };
-
-  const checkEmailTypo = (email: string) => {
-    const commonDomains = [
-      'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com',
-      'icloud.com', 'live.com', 'msn.com', 'aol.com', 'fasterclick.com'
-    ];
-    const userDomain = email.split('@').pop()?.toLowerCase() || '';
-
-    if (commonDomains.includes(userDomain)) return null;
-
-    for (const domain of commonDomains) {
-      const distance = getLevenshteinDistance(userDomain, domain);
-      if (distance >= 1 && distance <= 3) {
-        return `Parece un error tipográfico. ¿Quisiste decir @${domain}?`;
-      }
-    }
-    return null;
-  };
-
   // Bloqueo de UX: Formulario completo
   const isFormValid =
     formData.first_name.trim() !== '' &&
     formData.last_name.trim() !== '' &&
-    isEmailValid &&
+    !emailError &&
     isPasswordValid &&
     passMatch;
 
@@ -92,18 +58,11 @@ const Register = () => {
 
     setCargando(true);
 
-    const frontendErrors = [];
-
-    const typoError = checkEmailTypo(formData.email);
-    if (typoError) {
-      frontendErrors.push(typoError);
-    }
-
-    if (frontendErrors.length > 0) {
+    if (emailError) {
       Swal.fire({
         icon: 'warning',
         title: 'Verifica tus datos',
-        html: frontendErrors.join('<br>'),
+        html: emailError,
         confirmButtonColor: '#00b8d4',
       });
       setCargando(false);
@@ -217,10 +176,17 @@ const Register = () => {
               required
             />
 
-            {formData.email && !isEmailValid && (
-              <span style={reqStyle(false)}>
-                <i className="fi fi-br-cross-small"></i>
-                Formato inválido (ej. usuario@dominio.com)
+            {emailError && (
+              <span style={{ 
+                color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', 
+                fontSize: '0.75rem', 
+                marginTop: '5px', 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
+                {emailError}
               </span>
             )}
           </div>

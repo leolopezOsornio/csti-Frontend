@@ -6,6 +6,7 @@ import styles from '../Auth.module.css';
 import { authService } from '../../../services/authService';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
+import { checkEmailTypo } from '../../../utils/emailValidation';
 
 const RecoverPassword = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const RecoverPassword = () => {
   const { isValid: isPasswordValid } = usePasswordValidation(password);
   const passMatch = password && password === password2;
 
+  const emailError = checkEmailTypo(email);
+
   const reqStyle = (isValid: boolean) => ({
     color: isValid ? '#28a745' : '#dc3545',
     fontSize: '0.75rem',
@@ -36,16 +39,35 @@ const RecoverPassword = () => {
 
   const handleSolicitarCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (emailError) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Verifica tu correo',
+        text: emailError,
+        confirmButtonColor: '#00b8d4',
+      });
+      return;
+    }
+
     setCargando(true);
 
     try {
       await authService.requestPasswordReset(email);
+      // Siempre mostramos éxito aunque el usuario no exista (pérdida de enumeración)
+      Swal.fire({
+        icon: 'info',
+        title: 'Solicitud enviada',
+        text: 'Si el correo ingresado está registrado en nuestro sistema, recibirás un código de verificación en breve.',
+        confirmButtonColor: '#00b8d4',
+      });
       setStep(2);
     } catch (error: any) {
+      // En caso de error técnico real (no de usuario no encontrado)
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.response?.data?.error || 'No pudimos procesar tu solicitud.',
+        text: 'Ocurrió un problema técnico. Intenta más tarde.',
         confirmButtonColor: '#00b8d4',
       });
     } finally {
@@ -111,16 +133,21 @@ const RecoverPassword = () => {
       navigate('/login', { state: { email } });
     } catch (error: any) {
       let mensajeError = 'No se pudo actualizar la contraseña.';
+      let titulo = 'Contraseña insegura';
 
       if (error.response?.data?.errores) {
         mensajeError = error.response.data.errores.join('<br>');
       } else if (error.response?.data?.error) {
         mensajeError = error.response.data.error;
+        // Si el error es por reutilización, ajustamos el título
+        if (mensajeError.toLowerCase().includes('actual') || mensajeError.toLowerCase().includes('anterior')) {
+          titulo = 'Contraseña no permitida';
+        }
       }
 
       Swal.fire({
         icon: 'warning',
-        title: 'Contraseña insegura',
+        title: titulo,
         html: mensajeError,
         confirmButtonColor: '#00b8d4',
       });
@@ -186,16 +213,32 @@ const RecoverPassword = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => {
+                    // Solo mostramos el Swal si es una sugerencia de typo (contiene "¿Quisiste decir...?")
+                    if (emailError && emailError.includes('¿Quisiste decir')) {
+                      Swal.fire({
+                        icon: 'info',
+                        title: '¿Revisamos tu correo?',
+                        text: emailError,
+                        confirmButtonColor: '#00b8d4',
+                      });
+                    }
+                  }}
                   className={styles['form-input']}
                   placeholder="ejemplo@fasterclick.com"
                   required
                 />
+                {emailError && (
+                  <span style={{ color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', fontSize: '0.75rem', marginTop: '5px', display: 'block' }}>
+                    <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i> {emailError}
+                  </span>
+                )}
               </div>
 
               <button
                 type="submit"
                 className={`${styles['btn-cyan']} ${styles['btn-auth']}`}
-                disabled={cargando}
+                disabled={cargando || !!emailError}
               >
                 {cargando ? 'Enviando...' : 'Enviar Código'}
               </button>

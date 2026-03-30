@@ -92,10 +92,21 @@ const MyProfile = () => {
     } catch (error: any) {
       const errMsgs =
         error.response?.data?.errores ||
-        [error.response?.data?.error] ||
-        ['Ocurrió un error'];
+        (error.response?.data?.error ? [error.response.data.error] : ['Ocurrió un error']);
 
-      Swal.fire('Error de seguridad', errMsgs.join('<br/>'), 'error');
+      const mensaje = errMsgs.join('<br/>');
+      let titulo = 'Error de seguridad';
+
+      if (mensaje.toLowerCase().includes('anterior') || mensaje.toLowerCase().includes('actual')) {
+        titulo = 'Contraseña no permitida';
+      }
+
+      Swal.fire({
+        icon: 'warning',
+        title: titulo,
+        html: mensaje,
+        confirmButtonColor: '#00b8d4',
+      });
     }
   };
 
