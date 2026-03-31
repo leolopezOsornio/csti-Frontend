@@ -8,17 +8,21 @@ const FilterSidebar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtros, setFiltros] = useState<any>(null);
 
-  const [localPrice, setLocalPrice] = useState(50000);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
   const [showAllCats, setShowAllCats] = useState(false);
   const [showAllBrands, setShowAllBrands] = useState(false);
 
   useEffect(() => {
-    catalogService.getFilters().then((data) => {
+    // Cada vez que cambia la URL (searchParams), recargamos los filtros para obtener marcas dinámicas y contadores
+    catalogService.getFilters(searchParams.toString()).then((data) => {
       setFiltros(data);
-      const currentMaxPrice = searchParams.get('max_price');
-      setLocalPrice(currentMaxPrice ? Number(currentMaxPrice) : data.precio_maximo);
+      // Sincronizamos los inputs locales de precio con la URL
+      setMinPrice(searchParams.get('min_price') || '');
+      setMaxPrice(searchParams.get('max_price') || '');
     });
-  }, []);
+  }, [searchParams]);
 
   const updateSearchParam = (key: string, value: string | null) => {
     if (value) searchParams.set(key, value);
@@ -28,11 +32,22 @@ const FilterSidebar = () => {
     setSearchParams(searchParams);
   };
 
-  const handleMarcaToggle = (marcaSlug: string) => {
+  const handleApplyPrice = () => {
+    if (minPrice) searchParams.set('min_price', minPrice);
+    else searchParams.delete('min_price');
+
+    if (maxPrice) searchParams.set('max_price', maxPrice);
+    else searchParams.delete('max_price');
+
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
+  };
+
+  const handleMarcaToggle = (marcaName: string) => {
     const currentMarcas = searchParams.get('marcas')?.split(',') || [];
-    const newMarcas = currentMarcas.includes(marcaSlug)
-      ? currentMarcas.filter((m) => m !== marcaSlug)
-      : [...currentMarcas, marcaSlug];
+    const newMarcas = currentMarcas.includes(marcaName)
+      ? currentMarcas.filter((m) => m !== marcaName)
+      : [...currentMarcas, marcaName];
 
     updateSearchParam('marcas', newMarcas.length > 0 ? newMarcas.join(',') : null);
   };
@@ -47,7 +62,7 @@ const FilterSidebar = () => {
 
   const marcasAMostrar = showAllBrands
     ? filtros.marcas
-    : filtros.marcas.slice(0, 6);
+    : filtros.marcas.slice(0, 8);
 
   return (
     <aside className={styles.sidebar}>
@@ -60,14 +75,35 @@ const FilterSidebar = () => {
             const isActive = searchParams.get('grupo') === c.slug;
 
             return (
-              <li
-                key={c.id}
-                className={styles.filterItem}
-                onClick={() => updateSearchParam('grupo', c.slug)}
-              >
-                <span className={isActive ? styles.activeText : ''}>
+              <li key={c.id} className={styles.categoryItemContainer}>
+                <div
+                  className={`${styles.filterItem} ${isActive ? styles.activeText : ''}`}
+                  onClick={() => updateSearchParam('grupo', c.slug)}
+                >
                   › {c.name}
-                </span>
+                </div>
+                
+                {/* Renderizado de Subcategorías (Acordeón) */}
+                {c.subcategorias && c.subcategorias.length > 0 && (
+                  <ul style={{ marginLeft: '1.2rem', padding: '4px 0', listStyle: 'none' }}>
+                    {c.subcategorias.map((sub: any) => {
+                      const subActive = searchParams.get('grupo') === sub.grupo;
+                      return (
+                        <li 
+                          key={sub.id} 
+                          className={`${styles.filterItem} ${subActive ? styles.activeText : ''}`}
+                          style={{ fontSize: '0.85rem', marginBottom: '4px' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateSearchParam('grupo', sub.grupo);
+                          }}
+                        >
+                          - {sub.name}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}
@@ -85,25 +121,42 @@ const FilterSidebar = () => {
       </div>
 
       <div className={styles.filterGroup}>
-        <h3 className={styles.filterTitle}>Precio</h3>
-        <input
-          type="range"
-          min="0"
-          max={filtros.precio_maximo}
-          value={localPrice}
-          onChange={(e) => setLocalPrice(Number(e.target.value))}
-          onMouseUp={(e) =>
-            updateSearchParam('max_price', (e.target as HTMLInputElement).value)
-          }
-          onTouchEnd={(e) =>
-            updateSearchParam('max_price', (e.target as HTMLInputElement).value)
-          }
-          className={styles.priceRange}
-        />
-        <div className={styles.priceLabels}>
-          <span>Min: $0</span>
-          <span>Max: ${localPrice.toLocaleString()}</span>
+        <h3 className={styles.filterTitle}>Rango de Precio</h3>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+          <input
+            type="number"
+            placeholder="Min"
+            className={styles.priceInput}
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}
+          />
+          <span style={{ color: '#ccc' }}>-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            className={styles.priceInput}
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #eee' }}
+          />
         </div>
+        <button 
+          onClick={handleApplyPrice}
+          style={{ 
+            width: '100%', 
+            padding: '10px', 
+            background: '#00b4d8', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            transition: 'opacity 0.2s'
+          }}
+        >
+          Aplicar Rango
+        </button>
       </div>
 
       <div className={styles.filterGroup}>
@@ -122,13 +175,15 @@ const FilterSidebar = () => {
                   checked={isChecked}
                   onChange={() => handleMarcaToggle(m.name.toUpperCase())}
                 />
-                {m.name}
+                <span className={isChecked ? styles.activeText : ''}>
+                  {m.name} ({m.count})
+                </span>
               </li>
             );
           })}
         </ul>
 
-        {filtros.marcas.length > 6 && (
+        {filtros.marcas.length > 8 && (
           <button
             type="button"
             className={styles.toggleBtn}
