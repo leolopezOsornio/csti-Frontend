@@ -66,10 +66,10 @@ const FilterSidebar = () => {
     setSearchParams(searchParams);
   };
 
-  const handleSubCategoryClick = (grupoCva: string, e: React.MouseEvent) => {
+  const handleSubCategoryClick = (grupoCva: string, parentSlug: string, e: React.MouseEvent) => {
     e.stopPropagation();
     searchParams.set('grupo', grupoCva);
-    searchParams.delete('categoria'); // Limpiar el padre si clickeamos un hijo específico
+    searchParams.set('categoria', parentSlug);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
   };
@@ -115,7 +115,7 @@ const FilterSidebar = () => {
                           key={sub.id} 
                           className={`${styles.filterItem} ${subActive ? styles.activeText : ''}`}
                           style={{ fontSize: '0.85rem', marginBottom: '4px' }}
-                          onClick={(e) => handleSubCategoryClick(sub.grupo, e)}
+                          onClick={(e) => handleSubCategoryClick(sub.grupo, c.slug, e)}
                         >
                           - {sub.name}
                         </li>

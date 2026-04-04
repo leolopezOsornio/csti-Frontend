@@ -34,7 +34,14 @@ const TopBar = ({ totalItems, currentPage }: TopBarProps) => {
 
         {searchParams.get('categoria') && (
           <span>
-            {' '} &gt; <strong>{searchParams.get('categoria')?.replace(/-/g, ' ').toUpperCase()}</strong>
+            {' '} &gt; {' '}
+            {searchParams.get('grupo') ? (
+              <Link to={`/listado?categoria=${searchParams.get('categoria')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                {searchParams.get('categoria')?.replace(/-/g, ' ').toUpperCase()}
+              </Link>
+            ) : (
+              <strong>{searchParams.get('categoria')?.replace(/-/g, ' ').toUpperCase()}</strong>
+            )}
           </span>
         )}
 
