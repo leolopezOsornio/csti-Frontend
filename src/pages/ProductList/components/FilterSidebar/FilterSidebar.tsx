@@ -52,6 +52,21 @@ const FilterSidebar = () => {
     updateSearchParam('marcas', newMarcas.length > 0 ? newMarcas.join(',') : null);
   };
 
+  const handleCategoryClick = (slug: string) => {
+    searchParams.set('categoria', slug);
+    searchParams.delete('grupo'); // Limpiar el hijo si clickeamos el padre
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
+  };
+
+  const handleSubCategoryClick = (grupoCva: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    searchParams.set('grupo', grupoCva);
+    searchParams.delete('categoria'); // Limpiar el padre si clickeamos un hijo específico
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
+  };
+
   if (!filtros) {
     return <aside className={styles.sidebar}>Cargando filtros...</aside>;
   }
@@ -72,13 +87,13 @@ const FilterSidebar = () => {
         <h3 className={styles.filterTitle}>Categorías</h3>
         <ul className={styles.filterList}>
           {categoriasAMostrar.map((c: any) => {
-            const isActive = searchParams.get('grupo') === c.slug;
+            const isActive = searchParams.get('categoria') === c.slug;
 
             return (
               <li key={c.id} className={styles.categoryItemContainer}>
                 <div
                   className={`${styles.filterItem} ${isActive ? styles.activeText : ''}`}
-                  onClick={() => updateSearchParam('grupo', c.slug)}
+                  onClick={() => handleCategoryClick(c.slug)}
                 >
                   › {c.name}
                 </div>
@@ -93,10 +108,7 @@ const FilterSidebar = () => {
                           key={sub.id} 
                           className={`${styles.filterItem} ${subActive ? styles.activeText : ''}`}
                           style={{ fontSize: '0.85rem', marginBottom: '4px' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateSearchParam('grupo', sub.grupo);
-                          }}
+                          onClick={(e) => handleSubCategoryClick(sub.grupo, e)}
                         >
                           - {sub.name}
                         </li>
