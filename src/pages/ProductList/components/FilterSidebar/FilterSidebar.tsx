@@ -13,6 +13,7 @@ const FilterSidebar = () => {
 
   const [showAllCats, setShowAllCats] = useState(false);
   const [showAllBrands, setShowAllBrands] = useState(false);
+  const [expandedCats, setExpandedCats] = useState<string[]>([]);
 
   useEffect(() => {
     // Cada vez que cambia la URL (searchParams), recargamos los filtros para obtener marcas dinámicas y contadores
@@ -53,8 +54,14 @@ const FilterSidebar = () => {
   };
 
   const handleCategoryClick = (slug: string) => {
+    // Lógica visual del acordeón
+    setExpandedCats((prev) => 
+      prev.includes(slug) ? prev.filter((item) => item !== slug) : [...prev, slug]
+    );
+
+    // Lógica de URL existente
     searchParams.set('categoria', slug);
-    searchParams.delete('grupo'); // Limpiar el hijo si clickeamos el padre
+    searchParams.delete('grupo');
     searchParams.set('page', '1');
     setSearchParams(searchParams);
   };
@@ -95,11 +102,11 @@ const FilterSidebar = () => {
                   className={`${styles.filterItem} ${isActive ? styles.activeText : ''}`}
                   onClick={() => handleCategoryClick(c.slug)}
                 >
-                  › {c.name}
+                  {expandedCats.includes(c.slug) ? '▾' : '›'} {c.name}
                 </div>
                 
                 {/* Renderizado de Subcategorías (Acordeón) */}
-                {c.subcategorias && c.subcategorias.length > 0 && (
+                {expandedCats.includes(c.slug) && c.subcategorias && c.subcategorias.length > 0 && (
                   <ul style={{ marginLeft: '1.2rem', padding: '4px 0', listStyle: 'none' }}>
                     {c.subcategorias.map((sub: any) => {
                       const subActive = searchParams.get('grupo') === sub.grupo;
