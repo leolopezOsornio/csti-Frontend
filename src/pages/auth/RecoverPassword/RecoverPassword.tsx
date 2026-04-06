@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import { authService } from '../../../services/authService';
+import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
+import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
+import { checkEmailTypo } from '../../../utils/emailValidation';
 
 const RecoverPassword = () => {
   const navigate = useNavigate();
@@ -19,12 +22,11 @@ const RecoverPassword = () => {
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
 
-  const passLength = password.length >= 8;
-  const passUpper = /[A-Z]/.test(password);
-  const passLower = /[a-z]/.test(password);
-  const passNum = /[0-9]/.test(password);
-  const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  // Validación robusta
+  const { isValid: isPasswordValid } = usePasswordValidation(password);
   const passMatch = password && password === password2;
+
+  const emailError = checkEmailTypo(email);
 
   const reqStyle = (isValid: boolean) => ({
     color: isValid ? '#28a745' : '#dc3545',
@@ -35,43 +37,37 @@ const RecoverPassword = () => {
     marginTop: '5px',
   });
 
-  const renderPasswordFeedback = () => {
-    if (!password) return null;
-
-    const faltantes = [];
-    if (!passLength) faltantes.push('8 caracteres');
-    if (!passUpper) faltantes.push('mayúscula');
-    if (!passLower) faltantes.push('minúscula');
-    if (!passNum) faltantes.push('número');
-    if (!passSpecial) faltantes.push('carácter especial');
-
-    if (faltantes.length === 0) {
-      return (
-        <span style={reqStyle(true)}>
-          <i className="fi fi-br-check"></i> ¡Contraseña segura!
-        </span>
-      );
-    }
-
-    return (
-      <span style={reqStyle(false)}>
-        <i className="fi fi-br-cross-small"></i> Falta: {faltantes.join(', ')}.
-      </span>
-    );
-  };
-
   const handleSolicitarCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (emailError) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Verifica tu correo',
+        text: emailError,
+        confirmButtonColor: '#00b8d4',
+      });
+      return;
+    }
+
     setCargando(true);
 
     try {
       await authService.requestPasswordReset(email);
+      // Siempre mostramos éxito aunque el usuario no exista (pérdida de enumeración)
+      Swal.fire({
+        icon: 'info',
+        title: 'Solicitud enviada',
+        text: 'Si el correo ingresado está registrado en nuestro sistema, recibirás un código de verificación en breve.',
+        confirmButtonColor: '#00b8d4',
+      });
       setStep(2);
     } catch (error: any) {
+      // En caso de error técnico real (no de usuario no encontrado)
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.response?.data?.error || 'No pudimos procesar tu solicitud.',
+        text: 'Ocurrió un problema técnico. Intenta más tarde.',
         confirmButtonColor: '#00b8d4',
       });
     } finally {
@@ -120,25 +116,7 @@ const RecoverPassword = () => {
   const handleRestablecer = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const frontendErrors = [];
-
-    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
-      frontendErrors.push('La contraseña no cumple con los requisitos de seguridad.');
-    }
-
-    if (!passMatch) {
-      frontendErrors.push('Las contraseñas no coinciden.');
-    }
-
-    if (frontendErrors.length > 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Verifica tus datos',
-        html: frontendErrors.join('<br>'),
-        confirmButtonColor: '#00b8d4',
-      });
-      return;
-    }
+    if (!isPasswordValid || !passMatch) return;
 
     setCargando(true);
 
@@ -155,16 +133,21 @@ const RecoverPassword = () => {
       navigate('/login', { state: { email } });
     } catch (error: any) {
       let mensajeError = 'No se pudo actualizar la contraseña.';
+      let titulo = 'Contraseña insegura';
 
       if (error.response?.data?.errores) {
         mensajeError = error.response.data.errores.join('<br>');
       } else if (error.response?.data?.error) {
         mensajeError = error.response.data.error;
+        // Si el error es por reutilización, ajustamos el título
+        if (mensajeError.toLowerCase().includes('actual') || mensajeError.toLowerCase().includes('anterior')) {
+          titulo = 'Contraseña no permitida';
+        }
       }
 
       Swal.fire({
         icon: 'warning',
-        title: 'Contraseña insegura',
+        title: titulo,
         html: mensajeError,
         confirmButtonColor: '#00b8d4',
       });
@@ -230,16 +213,32 @@ const RecoverPassword = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => {
+                    // Solo mostramos el Swal si es una sugerencia de typo (contiene "¿Quisiste decir...?")
+                    if (emailError && emailError.includes('¿Quisiste decir')) {
+                      Swal.fire({
+                        icon: 'info',
+                        title: '¿Revisamos tu correo?',
+                        text: emailError,
+                        confirmButtonColor: '#00b8d4',
+                      });
+                    }
+                  }}
                   className={styles['form-input']}
                   placeholder="ejemplo@fasterclick.com"
                   required
                 />
+                {emailError && (
+                  <span style={{ color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', fontSize: '0.75rem', marginTop: '5px', display: 'block' }}>
+                    <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i> {emailError}
+                  </span>
+                )}
               </div>
 
               <button
                 type="submit"
                 className={`${styles['btn-cyan']} ${styles['btn-auth']}`}
-                disabled={cargando}
+                disabled={cargando || !!emailError}
               >
                 {cargando ? 'Enviando...' : 'Enviar Código'}
               </button>
@@ -347,7 +346,7 @@ const RecoverPassword = () => {
                   ></i>
                 </div>
 
-                {renderPasswordFeedback()}
+                <PasswordFeedback password={password} />
               </div>
 
               <div className={styles['form-group']}>
@@ -361,6 +360,7 @@ const RecoverPassword = () => {
                     className={styles['form-input']}
                     placeholder="Repite la contraseña"
                     required
+                    disabled={!isPasswordValid}
                   />
 
                   <i
@@ -393,7 +393,7 @@ const RecoverPassword = () => {
                 <button
                   type="submit"
                   className={`${styles['btn-dark']} ${styles['btn-auth']}`}
-                  disabled={cargando}
+                  disabled={cargando || !isPasswordValid || !passMatch}
                 >
                   {cargando ? 'Guardando...' : 'Cambiar Contraseña'}
                 </button>

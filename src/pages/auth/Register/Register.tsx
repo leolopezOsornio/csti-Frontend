@@ -4,6 +4,9 @@ import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/authService';
+import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
+import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
+import { checkEmailTypo } from '../../../utils/emailValidation';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,18 +22,17 @@ const Register = () => {
 
   const [cargando, setCargando] = useState(false);
 
+  // Hook de validación robusta
+  const { isValid: isPasswordValid } = usePasswordValidation(formData.password);
+
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-  const passLength = formData.password.length >= 8;
-  const passUpper = /[A-Z]/.test(formData.password);
-  const passLower = /[a-z]/.test(formData.password);
-  const passNum = /[0-9]/.test(formData.password);
-  const passSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+  const emailError = checkEmailTypo(formData.email);
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email);
   const passMatch = formData.password && formData.password === formData.password2;
 
   const reqStyle = (isValid: boolean) => ({
@@ -42,54 +44,25 @@ const Register = () => {
     marginTop: '5px',
   });
 
-  const renderPasswordFeedback = () => {
-    if (!formData.password) return null;
-
-    const faltantes = [];
-    if (!passLength) faltantes.push('8 caracteres');
-    if (!passUpper) faltantes.push('mayúscula');
-    if (!passLower) faltantes.push('minúscula');
-    if (!passNum) faltantes.push('número');
-    if (!passSpecial) faltantes.push('carácter especial');
-
-    if (faltantes.length === 0) {
-      return (
-        <span style={reqStyle(true)}>
-          <i className="fi fi-br-check"></i> ¡Contraseña segura!
-        </span>
-      );
-    }
-
-    return (
-      <span style={reqStyle(false)}>
-        <i className="fi fi-br-cross-small"></i> Falta: {faltantes.join(', ')}.
-      </span>
-    );
-  };
+  // Bloqueo de UX: Formulario completo
+  const isFormValid =
+    formData.first_name.trim() !== '' &&
+    formData.last_name.trim() !== '' &&
+    !emailError &&
+    isPasswordValid &&
+    passMatch;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
+
     setCargando(true);
 
-    const frontendErrors = [];
-
-    if (!isEmailValid) {
-      frontendErrors.push('El formato del correo electrónico es inválido.');
-    }
-
-    if (!passLength || !passUpper || !passLower || !passNum || !passSpecial) {
-      frontendErrors.push('La contraseña no cumple con los requisitos de seguridad.');
-    }
-
-    if (!passMatch) {
-      frontendErrors.push('Las contraseñas no coinciden.');
-    }
-
-    if (frontendErrors.length > 0) {
+    if (emailError) {
       Swal.fire({
         icon: 'warning',
         title: 'Verifica tus datos',
-        html: frontendErrors.join('<br>'),
+        html: emailError,
         confirmButtonColor: '#00b8d4',
       });
       setCargando(false);
@@ -203,10 +176,17 @@ const Register = () => {
               required
             />
 
-            {formData.email && !isEmailValid && (
-              <span style={reqStyle(false)}>
-                <i className="fi fi-br-cross-small"></i>
-                Formato inválido (ej. usuario@dominio.com)
+            {emailError && (
+              <span style={{ 
+                color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', 
+                fontSize: '0.75rem', 
+                marginTop: '5px', 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
+                {emailError}
               </span>
             )}
           </div>
@@ -237,7 +217,7 @@ const Register = () => {
               ></i>
             </div>
 
-            {renderPasswordFeedback()}
+            <PasswordFeedback password={formData.password} />
           </div>
 
           <div className={styles['form-group']}>
@@ -255,6 +235,7 @@ const Register = () => {
                 className={styles['form-input']}
                 placeholder="Repite tu contraseña"
                 required
+                disabled={!isPasswordValid}
               />
             </div>
 
@@ -269,7 +250,7 @@ const Register = () => {
           <button
             type="submit"
             className={`${styles['btn-auth']} ${styles['btn-cyan']}`}
-            disabled={cargando}
+            disabled={cargando || !isFormValid}
           >
             {cargando ? 'Registrando...' : 'Registrarse'}
           </button>

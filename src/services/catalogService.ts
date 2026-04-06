@@ -37,9 +37,9 @@ export const catalogService = {
   // --- NUEVAS FUNCIONES PARA EL LISTADO ---
 
   // 1. Obtener filtros dinámicos (Categorías, Marcas y Precio Máximo)
-  getFilters: async () => {
+  getFilters: async (queryString: string = '') => {
     try {
-      const response = await api.get('/catalogo/api/filtros/');
+      const response = await api.get(`/catalogo/api/filtros/?${queryString}`);
       return response.data;
     } catch (error) {
       console.error("Error al obtener filtros:", error);

@@ -1,3 +1,4 @@
+// src/components/CategoryGrid/CategoryGrid.tsx
 import { Link } from 'react-router-dom';
 import styles from '../CategoryGrid/CategoryGrid.module.css';
 
