@@ -14,6 +14,7 @@ import BrandDetail from '../pages/BrandDetail/BrandDetail';
 import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import ProductList from '../pages/ProductList/ProductList';
 import Cart from '../pages/cart/Cart';
+import Payment from '../pages/Payment/Payment';
 
 import Profile from '../pages/Profile/Profile';
 import MyProfile from '../pages/Profile/components/MyProfile/MyProfile';
@@ -41,7 +42,8 @@ export const AppRouter = () => {
           <Route element={<PrivateRoutes />}>
             {/* <Route path="/perfil" element={<Perfil />} /> */}
             <Route path="/carrito" element={<Cart />} />
-            
+            <Route path="/payment" element={<Payment />} />
+
             {/* Rutas Anidadas para el Perfil de Usuario */}
             <Route path="/perfil" element={<Profile />}>
               <Route index element={<MyProfile />} /> {/* Ruta por defecto: /perfil */}
