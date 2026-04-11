@@ -20,6 +20,7 @@ import Profile from '../pages/Profile/Profile';
 import MyProfile from '../pages/Profile/components/MyProfile/MyProfile';
 import MyAddresses from '../pages/Profile/components/MyAddresses/MyAddresses';
 import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
+import OrderDetail from '../pages/Profile/components/OrderDetail/OrderDetail';
 import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
 
 export const AppRouter = () => {
@@ -49,6 +50,7 @@ export const AppRouter = () => {
               <Route index element={<MyProfile />} /> {/* Ruta por defecto: /perfil */}
               <Route path="direcciones" element={<MyAddresses />} /> {/* /perfil/direcciones */}
               <Route path="pedidos" element={<MyOrders />} /> {/* /perfil/pedidos */}
+              <Route path="pedidos/:id" element={<OrderDetail />} /> {/* /perfil/pedidos/:id */}
               <Route path="deseos" element={<Wishlist />} /> {/* /perfil/deseos */}
             </Route>
           </Route>
