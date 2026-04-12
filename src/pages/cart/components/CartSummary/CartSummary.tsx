@@ -1,5 +1,4 @@
-// src/pages/cart/components/CartSummary.tsx
-import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 import styles from '../CartSummary/CartSummary.module.css';
 
 interface CartSummaryProps {
@@ -7,15 +6,10 @@ interface CartSummaryProps {
 }
 
 const CartSummary = ({ total }: CartSummaryProps) => {
+  const navigate = useNavigate();
+
   const handleCheckout = () => {
-    Swal.fire({
-      title: 'Procesando...',
-      text: 'Redirigiendo a la pasarela de pago segura.',
-      icon: 'info',
-      confirmButtonColor: '#00b4d8',
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    navigate('/payment');
   };
 
   return (
