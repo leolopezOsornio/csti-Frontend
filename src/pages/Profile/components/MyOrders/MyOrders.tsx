@@ -1,63 +1,110 @@
 // src/pages/Profile/components/MyOrders/MyOrders.tsx
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { orderService } from '../../../../services/orderService';
 import styles from '../MyOrders/MyOrders.module.css';
 
 const MyOrders = () => {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const data = await orderService.getOrders();
+        setOrders(data);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'COMPLETADO': return styles.delivered;
+      case 'PENDIENTE': return styles.processing;
+      case 'FALLIDO': return styles.processing; // O crear una roja si existiera
+      default: return styles.processing;
+    }
+  };
+
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case 'COMPLETADO': return 'Completado';
+      case 'PENDIENTE': return 'Pendiente';
+      case 'FALLIDO': return 'Fallido';
+      default: return status;
+    }
+  };
+
+  if (loading) return <p>Cargando pedidos...</p>;
+
   return (
     <>
       <h1 className={styles.pageTitle}>Historial de Pedidos</h1>
 
       <div className={styles.ordersList}>
-        <div className={styles.orderCard}>
-          <div className={styles.orderHeader}>
-            <span className={styles.orderId}>Pedido #ORD-123456</span>
-            <span className={`${styles.statusPill} ${styles.processing}`}>
-              En Proceso
-            </span>
+        {orders.length === 0 ? (
+          <div className={styles.noOrders}>
+            <p>Aún no has realizado ningún pedido.</p>
+            <Link to="/listado" className={styles.btnDetails}>Ir a la tienda</Link>
           </div>
+        ) : (
+          orders.map((orden) => {
+            const date = new Date(orden.creado_en).toLocaleDateString('es-MX', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            });
 
-          <div className={styles.orderBody}>
-            <div className={styles.orderDate}>Fecha: 23 Ene 2026</div>
-            <div className={styles.orderPreview}>
-              <div className={styles.orderThumbs}>
-                <img src="/img/laptop.png" className={styles.thumbMini} alt="Producto" />
-                <img src="/img/brand-placeholder.png" className={styles.thumbMini} alt="Producto" />
+            return (
+              <div key={orden.id} className={styles.orderCard}>
+                <div className={styles.orderHeader}>
+                  <span className={styles.orderId}>Pedido #{orden.id}</span>
+                  <span className={`${styles.statusPill} ${getStatusClass(orden.estado_pago)}`}>
+                    {formatStatus(orden.estado_pago)}
+                  </span>
+                </div>
+
+                <div className={styles.orderBody}>
+                  <div className={styles.orderDate}>Fecha: {date}</div>
+                  <div className={styles.orderPreview}>
+                    <div className={styles.orderThumbs}>
+                      {orden.items.slice(0, 3).map((item: any) => (
+                        <img 
+                          key={item.id}
+                          src={item.producto.imagen || '/img/brand-placeholder.png'} 
+                          className={styles.thumbMini} 
+                          alt={item.producto.descripcion} 
+                        />
+                      ))}
+                    </div>
+                    {orden.items.length > 3 && (
+                      <span className={styles.moreItems}>+ {orden.items.length - 3} artículos más</span>
+                    )}
+                    {orden.items.length <= 3 && orden.items.length > 0 && (
+                      <span className={styles.moreItems}>
+                        {orden.items.length} {orden.items.length === 1 ? 'artículo' : 'artículos'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.orderFooter}>
+                  <span className={styles.orderTotal}>Total: ${Number(orden.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                  <Link to={`/perfil/pedidos/${orden.id}`} className={styles.btnDetails}>Ver Detalles</Link>
+                </div>
               </div>
-              <span className={styles.moreItems}>+ 1 artículo más</span>
-            </div>
-          </div>
-
-          <div className={styles.orderFooter}>
-            <span className={styles.orderTotal}>Total: $47,558.84</span>
-            <a href="#" className={styles.btnDetails}>Ver Detalles</a>
-          </div>
-        </div>
-
-        <div className={styles.orderCard}>
-          <div className={styles.orderHeader}>
-            <span className={styles.orderId}>Pedido #ORD-987654</span>
-            <span className={`${styles.statusPill} ${styles.delivered}`}>
-              Entregado
-            </span>
-          </div>
-
-          <div className={styles.orderBody}>
-            <div className={styles.orderDate}>Fecha: 15 Dic 2025</div>
-            <div className={styles.orderPreview}>
-              <div className={styles.orderThumbs}>
-                <img src="/img/laptop.png" className={styles.thumbMini} alt="Producto" />
-              </div>
-              <span className={styles.moreItems}>1 artículo</span>
-            </div>
-          </div>
-
-          <div className={styles.orderFooter}>
-            <span className={styles.orderTotal}>Total: $12,200.00</span>
-            <a href="#" className={styles.btnDetails}>Ver Detalles</a>
-          </div>
-        </div>
+            );
+          })
+        )}
       </div>
     </>
   );
 };
 
-export default MyOrders;
+export default MyOrders;

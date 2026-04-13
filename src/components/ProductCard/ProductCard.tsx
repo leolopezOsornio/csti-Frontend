@@ -1,3 +1,4 @@
+// src/components/ProductCard/ProductCard.tsx
 import { Link } from 'react-router-dom';
 import styles from '../ProductCard/ProductCard.module.css';
 
@@ -47,10 +48,10 @@ const ProductCard = ({ producto }: ProductCardProps) => {
           {esOferta ? (
             <>
               <span className={styles.priceOld}>
-                ${Number(producto.precio_regular).toFixed(2)}
+                ${Number(producto.precio).toFixed(2)}
               </span>
               <span className={styles.priceNew}>
-                ${Number(producto.precio_oferta).toFixed(2)}
+                ${Number(producto.precio_promocion).toFixed(2)}
               </span>
             </>
           ) : (

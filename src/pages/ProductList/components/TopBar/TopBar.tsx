@@ -1,5 +1,5 @@
 // src/pages/ProductList/components/TopBar.tsx
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import styles from '../TopBar/TopBar.module.css';
 
 interface TopBarProps {
@@ -24,11 +24,30 @@ const TopBar = ({ totalItems, currentPage }: TopBarProps) => {
   return (
     <div className={styles.topbar}>
       <div className={styles.breadcrumb}>
-        Inicio &gt; Catálogo
+        <Link to="/home" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Inicio
+        </Link>
+        {' '} &gt; {' '}
+        <Link to="/listado" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Catálogo
+        </Link>
+
+        {searchParams.get('categoria') && (
+          <span>
+            {' '} &gt; {' '}
+            {searchParams.get('grupo') ? (
+              <Link to={`/listado?categoria=${searchParams.get('categoria')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                {searchParams.get('categoria')?.replace(/-/g, ' ').toUpperCase()}
+              </Link>
+            ) : (
+              <strong>{searchParams.get('categoria')?.replace(/-/g, ' ').toUpperCase()}</strong>
+            )}
+          </span>
+        )}
+
         {searchParams.get('grupo') && (
           <span>
-            {' '}
-            &gt; <strong>{searchParams.get('grupo')}</strong>
+            {' '} &gt; <strong>{searchParams.get('grupo')?.toUpperCase()}</strong>
           </span>
         )}
       </div>

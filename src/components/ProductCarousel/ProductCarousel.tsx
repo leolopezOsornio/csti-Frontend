@@ -1,3 +1,4 @@
+// src/components/ProductCarousel/ProductCarousel.tsx
 import { useRef } from 'react';
 import ProductCard from '../ProductCard/ProductCard';
 import BrandCard from '../BrandCard/BrandCard';

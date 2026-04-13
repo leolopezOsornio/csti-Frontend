@@ -67,7 +67,7 @@
   background-color: #003366;
 }
 
-.open {
+.sidebarWrapper.open {
   display: block;
   animation: fadeInDown 0.3s ease-in-out;
 }
