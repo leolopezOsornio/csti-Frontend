@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import { authService } from '../../../services/authService';
+import { authService } from '../../../services/Auth.service';
 
 const VerifyAccount = () => {
   const location = useLocation();

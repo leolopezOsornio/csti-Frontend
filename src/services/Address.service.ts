@@ -1,5 +1,5 @@
 // src/services/addressService.ts
-import api from './api';
+import api from './Api.service';
 
 export const addressService = {
   getAddresses: async () => {

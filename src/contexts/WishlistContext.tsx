@@ -1,6 +1,6 @@
 // src/contexts/WishlistContext.tsx
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
-import { wishlistService } from '../services/wishlistService';
+import { wishlistService } from '../services/Wishlist.service';
 import { AuthContext } from './AuthContext';
 
 interface WishlistContextType {

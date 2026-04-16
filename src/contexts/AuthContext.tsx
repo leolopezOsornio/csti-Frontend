@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { authService } from '../services/authService';
+import { authService } from '../services/Auth.service';
 
 // 1. Definimos la forma de los datos del usuario
 export interface User {

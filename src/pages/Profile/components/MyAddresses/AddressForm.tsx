@@ -1,7 +1,7 @@
 // src/pages/Profile/components/MyAddresses/AddressForm.tsx
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { addressService } from '../../../../services/addressService';
+import { addressService } from '../../../../services/Address.service';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import styles from '../MyAddresses/MyAddresses.module.css';

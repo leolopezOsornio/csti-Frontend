@@ -9,7 +9,7 @@ import {
   faLock,
   faUserPen,
 } from '@fortawesome/free-solid-svg-icons';
-import { profileService } from '../../../../services/profileService';
+import { profileService } from '../../../../services/Profile.service';
 import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
 import styles from '../MyProfile/MyProfile.module.css';

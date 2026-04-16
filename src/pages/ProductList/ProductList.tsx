@@ -1,7 +1,7 @@
 // src/pages/ProductList/ProductList.tsx
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { catalogService } from '../../services/catalogService';
+import { catalogService } from '../../services/Catalog.service';
 import FilterSidebar from './components/FilterSidebar/FilterSidebar';
 import TopBar from './components/TopBar/TopBar';
 import ProductItem from './components/ProductItem/ProductItem';

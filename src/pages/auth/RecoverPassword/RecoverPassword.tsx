@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import { authService } from '../../../services/authService';
+import { authService } from '../../../services/Auth.service';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
 import { checkEmailTypo } from '../../../utils/emailValidation';
