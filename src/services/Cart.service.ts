@@ -1,5 +1,5 @@
 // src/services/cartService.ts
-import api from './api';
+import api from './Api.service';
 
 export const cartService = {
     getCart: async () => {

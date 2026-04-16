@@ -1,5 +1,5 @@
 // src/services/catalogService.ts
-import api from './api';
+import api from './Api.service';
 
 export const catalogService = {
   getHomeSections: async () => {

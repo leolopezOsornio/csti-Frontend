@@ -1,5 +1,5 @@
 // src/services/authService.ts
-import api from './api';
+import api from './Api.service';
 
 export const authService = {
     // Función para iniciar sesión

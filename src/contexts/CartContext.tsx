@@ -1,6 +1,6 @@
 // src/contexts/CartContext.tsx
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
-import { cartService } from '../services/cartService';
+import { cartService } from '../services/Cart.service';
 import { AuthContext } from './AuthContext';
 
 interface CartContextType {

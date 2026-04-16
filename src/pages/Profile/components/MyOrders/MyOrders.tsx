@@ -1,7 +1,7 @@
 // src/pages/Profile/components/MyOrders/MyOrders.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { orderService } from '../../../../services/orderService';
+import { orderService } from '../../../../services/Order.service';
 import styles from '../MyOrders/MyOrders.module.css';
 
 const MyOrders = () => {
@@ -107,4 +107,4 @@ const MyOrders = () => {
   );
 };
 
-export default MyOrders;
+export default MyOrders;
