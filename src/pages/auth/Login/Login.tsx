@@ -41,7 +41,15 @@ const Login = () => {
     try {
       const data = await authService.login(email, password);
       login(data.access);
-      navigate('/home');
+
+      const profile = await authService.getUserProfile();
+      const role = profile?.perfil?.role;
+
+      if (role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/home');
+      }
     } catch (error: any) {
       if (error.response) {
         if (error.response.status === 401) {
