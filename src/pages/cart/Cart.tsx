@@ -3,7 +3,7 @@ import { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
-import { cartService } from '../../services/cartService';
+import { cartService } from '../../services/Cart.service';
 import { CartContext } from '../../contexts/CartContext';
 
 import EmptyCart from './components/EmptyCart/EmptyCart';

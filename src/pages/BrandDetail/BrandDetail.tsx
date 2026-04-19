@@ -1,7 +1,7 @@
 // src/pages/BrandDetail/BrandDetail.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { catalogService } from '../../services/catalogService';
+import { catalogService } from '../../services/Catalog.service';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from '../BrandDetail/BrandDetail.module.css';
 

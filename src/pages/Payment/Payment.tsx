@@ -4,9 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import Swal from 'sweetalert2';
 import { CartContext } from '../../contexts/CartContext';
-import { cartService } from '../../services/cartService';
-import { paymentService } from '../../services/paymentService';
-import { addressService } from '../../services/addressService';
+import { cartService } from '../../services/Cart.service';
+import { paymentService } from '../../services/Payment.service';
+import { addressService } from '../../services/Address.service';
 import styles from './Payment.module.css';
 
 const Payment = () => {

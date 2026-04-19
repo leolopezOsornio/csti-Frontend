@@ -1,5 +1,5 @@
 // src/services/profileService.ts
-import api from './api';
+import api from './Api.service';
 
 export const profileService = {
   // Obtener todos los datos del perfil (nombre, correo, teléfono, fecha)

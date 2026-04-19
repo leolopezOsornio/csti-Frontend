@@ -8,7 +8,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../../../../contexts/AuthContext';
 import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
-import { cartService } from '../../../../services/cartService';
+import { cartService } from '../../../../services/Cart.service';
 
 import styles from '../ProductItem/ProductItem.module.css';
 

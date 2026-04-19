@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import logoFasterClick from '../../../assets/img/Fasterclick1.png';
-import { authService } from '../../../services/authService';
+import { authService } from '../../../services/Auth.service';
 import { AuthContext } from '../../../contexts/AuthContext';
 
 const Login = () => {
@@ -41,7 +41,15 @@ const Login = () => {
     try {
       const data = await authService.login(email, password);
       login(data.access);
-      navigate('/home');
+
+      const profile = await authService.getUserProfile();
+      const role = profile?.perfil?.role;
+
+      if (role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/home');
+      }
     } catch (error: any) {
       if (error.response) {
         if (error.response.status === 401) {

@@ -1,5 +1,5 @@
 // src/services/wishlistService.ts
-import api from './api';
+import api from './Api.service';
 
 export const wishlistService = {
   getWishlist: async () => {

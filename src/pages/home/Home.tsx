@@ -1,6 +1,6 @@
 // src/pages/Home/Home.tsx
 import { useEffect, useState } from 'react';
-import { catalogService } from '../../services/catalogService';
+import { catalogService } from '../../services/Catalog.service';
 
 import Hero from '../../components/Hero/Hero';
 import CategoryGrid from '../../components/CategoryGrid/CategoryGrid';

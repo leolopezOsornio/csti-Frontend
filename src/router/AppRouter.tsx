@@ -2,9 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
-
 import MainLayout from '../components/Layout/MainLayout';
-
 import Login from '../pages/auth/Login/Login';
 import Register from '../pages/auth/Register/Register';
 import RecoverPassword from '../pages/auth/RecoverPassword/RecoverPassword';
@@ -15,13 +13,13 @@ import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import ProductList from '../pages/ProductList/ProductList';
 import Cart from '../pages/cart/Cart';
 import Payment from '../pages/Payment/Payment';
-
 import Profile from '../pages/Profile/Profile';
 import MyProfile from '../pages/Profile/components/MyProfile/MyProfile';
 import MyAddresses from '../pages/Profile/components/MyAddresses/MyAddresses';
 import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
 import OrderDetail from '../pages/Profile/components/OrderDetail/OrderDetail';
 import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
+import AdminDashboard from '../pages/Admin/AdminDashboard/AdminDashboard';
 
 export const AppRouter = () => {
   return (
@@ -44,7 +42,7 @@ export const AppRouter = () => {
             {/* <Route path="/perfil" element={<Perfil />} /> */}
             <Route path="/carrito" element={<Cart />} />
             <Route path="/payment" element={<Payment />} />
-
+            <Route path="/admin" element={<AdminDashboard />} />
             {/* Rutas Anidadas para el Perfil de Usuario */}
             <Route path="/perfil" element={<Profile />}>
               <Route index element={<MyProfile />} /> {/* Ruta por defecto: /perfil */}

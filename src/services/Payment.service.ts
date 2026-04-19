@@ -1,5 +1,5 @@
 // src/services/paymentService.ts
-import api from './api';
+import api from './Api.service';
 
 export const paymentService = {
   verifyPayment: async (orderID: string, direccionID: number) => {
