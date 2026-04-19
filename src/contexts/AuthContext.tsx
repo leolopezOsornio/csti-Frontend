@@ -9,6 +9,9 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  perfil: {
+    role: string; // 'admin' o 'user'
+  };
 }
 
 // 2. Ampliamos el contexto para incluir al usuario
