@@ -4,11 +4,17 @@ import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
 export const PublicRoutes = () => {
-  const { isAuthenticated, isLoading } = useContext(AuthContext);
+  const { isAuthenticated, user, isLoading } = useContext(AuthContext);
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return null; // O un spinner
   }
 
-  return isAuthenticated ? <Navigate to="/home" replace /> : <Outlet />;
+  if (isAuthenticated) {
+    return user?.perfil?.role === 'admin' 
+      ? <Navigate to="/admin" replace /> 
+      : <Navigate to="/home" replace />;
+  }
+
+  return <Outlet />;
 };

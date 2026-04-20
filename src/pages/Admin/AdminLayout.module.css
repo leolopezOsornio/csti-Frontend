@@ -1,0 +1,96 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #0b132b;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.sidebarHeader {
+  padding: 2rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  max-width: 180px;
+  height: auto;
+}
+
+.nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+  gap: 0.8rem;
+}
+
+.navLink:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.activeLink {
+  background-color: #f8fafc;
+  color: #0b132b !important;
+  border-left-color: #3b82f6; /* Accent color for the indicator */
+}
+
+.sidebarFooter {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  gap: 0.8rem;
+}
+
+.logoutBtn:hover {
+  color: #ef4444;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 260px; /* Same as sidebar width */
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.icon {
+  width: 20px;
+  text-align: center;
+}

@@ -1,0 +1,146 @@
+.container {
+  padding: 1.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.025em;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th {
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+
+.orderId {
+  font-weight: 700;
+  color: #2563eb;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.clientInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.clientName {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.clientEmail {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.amount {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pill {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pillPendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pillCompletado {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pillFallido {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.date {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.viewBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewBtn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+  color: #64748b;
+  font-weight: 500;
+}
