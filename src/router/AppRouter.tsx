@@ -26,7 +26,8 @@ import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
 import OrderDetail from '../pages/Profile/components/OrderDetail/OrderDetail';
 import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
 
-import AdminDashboard from '../pages/Admin/AdminDashboard/AdminDashboard';
+import Dashboard from '../pages/Admin/components/Dashboard/Dashboard';
+import Users from '../pages/Admin/components/Users/Users';
 
 export const AppRouter = () => {
   return (
@@ -44,10 +45,10 @@ export const AppRouter = () => {
         {/* === RUTAS ADMINISTRATIVAS (Layout con Sidebar) === */}
         <Route path="/admin" element={<AdminRoutes />}>
           <Route element={<AdminLayout />}>
-            <Route index element={<div>En construcción: Dashboard</div>} />
+            <Route index element={<Dashboard />} />
             <Route path="pedidos" element={<div>En construcción: Pedidos</div>} />
             <Route path="pedidos/:id" element={<div>En construcción: Detalle de Pedido</div>} />
-            <Route path="usuarios" element={<div>En construcción: Usuarios</div>} />
+            <Route path="usuarios" element={<Users />} />
             <Route path="intereses" element={<div>En construcción: Intereses</div>} />
           </Route>
         </Route>
