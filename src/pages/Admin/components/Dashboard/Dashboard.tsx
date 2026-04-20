@@ -1,38 +1,56 @@
-// src/pages/Admin/components/Dashboard/Dashboard.tsx
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import { useState, useEffect } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoneyBillTrendUp, faCartShopping, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import adminPanelService from '../../../../services/AdminPanel.service';
 import styles from './Dashboard.module.css';
 
-// Mock Data Orden (coincidiendo con Django)
-const recentOrders = [
-  { id: '00000007', user: { username: 'Admin Sarosla' }, estado_pago: 'COMPLETADO', monto_total: '$45,200 MXN' },
-  { id: '00000008', user: { username: 'Juan Pérez' }, estado_pago: 'PENDIENTE', monto_total: '$12,500 MXN' },
-  { id: '00000009', user: { username: 'María García' }, estado_pago: 'COMPLETADO', monto_total: '$3,400 MXN' },
-  { id: '00000010', user: { username: 'Carlos López' }, estado_pago: 'PENDIENTE', monto_total: '$1,200 MXN' },
-  { id: '00000011', user: { username: 'Ana Martínez' }, estado_pago: 'FALLIDO', monto_total: '$8,900 MXN' },
-];
-
-// Mock Data Performance (7 days)
-const chartData = [
-  { name: 'Lun', sales: 12000 },
-  { name: 'Mar', sales: 19000 },
-  { name: 'Mie', sales: 15000 },
-  { name: 'Jue', sales: 22000 },
-  { name: 'Vie', sales: 30000 },
-  { name: 'Sab', sales: 25000 },
-  { name: 'Dom', sales: 35000 },
-];
-
 const Dashboard = () => {
+  const [stats, setStats] = useState({ ventas_hoy: 0, ordenes_pendientes: 0, total_productos: 0 });
+  const [chartData, setChartData] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, chartRes, ordersRes] = await Promise.all([
+        adminPanelService.getDashboardStats(),
+        adminPanelService.getSalesChart(),
+        adminPanelService.getOrders()
+      ]);
+      setStats(statsRes);
+      // La API devuelve { fecha: 'DD/MM', total: X }
+      // Recharts espera que el campo coincida con dataKey (sales)
+      const formattedChart = chartRes.map((d: any) => ({
+        name: d.fecha,
+        sales: d.total
+      }));
+      setChartData(formattedChart);
+      setRecentOrders(ordersRes.slice(0, 5));
+    } catch (error) {
+      console.error("Error al cargar datos del dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className={styles.loadingContainer}>Cargando panel...</div>;
+  }
+
   return (
     <div className={styles.container}>
       <header>
@@ -47,8 +65,7 @@ const Dashboard = () => {
           </div>
           <div className={styles.statInfo}>
             <span className={styles.statLabel}>Ventas Hoy</span>
-            <span className={styles.statValue}>$45,200 MXN</span>
-            <span className={`${styles.statTrend} ${styles.trendPositive}`}>+12% vs ayer</span>
+            <span className={styles.statValue}>${Number(stats.ventas_hoy).toLocaleString()} MXN</span>
           </div>
         </div>
 
@@ -58,7 +75,7 @@ const Dashboard = () => {
           </div>
           <div className={styles.statInfo}>
             <span className={styles.statLabel}>Pedidos Pendientes</span>
-            <span className={styles.statValue}>14</span>
+            <span className={styles.statValue}>{stats.ordenes_pendientes}</span>
           </div>
         </div>
 
@@ -68,7 +85,7 @@ const Dashboard = () => {
           </div>
           <div className={styles.statInfo}>
             <span className={styles.statLabel}>Total Productos (CVA)</span>
-            <span className={styles.statValue}>15,430</span>
+            <span className={styles.statValue}>{Number(stats.total_productos).toLocaleString()}</span>
           </div>
         </div>
       </section>
@@ -82,17 +99,17 @@ const Dashboard = () => {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(val) => `$${val / 1000}k`} />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Ventas']}
               />
-              <Line 
-                type="monotone" 
-                dataKey="sales" 
-                stroke="#3b82f6" 
-                strokeWidth={3} 
-                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} 
-                activeDot={{ r: 6 }} 
+              <Line
+                type="monotone"
+                dataKey="sales"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -112,21 +129,20 @@ const Dashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {recentOrders.map((order) => (
+            {recentOrders.map((order: any) => (
               <tr key={order.id}>
                 <td>{order.id}</td>
-                <td>{order.user.username}</td>
+                <td>{order.user_data?.first_name} {order.user_data?.last_name}</td>
                 <td>
-                  <span className={`${styles.pill} ${
-                    order.estado_pago === 'COMPLETADO' ? styles.pillCompletado : 
-                    order.estado_pago === 'PENDIENTE' ? styles.pillPendiente : 
-                    styles.pillFallido
-                  }`}>
-                    {order.estado_pago === 'COMPLETADO' ? 'Pagado' : 
-                     order.estado_pago === 'PENDIENTE' ? 'Pendiente' : 'Fallido'}
+                  <span className={`${styles.pill} ${order.estado_pago === 'COMPLETADO' ? styles.pillCompletado :
+                      order.estado_pago === 'PENDIENTE' ? styles.pillPendiente :
+                        styles.pillFallido
+                    }`}>
+                    {order.estado_pago === 'COMPLETADO' ? 'Pagado' :
+                      order.estado_pago === 'PENDIENTE' ? 'Pendiente' : 'Fallido'}
                   </span>
                 </td>
-                <td style={{ fontWeight: 600 }}>{order.monto_total}</td>
+                <td style={{ fontWeight: 600 }}>${Number(order.monto_total).toLocaleString()} MXN</td>
               </tr>
             ))}
           </tbody>

@@ -133,3 +133,12 @@
 .pillCompletado { background-color: #dcfce7; color: #166534; }
 .pillPendiente { background-color: #ffedd5; color: #9a3412; }
 .pillFallido { background-color: #fee2e2; color: #991b1b; }
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  font-weight: 500;
+  color: #64748b;
+}

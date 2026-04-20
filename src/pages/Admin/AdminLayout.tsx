@@ -3,12 +3,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faGauge, 
-  faShoppingBag, 
-  faUsers, 
-  faHeart, 
-  faRightFromBracket 
+import {
+    faGauge,
+    faShoppingBag,
+    faUsers,
+    faHeart,
+    faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 import styles from './AdminLayout.module.css';
 
@@ -26,18 +26,18 @@ const AdminLayout = () => {
             {/* Sidebar */}
             <aside className={styles.sidebar}>
                 <div className={styles.sidebarHeader}>
-                    <img 
-                        src="/img/logo_csti.png" 
-                        alt="CSTI Logo" 
-                        className={styles.logo} 
+                    <img
+                        src="/img/Fasterclick1.png"
+                        alt="CSTI Logo"
+                        className={styles.logo}
                     />
                 </div>
 
                 <nav className={styles.nav}>
-                    <NavLink 
-                        to="/admin" 
+                    <NavLink
+                        to="/admin"
                         end
-                        className={({ isActive }) => 
+                        className={({ isActive }) =>
                             `${styles.navLink} ${isActive ? styles.activeLink : ''}`
                         }
                     >
@@ -45,9 +45,9 @@ const AdminLayout = () => {
                         <span>Dashboard</span>
                     </NavLink>
 
-                    <NavLink 
-                        to="/admin/pedidos" 
-                        className={({ isActive }) => 
+                    <NavLink
+                        to="/admin/pedidos"
+                        className={({ isActive }) =>
                             `${styles.navLink} ${isActive ? styles.activeLink : ''}`
                         }
                     >
@@ -55,9 +55,9 @@ const AdminLayout = () => {
                         <span>Pedidos</span>
                     </NavLink>
 
-                    <NavLink 
-                        to="/admin/usuarios" 
-                        className={({ isActive }) => 
+                    <NavLink
+                        to="/admin/usuarios"
+                        className={({ isActive }) =>
                             `${styles.navLink} ${isActive ? styles.activeLink : ''}`
                         }
                     >
@@ -65,9 +65,9 @@ const AdminLayout = () => {
                         <span>Usuarios</span>
                     </NavLink>
 
-                    <NavLink 
-                        to="/admin/intereses" 
-                        className={({ isActive }) => 
+                    <NavLink
+                        to="/admin/intereses"
+                        className={({ isActive }) =>
                             `${styles.navLink} ${isActive ? styles.activeLink : ''}`
                         }
                     >

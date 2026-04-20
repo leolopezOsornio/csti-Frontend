@@ -19,6 +19,28 @@
 .controls {
   display: flex;
   gap: 1rem;
+  align-items: center;
+}
+
+.addBtn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.addBtn:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .searchWrapper {
@@ -190,4 +212,13 @@ input:checked + .slider:before {
 
 .actionBtn:hover {
   color: #3b82f6;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  font-weight: 500;
+  color: #64748b;
 }

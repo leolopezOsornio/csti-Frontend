@@ -159,3 +159,12 @@
 .actionBtn:hover {
   color: #3b82f6;
 }
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  font-weight: 500;
+  color: #64748b;
+}
