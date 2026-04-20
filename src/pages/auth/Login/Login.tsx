@@ -40,15 +40,14 @@ const Login = () => {
 
     try {
       const data = await authService.login(email, password);
-      login(data.access);
-
-      const profile = await authService.getUserProfile();
+      // login() ahora retorna el perfil completo
+      const profile = await login(data.access);
       const role = profile?.perfil?.role;
 
       if (role === 'admin') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/home');
+        navigate('/home', { replace: true });
       }
     } catch (error: any) {
       if (error.response) {

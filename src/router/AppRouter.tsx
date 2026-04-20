@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
 import { AdminRoutes } from './AdminRoutes';
+import { ClientRoutes } from './ClientRoutes';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
 import MainLayout from '../components/Layout/MainLayout';
 import AdminLayout from '../pages/Admin/AdminLayout';
@@ -56,8 +59,9 @@ export const AppRouter = () => {
           </Route>
         </Route>
 
-        {/* === RUTAS CON NAVBAR Y FOOTER === */}
-        <Route element={<MainLayout />}>
+        {/* === RUTAS CON NAVBAR Y FOOTER (Solo para clientes y anónimos) === */}
+        <Route element={<ClientRoutes />}>
+          <Route element={<MainLayout />}>
 
           {/* Rutas privadas normales */}
           <Route element={<PrivateRoutes />}>
@@ -79,10 +83,18 @@ export const AppRouter = () => {
           <Route path="/producto/:clave" element={<ProductDetail />} />
           <Route path="/listado" element={<ProductList />} />
         </Route>
+      </Route>
 
-        {/* CATCH-ALL */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        {/* CATCH-ALL con lógica de roles */}
+        <Route path="*" element={<CatchAllRedirect />} />
       </Routes>
     </BrowserRouter>
   );
+};
+const CatchAllRedirect = () => {
+  const { isAuthenticated, user } = useContext(AuthContext);
+  if (isAuthenticated && user?.perfil?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  return <Navigate to="/home" replace />;
 };
