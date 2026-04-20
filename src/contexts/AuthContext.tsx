@@ -18,7 +18,7 @@ export interface User {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null; // Puede ser null si no está logueado
-  login: (token: string) => Promise<void>; // Lo hacemos Promise para esperar los datos
+  login: (token: string) => Promise<User | null>; // Retorna el usuario para redirección inmediata
   logout: () => void;
   isLoading: boolean; // Para mostrar un spinner mientras validamos la sesión al recargar
 }
@@ -26,8 +26,8 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
-  login: async () => {},
-  logout: () => {},
+  login: async () => null,
+  logout: () => { },
   isLoading: true,
 });
 
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Si falla (ej. token expirado), cerramos sesión por seguridad
       logout();
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
@@ -65,10 +65,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  const login = async (token: string) => {
+  const login = async (token: string): Promise<User | null> => {
     localStorage.setItem('access_token', token);
     // Inmediatamente después de guardar el token, pedimos el perfil
-    await fetchUserProfile();
+    try {
+      const userData = await authService.getUserProfile();
+      setUser(userData);
+      setIsAuthenticated(true);
+      return userData;
+    } catch (error) {
+      logout();
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {

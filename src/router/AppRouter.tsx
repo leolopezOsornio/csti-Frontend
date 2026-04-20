@@ -3,8 +3,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoutes } from './PrivateRoutes';
 import { PublicRoutes } from './PublicRoutes';
 import { AdminRoutes } from './AdminRoutes';
+import { ClientRoutes } from './ClientRoutes';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
 import MainLayout from '../components/Layout/MainLayout';
+import AdminLayout from '../pages/Admin/AdminLayout';
 
 import Login from '../pages/auth/Login/Login';
 import Register from '../pages/auth/Register/Register';
@@ -25,7 +29,11 @@ import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
 import OrderDetail from '../pages/Profile/components/OrderDetail/OrderDetail';
 import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
 
-import AdminDashboard from '../pages/Admin/AdminDashboard/AdminDashboard';
+import Dashboard from '../pages/Admin/components/Dashboard/Dashboard';
+import Users from '../pages/Admin/components/Users/Users';
+import Interests from '../pages/Admin/components/Interests/Interests';
+import OrdersList from '../pages/Admin/components/Orders/OrdersList';
+import AdminOrderDetail from '../pages/Admin/components/Orders/OrderDetail';
 
 export const AppRouter = () => {
   return (
@@ -40,13 +48,20 @@ export const AppRouter = () => {
           <Route path="/verificar-cuenta" element={<VerifyAccount />} />
         </Route>
 
-        {/* === RUTAS CON NAVBAR Y FOOTER === */}
-        <Route element={<MainLayout />}>
-
-          {/* Rutas solo para admin */}
-          <Route element={<AdminRoutes />}>
-            <Route path="/admin" element={<AdminDashboard />} />
+        {/* === RUTAS ADMINISTRATIVAS (Layout con Sidebar) === */}
+        <Route path="/admin" element={<AdminRoutes />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="pedidos" element={<OrdersList />} />
+            <Route path="pedidos/:id" element={<AdminOrderDetail />} />
+            <Route path="usuarios" element={<Users />} />
+            <Route path="intereses" element={<Interests />} />
           </Route>
+        </Route>
+
+        {/* === RUTAS CON NAVBAR Y FOOTER (Solo para clientes y anónimos) === */}
+        <Route element={<ClientRoutes />}>
+          <Route element={<MainLayout />}>
 
           {/* Rutas privadas normales */}
           <Route element={<PrivateRoutes />}>
@@ -68,10 +83,18 @@ export const AppRouter = () => {
           <Route path="/producto/:clave" element={<ProductDetail />} />
           <Route path="/listado" element={<ProductList />} />
         </Route>
+      </Route>
 
-        {/* CATCH-ALL */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        {/* CATCH-ALL con lógica de roles */}
+        <Route path="*" element={<CatchAllRedirect />} />
       </Routes>
     </BrowserRouter>
   );
+};
+const CatchAllRedirect = () => {
+  const { isAuthenticated, user } = useContext(AuthContext);
+  if (isAuthenticated && user?.perfil?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  return <Navigate to="/home" replace />;
 };
