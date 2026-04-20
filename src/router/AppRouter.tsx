@@ -5,6 +5,7 @@ import { PublicRoutes } from './PublicRoutes';
 import { AdminRoutes } from './AdminRoutes';
 
 import MainLayout from '../components/Layout/MainLayout';
+import AdminLayout from '../pages/Admin/AdminLayout';
 
 import Login from '../pages/auth/Login/Login';
 import Register from '../pages/auth/Register/Register';
@@ -40,13 +41,19 @@ export const AppRouter = () => {
           <Route path="/verificar-cuenta" element={<VerifyAccount />} />
         </Route>
 
+        {/* === RUTAS ADMINISTRATIVAS (Layout con Sidebar) === */}
+        <Route path="/admin" element={<AdminRoutes />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<div>En construcción: Dashboard</div>} />
+            <Route path="pedidos" element={<div>En construcción: Pedidos</div>} />
+            <Route path="pedidos/:id" element={<div>En construcción: Detalle de Pedido</div>} />
+            <Route path="usuarios" element={<div>En construcción: Usuarios</div>} />
+            <Route path="intereses" element={<div>En construcción: Intereses</div>} />
+          </Route>
+        </Route>
+
         {/* === RUTAS CON NAVBAR Y FOOTER === */}
         <Route element={<MainLayout />}>
-
-          {/* Rutas solo para admin */}
-          <Route element={<AdminRoutes />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Route>
 
           {/* Rutas privadas normales */}
           <Route element={<PrivateRoutes />}>
