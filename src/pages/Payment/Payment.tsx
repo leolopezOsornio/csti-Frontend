@@ -175,35 +175,12 @@ const Payment = () => {
                     });
                   }}
                   onApprove={async (data, _actions) => {
-                    if (!selectedAddressId) {
-                      Swal.fire('Error', 'No se detectó una dirección de envío seleccionada.', 'error');
-                      return;
-                    }
-
                     try {
-                      // 1. Mostramos un modal de carga para que el usuario no toque nada
-                      // sin destruir el componente de React.
-                      Swal.fire({
-                        title: 'Procesando pago...',
-                        text: 'Por favor, no cierres esta ventana.',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                          Swal.showLoading();
-                        }
-                      });
-
-                      // 2. Capturamos el dinero en PayPal
-                      if (_actions.order) {
-                        await _actions.order.capture();
-                      }
-
-                      // 3. Avisamos a Django
+                      // MODIFICACIÓN CRÍTICA: Se eliminó _actions.order.capture()
+                      // Ahora solo notificamos a Django para que él haga la captura oficial
                       await paymentService.verifyPayment(data.orderID, selectedAddressId);
 
-                      // 4. Actualizamos el frontend
                       await refreshCart();
-
-                      // 5. Mostramos el éxito y redirigimos
                       Swal.fire({
                         title: '¡Pago Exitoso!',
                         text: 'Tu orden ha sido procesada y creada correctamente.',
@@ -212,12 +189,10 @@ const Payment = () => {
                       }).then(() => {
                         navigate('/home');
                       });
-
                     } catch (error) {
-                      console.error("Error al procesar el pago:", error);
-                      Swal.fire('Error', 'Hubo un problema al verificar tu pago. Por favor contacta a soporte.', 'error');
+                      console.error("Error en la verificación:", error);
+                      Swal.fire('Error', 'El pago se autorizó pero hubo un problema al registrarlo.', 'error');
                     }
-                    // Quitamos el bloque 'finally' para que no interfiera.
                   }}
                   onError={(err) => {
                     console.error("PayPal Error:", err);
