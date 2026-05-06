@@ -11,6 +11,7 @@ import {
   faLinkedinIn,
   faInstagram,
 } from '@fortawesome/free-brands-svg-icons';
+import { appConfig } from '../../config/appConfig';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -29,12 +30,12 @@ const Footer = () => {
 
           <p className={styles.footerDesc}>
             Tu tienda en linea de confianza para equipos, laptops, consumibles de
-            impresión y periféricos. Calidad y servicio para tu área de cómputo.
+            impresion y perifericos. Calidad y servicio para tu area de computo.
           </p>
 
           <div className={styles.socialBlock}>
             <h3 className={`${styles.footerHeading} ${styles.socialHeading}`}>
-              Síguenos
+              Siguenos
             </h3>
 
             <div className={styles.socialIcons}>
@@ -52,11 +53,11 @@ const Footer = () => {
         </div>
 
         <div className={styles.navCol}>
-          <h3 className={styles.footerHeading}>Navegación</h3>
+          <h3 className={styles.footerHeading}>Navegacion</h3>
           <ul className={styles.footerLinks}>
             <li><Link to="/home">Inicio</Link></li>
-            <li><Link to="/home">Catálogo</Link></li>
-            <li><a href="#">Conócenos</a></li>
+            <li><Link to="/home">Catalogo</Link></li>
+            <li><a href="#">Conocenos</a></li>
             <li><a href="#">Contacto</a></li>
           </ul>
         </div>
@@ -70,20 +71,17 @@ const Footer = () => {
                 icon={faLocationDot}
                 className={styles.contactIconTop}
               />
-              <span>
-                Pirineos no. 515 int. 41-J, Parque Industrial Micro Santiago,
-                CP 76120, Santiago de Querétaro, Qro.
-              </span>
+              <span>{appConfig.contactAddress}</span>
             </p>
 
             <p className={styles.contactItem}>
               <FontAwesomeIcon icon={faPhone} className={styles.contactIcon} />
-              <span>442 251 05 21</span>
+              <span>{appConfig.contactPhone}</span>
             </p>
 
             <p className={styles.contactItem}>
               <FontAwesomeIcon icon={faEnvelope} className={styles.contactIcon} />
-              <span>ventas@csti.com.mx</span>
+              <span>{appConfig.contactEmail}</span>
             </p>
           </div>
         </div>
@@ -92,13 +90,13 @@ const Footer = () => {
       <div className={styles.footerBottom}>
         <div className={`container ${styles.footerBottomInner}`}>
           <p className={styles.copyrightText}>
-            © {currentYear} FasterClick. Todos los derechos reservados.
+            &copy; {currentYear} FasterClick. Todos los derechos reservados.
           </p>
 
           <div className={styles.footerLegal}>
-            <a href="#">Políticas de Privacidad</a>
-            <span className={styles.separator}>•</span>
-            <a href="#">Términos y Condiciones</a>
+            <a href="#">Politicas de Privacidad</a>
+            <span className={styles.separator}>|</span>
+            <a href="#">Terminos y Condiciones</a>
           </div>
         </div>
       </div>

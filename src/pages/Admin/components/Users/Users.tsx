@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faPen, faEye, faPlus } from '@fortawesome/free-solid-svg-icons';
 import adminPanelService from '../../../../services/AdminPanel.service';
+import { getUserInitials } from '../../../../utils/userDisplay';
 import UserModal from './UserModal';
 import styles from './Users.module.css';
 
@@ -133,11 +134,9 @@ const Users = () => {
                 <td style={{ color: '#64748b', fontSize: '0.8rem' }}>#{user.id}</td>
                 <td>
                   <div className={styles.userInfo}>
-                    <img
-                      src={`https://i.pravatar.cc/150?u=${user.email}`}
-                      alt={user.first_name}
-                      className={styles.avatar}
-                    />
+                    <span className={styles.avatar} aria-hidden="true">
+                      {getUserInitials(user.first_name, user.last_name, user.email)}
+                    </span>
                     <div className={styles.userDetails}>
                       <span className={styles.userName}>{user.first_name} {user.last_name}</span>
                       <span className={styles.userEmail}>{user.email}</span>
