@@ -1,10 +1,10 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/Auth.service';
 import { AuthContext } from '../../../contexts/AuthContext';
+import { appAlert, appLoadingToast, appToast, closeAppAlert } from '../../../utils/alerts';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,11 +18,10 @@ const Login = () => {
 
   useEffect(() => {
     if (location.state?.accountVerified) {
-      Swal.fire({
+      appAlert({
         icon: 'info',
-        title: '¡Casi listo!',
-        text: 'Ingresa tu contraseña para acceder a tu nueva cuenta.',
-        confirmButtonColor: '#0A0A45',
+        title: 'Casi listo',
+        text: 'Ingresa tu contrasena para acceder a tu nueva cuenta.',
       });
 
       window.history.replaceState({}, document.title);
@@ -37,12 +36,15 @@ const Login = () => {
     e.preventDefault();
     setErrorMensaje('');
     setCargando(true);
+    appLoadingToast('Iniciando sesion', 'Estamos validando tus datos.');
 
     try {
       const data = await authService.login(email, password);
-      // login() ahora retorna el perfil completo
       const profile = await login(data.access);
       const role = profile?.perfil?.role;
+
+      closeAppAlert();
+      appToast('success', 'Sesion iniciada', 'Bienvenido de nuevo.');
 
       if (role === 'admin') {
         navigate('/admin', { replace: true });
@@ -50,19 +52,25 @@ const Login = () => {
         navigate('/home', { replace: true });
       }
     } catch (error: any) {
+      let message = 'No se pudo iniciar sesion.';
+
       if (error.response) {
         if (error.response.status === 401) {
-          setErrorMensaje('Contraseña incorrecta.');
+          message = 'Contrasena incorrecta.';
         } else if (error.response.status === 404) {
-          setErrorMensaje('El correo no está registrado.');
+          message = 'El correo no esta registrado.';
         } else if (error.response.status === 403) {
-          setErrorMensaje('Cuenta no verificada. Revisa tu correo.');
+          message = 'Cuenta no verificada. Revisa tu correo.';
         } else {
-          setErrorMensaje('Ocurrió un error al intentar iniciar sesión.');
+          message = 'Ocurrio un error al intentar iniciar sesion.';
         }
       } else {
-        setErrorMensaje('Error de conexión con el servidor.');
+        message = 'Error de conexion con el servidor.';
       }
+
+      setErrorMensaje(message);
+      closeAppAlert();
+      appToast('error', 'No se pudo iniciar sesion', message);
     } finally {
       setCargando(false);
     }
@@ -84,7 +92,7 @@ const Login = () => {
         <h1>Bienvenido de nuevo</h1>
 
         {errorMensaje && (
-          <p className={styles['auth-subtitle']} style={{ color: '#dc3545', marginBottom: '16px' }}>
+          <p className={styles['auth-subtitle']} style={{ color: 'var(--color-danger)', marginBottom: '16px' }}>
             {errorMensaje}
           </p>
         )}
@@ -92,7 +100,7 @@ const Login = () => {
         <form className={styles['auth-form']} onSubmit={handleSubmit}>
           <div className={styles['form-group']}>
             <label htmlFor="login_email" className={styles['form-label']}>
-              Correo Electrónico
+              Correo Electronico
             </label>
             <input
               type="email"
@@ -108,7 +116,7 @@ const Login = () => {
 
           <div className={styles['form-group']}>
             <label htmlFor="login_pass" className={styles['form-label']}>
-              Contraseña
+              Contrasena
             </label>
 
             <div className={styles['password-wrapper']}>
@@ -117,7 +125,7 @@ const Login = () => {
                 id="login_pass"
                 name="password"
                 className={styles['form-input']}
-                placeholder="Ingresa tu contraseña"
+                placeholder="Ingresa tu contrasena"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -137,7 +145,7 @@ const Login = () => {
             </label>
 
             <Link to="/recuperar-password" className={styles['forgot-link']}>
-              ¿Olvidaste tu contraseña?
+              Olvidaste tu contrasena?
             </Link>
           </div>
 
@@ -151,9 +159,9 @@ const Login = () => {
         </form>
 
         <p className={styles['auth-footer']}>
-          ¿No tienes cuenta?{' '}
+          No tienes cuenta?{' '}
           <Link to="/registro" className={styles['link-cyan']}>
-            Regístrate aquí
+            Registrate aqui
           </Link>
         </p>
       </div>

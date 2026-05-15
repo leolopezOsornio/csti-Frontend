@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/Auth.service';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
 import { checkEmailTypo } from '../../../utils/emailValidation';
+import { appAlert, appLoadingToast, appToast, closeAppAlert } from '../../../utils/alerts';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +21,6 @@ const Register = () => {
   });
 
   const [cargando, setCargando] = useState(false);
-
-  // Hook de validación robusta
   const { isValid: isPasswordValid } = usePasswordValidation(formData.password);
 
   const togglePassword = () => setShowPassword((prev) => !prev);
@@ -36,7 +34,7 @@ const Register = () => {
   const passMatch = formData.password && formData.password === formData.password2;
 
   const reqStyle = (isValid: boolean) => ({
-    color: isValid ? '#28a745' : '#dc3545',
+    color: isValid ? 'var(--color-success)' : 'var(--color-danger)',
     fontSize: '0.75rem',
     display: 'flex',
     alignItems: 'center',
@@ -44,7 +42,6 @@ const Register = () => {
     marginTop: '5px',
   });
 
-  // Bloqueo de UX: Formulario completo
   const isFormValid =
     formData.first_name.trim() !== '' &&
     formData.last_name.trim() !== '' &&
@@ -57,13 +54,14 @@ const Register = () => {
     if (!isFormValid) return;
 
     setCargando(true);
+    appLoadingToast('Creando cuenta', 'Estamos registrando tus datos.');
 
     if (emailError) {
-      Swal.fire({
+      closeAppAlert();
+      appAlert({
         icon: 'warning',
         title: 'Verifica tus datos',
         html: emailError,
-        confirmButtonColor: '#00b8d4',
       });
       setCargando(false);
       return;
@@ -71,37 +69,37 @@ const Register = () => {
 
     try {
       const response = await authService.register(formData);
+      closeAppAlert();
 
       if (response.mensaje && response.mensaje.includes('Cuenta inactiva actualizada')) {
-        await Swal.fire({
+        await appAlert({
           icon: 'info',
           title: 'Cuenta reactivada',
-          text: 'Tu cuenta estaba inactiva. Actualizamos tus datos y enviamos un nuevo código.',
-          confirmButtonColor: '#00b8d4',
+          text: 'Tu cuenta estaba inactiva. Actualizamos tus datos y enviamos un nuevo codigo.',
         });
       } else {
-        await Swal.fire({
+        await appAlert({
           icon: 'success',
-          title: '¡Registro exitoso!',
-          text: 'Te enviamos un código de verificación por correo electrónico.',
-          confirmButtonColor: '#00b8d4',
+          title: 'Registro exitoso',
+          text: 'Te enviamos un codigo de verificacion por correo electronico.',
         });
       }
 
       navigate('/verificar-cuenta', { state: { email: formData.email } });
     } catch (error: any) {
-      let backendErrors = 'Ocurrió un error inesperado al registrar.';
+      let backendErrors = 'Ocurrio un error inesperado al registrar.';
 
       if (error.response?.data?.errores) {
         backendErrors = error.response.data.errores.join('<br>');
       }
 
-      Swal.fire({
+      closeAppAlert();
+      await appAlert({
         icon: 'error',
         title: 'No se pudo crear la cuenta',
         html: backendErrors,
-        confirmButtonColor: '#00b8d4',
       });
+      appToast('error', 'Registro no completado', 'Revisa los datos e intenta de nuevo.');
     } finally {
       setCargando(false);
     }
@@ -163,7 +161,7 @@ const Register = () => {
             style={{ marginBottom: formData.email && !isEmailValid ? '5px' : '15px' }}
           >
             <label htmlFor="id_email" className={styles['form-label']}>
-              Correo Electrónico
+              Correo Electronico
             </label>
             <input
               type="email"
@@ -177,15 +175,15 @@ const Register = () => {
             />
 
             {emailError && (
-              <span style={{ 
-                color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', 
-                fontSize: '0.75rem', 
-                marginTop: '5px', 
+              <span style={{
+                color: emailError.includes('Quisiste') ? 'var(--color-primary)' : 'var(--color-danger)',
+                fontSize: '0.75rem',
+                marginTop: '5px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '5px',
               }}>
-                <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
+                <i className={`fi ${emailError.includes('Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
                 {emailError}
               </span>
             )}
@@ -196,7 +194,7 @@ const Register = () => {
             style={{ marginBottom: formData.password ? '5px' : '15px' }}
           >
             <label htmlFor="id_password" className={styles['form-label']}>
-              Contraseña
+              Contrasena
             </label>
 
             <div className={styles['password-wrapper']}>
@@ -207,7 +205,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className={styles['form-input']}
-                placeholder="Crea una contraseña segura"
+                placeholder="Crea una contrasena segura"
                 required
               />
 
@@ -222,7 +220,7 @@ const Register = () => {
 
           <div className={styles['form-group']}>
             <label htmlFor="id_password2" className={styles['form-label']}>
-              Confirmar Contraseña
+              Confirmar Contrasena
             </label>
 
             <div className={styles['password-wrapper']}>
@@ -233,7 +231,7 @@ const Register = () => {
                 value={formData.password2}
                 onChange={handleChange}
                 className={styles['form-input']}
-                placeholder="Repite tu contraseña"
+                placeholder="Repite tu contrasena"
                 required
                 disabled={!isPasswordValid}
               />
@@ -242,7 +240,7 @@ const Register = () => {
             {formData.password2 && (
               <span style={reqStyle(!!passMatch)}>
                 <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
-                {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                {passMatch ? 'Las contrasenas coinciden' : 'Las contrasenas no coinciden'}
               </span>
             )}
           </div>
@@ -257,9 +255,9 @@ const Register = () => {
         </form>
 
         <p className={styles['auth-footer']}>
-          ¿Ya tienes cuenta?{' '}
+          Ya tienes cuenta?{' '}
           <Link to="/login" className={styles['link-dark']}>
-            Inicia sesión aquí
+            Inicia sesion aqui
           </Link>
         </p>
       </div>
