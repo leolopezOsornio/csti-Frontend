@@ -8,29 +8,35 @@ interface PasswordFeedbackProps {
 const PasswordFeedback: React.FC<PasswordFeedbackProps> = ({ password = '' }) => {
   const { isValid, missing } = usePasswordValidation(password);
 
-  if (!password) return null;
+  const isVisible = password.length > 0;
 
   const reqStyle = (isValid: boolean) => ({
-    color: isValid ? '#28a745' : '#dc3545',
+    color: isValid ? 'var(--color-success-feedback, #28a745)' : 'var(--color-error-feedback, #dc3545)',
     fontSize: '0.75rem',
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
-    marginTop: '5px',
+    maxHeight: isVisible ? '30px' : '0px',
+    opacity: isVisible ? 1 : 0,
+    marginTop: isVisible ? '5px' : '0px',
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
   });
 
-  if (isValid) {
-    return (
-      <span style={reqStyle(true)}>
-        <i className="fi fi-br-check"></i> ¡Contraseña segura!
-      </span>
-    );
-  }
-
   return (
-    <span style={reqStyle(false)}>
-      <i className="fi fi-br-cross-small"></i> Falta: {missing.join(', ')}.
-    </span>
+    <div style={{ overflow: 'hidden' }}>
+      <span style={reqStyle(isValid)}>
+        {isValid ? (
+          <>
+            <i className="fi fi-br-check"></i> ¡Contraseña segura!
+          </>
+        ) : (
+          <>
+            <i className="fi fi-br-cross-small"></i> Falta: {missing.join(', ')}.
+          </>
+        )}
+      </span>
+    </div>
   );
 };
 

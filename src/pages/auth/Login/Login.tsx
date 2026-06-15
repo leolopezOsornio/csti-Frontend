@@ -2,7 +2,6 @@ import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import logoFasterClick from '../../../assets/img/descarga.png';
 import { authService } from '../../../services/Auth.service';
 import { AuthContext } from '../../../contexts/AuthContext';
 
@@ -15,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [errorMensaje, setErrorMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
+  const logoFasterClick = '/img/descarga.png';
 
   const carouselSlides = [
     {
