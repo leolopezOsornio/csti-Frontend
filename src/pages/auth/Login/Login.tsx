@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import logoFasterClick from '../../../assets/img/Fasterclick1.png';
+import logoFasterClick from '../../../assets/img/descarga.png';
 import { authService } from '../../../services/Auth.service';
 import { AuthContext } from '../../../contexts/AuthContext';
 
@@ -15,6 +15,33 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [errorMensaje, setErrorMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  const carouselSlides = [
+    {
+      image: '/img/Fondo.png',
+      title: 'Velocidad sin límites',
+      subtitle: 'La plataforma más rápida y confiable para tus operaciones diarias.',
+    },
+    {
+      image: '/img/Fondo2.png',
+      title: 'Control Total',
+      subtitle: 'Monitorea y gestiona tus dispositivos y catálogos en tiempo real.',
+    },
+    {
+      image: '/img/Fondo3.jpeg',
+      title: 'Innovación Tecnológica',
+      subtitle: 'Herramientas de última generación diseñadas para tu crecimiento.',
+    },
+  ];
+
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (location.state?.accountVerified) {
@@ -40,7 +67,6 @@ const Login = () => {
 
     try {
       const data = await authService.login(email, password);
-      // login() ahora retorna el perfil completo
       const profile = await login(data.access);
       const role = profile?.perfil?.role;
 
@@ -69,93 +95,122 @@ const Login = () => {
   };
 
   return (
-    <div className={styles['auth-wrapper']}>
-      <div className={styles['auth-background']}></div>
-
-      <div className={`${styles['auth-card']} animate__animated animate__fadeInUp`}>
-        <Link to="/home">
-          <img
-            src={logoFasterClick}
-            alt="Faster Click Logo"
-            className={styles['auth-logo']}
-          />
-        </Link>
-
-        <h1>Bienvenido de nuevo</h1>
-
-        {errorMensaje && (
-          <p className={styles['auth-subtitle']} style={{ color: '#dc3545', marginBottom: '16px' }}>
-            {errorMensaje}
-          </p>
-        )}
-
-        <form className={styles['auth-form']} onSubmit={handleSubmit}>
-          <div className={styles['form-group']}>
-            <label htmlFor="login_email" className={styles['form-label']}>
-              Correo Electrónico
-            </label>
-            <input
-              type="email"
-              id="login_email"
-              name="email"
-              className={styles['form-input']}
-              placeholder="ejemplo@fasterclick.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+    <div className={styles['split-wrapper']}>
+      <div className={styles['split-left']}>
+        <div className={`${styles['split-left-inner']} animate__animated animate__fadeIn`}>
+          <Link to="/home">
+            <img
+              src={logoFasterClick}
+              alt="Faster Click Logo"
+              className={styles['split-logo']}
             />
-          </div>
+          </Link>
 
-          <div className={styles['form-group']}>
-            <label htmlFor="login_pass" className={styles['form-label']}>
-              Contraseña
-            </label>
+          <h1 className={styles['split-title']}>Bienvenido de nuevo</h1>
+          <p className={styles['split-subtitle']}>Por favor, ingrese sus datos</p>
 
-            <div className={styles['password-wrapper']}>
+          {errorMensaje && (
+            <p style={{ color: '#fc8181', marginBottom: '16px', textAlign: 'center', fontSize: '0.9rem' }}>
+              {errorMensaje}
+            </p>
+          )}
+
+          <form className={styles['split-form']} onSubmit={handleSubmit}>
+            <div className={styles['split-form-group']}>
+              <label htmlFor="login_email" className={styles['split-label']}>
+                Correo Electrónico
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="login_pass"
-                name="password"
-                className={styles['form-input']}
-                placeholder="Ingresa tu contraseña"
+                type="email"
+                id="login_email"
+                name="email"
+                className={styles['split-input']}
+                placeholder="ejemplo@fasterclick.com"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
+            </div>
 
-              <i
-                className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`}
-                onClick={togglePassword}
-              ></i>
+            <div className={styles['split-form-group']}>
+              <label htmlFor="login_pass" className={styles['split-label']}>
+                Contraseña
+              </label>
+
+              <div className={styles['split-input-wrapper']}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="login_pass"
+                  name="password"
+                  className={styles['split-input']}
+                  placeholder="Ingresa tu contraseña"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+
+                <i
+                  className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['split-toggle-password']}`}
+                  onClick={togglePassword}
+                ></i>
+              </div>
+            </div>
+
+            <div className={styles['split-actions']}>
+              <label className={styles['split-remember']}>
+                <input type="checkbox" name="remember" />
+                Recordarme
+              </label>
+
+              <Link to="/recuperar-password" className={styles['split-forgot']}>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              className={styles['split-btn']}
+              disabled={cargando}
+            >
+              {cargando ? 'INGRESANDO...' : 'INGRESAR'}
+            </button>
+          </form>
+
+          <p className={styles['split-footer']}>
+            No tienes cuenta?{' '}
+            <Link to="/registro">
+              Regístrate aquí
+            </Link>
+          </p>
+
+          <p className={styles['split-terms']}>
+            Al continuar, aceptas nuestros <Link to="/terminos">Términos de servicio</Link> y <Link to="/privacidad">Política de privacidad</Link>
+          </p>
+        </div>
+      </div>
+      <div className={styles['split-right']}>
+        {carouselSlides.map((slide, index) => (
+          <div
+            key={index}
+            className={`${styles['carousel-slide']} ${index === activeSlide ? styles['active'] : ''}`}
+            style={{ backgroundImage: `url(${slide.image})` }}
+          >
+            <div className={styles['carousel-overlay']} />
+            <div className={styles['carousel-content']}>
+              <h2 className={styles['carousel-title']}>{slide.title}</h2>
+              <p className={styles['carousel-subtitle']}>{slide.subtitle}</p>
             </div>
           </div>
-
-          <div className={styles['auth-actions']}>
-            <label className={styles['remember-me']}>
-              <input type="checkbox" name="remember" />
-              Recordarme
-            </label>
-
-            <Link to="/recuperar-password" className={styles['forgot-link']}>
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            className={`${styles['btn-auth']} ${styles['btn-dark']}`}
-            disabled={cargando}
-          >
-            {cargando ? 'Ingresando...' : 'Ingresar'}
-          </button>
-        </form>
-
-        <p className={styles['auth-footer']}>
-          ¿No tienes cuenta?{' '}
-          <Link to="/registro" className={styles['link-cyan']}>
-            Regístrate aquí
-          </Link>
-        </p>
+        ))}
+        <div className={styles['carousel-dots']}>
+          {carouselSlides.map((_, index) => (
+            <span
+              key={index}
+              className={`${styles['carousel-dot']} ${index === activeSlide ? styles['active'] : ''}`}
+              onClick={() => setActiveSlide(index)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
