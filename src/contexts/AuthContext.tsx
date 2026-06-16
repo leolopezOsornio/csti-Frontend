@@ -18,7 +18,7 @@ export interface User {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null; // Puede ser null si no está logueado
-  login: (token: string) => Promise<User | null>; // Retorna el usuario para redirección inmediata
+  login: (token: string, rememberMe?: boolean) => Promise<User | null>; // Retorna el usuario para redirección inmediata
   logout: () => void;
   isLoading: boolean; // Para mostrar un spinner mientras validamos la sesión al recargar
 }
@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Al cargar la app, revisamos si hay token
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = localStorage.getItem('access_token');
+      // Checamos en cualquiera de los dos almacenamientos
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       if (token) {
         // Si hay token, pedimos los datos del usuario
         await fetchUserProfile();
@@ -65,8 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  const login = async (token: string): Promise<User | null> => {
-    localStorage.setItem('access_token', token);
+  const login = async (token: string, rememberMe: boolean = false): Promise<User | null> => {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('access_token', token);
     // Inmediatamente después de guardar el token, pedimos el perfil
     try {
       const userData = await authService.getUserProfile();
