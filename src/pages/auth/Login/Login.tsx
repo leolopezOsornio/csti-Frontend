@@ -14,7 +14,17 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [errorMensaje, setErrorMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const logoFasterClick = '/img/descarga.png';
+
+  // Verificar si hay un correo recordado al iniciar
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const carouselSlides = [
     {
@@ -66,8 +76,9 @@ const Login = () => {
     setCargando(true);
 
     try {
-      const data = await authService.login(email, password);
-      const profile = await login(data.access);
+      // Pasamos 'rememberMe' tanto al login de backend como al contexto
+      const data = await authService.login(email, password, rememberMe);
+      const profile = await login(data.access, rememberMe);
       const role = profile?.perfil?.role;
 
       if (role === 'admin') {
@@ -158,7 +169,12 @@ const Login = () => {
 
             <div className={styles['split-actions']}>
               <label className={styles['split-remember']}>
-                <input type="checkbox" name="remember" />
+                <input
+                  type="checkbox"
+                  name="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
                 Recordarme
               </label>
 

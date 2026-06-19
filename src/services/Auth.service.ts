@@ -3,15 +3,24 @@ import api from './Api.service';
 
 export const authService = {
     // Función para iniciar sesión
-    login: async (email: string, password: string) => {
+    // Función para iniciar sesión
+    login: async (email: string, password: string, rememberMe: boolean = false) => {
         try {
-            // Hacemos el POST al endpoint que acabamos de probar en Postman
+            // Hacemos el POST al endpoint
             const response = await api.post('/accounts/api/login/', { email, password });
 
-            // Si fue exitoso, guardamos los tokens
+            // Si fue exitoso, guardamos los tokens en el almacenamiento correspondiente
             if (response.data.access) {
-                localStorage.setItem('access_token', response.data.access);
-                localStorage.setItem('refresh_token', response.data.refresh);
+                const storage = rememberMe ? localStorage : sessionStorage;
+                storage.setItem('access_token', response.data.access);
+                storage.setItem('refresh_token', response.data.refresh);
+
+                // Recordar el email del usuario en el formulario si marcó Recordarme
+                if (rememberMe) {
+                    localStorage.setItem('remembered_email', email);
+                } else {
+                    localStorage.removeItem('remembered_email');
+                }
             }
             return response.data;
         } catch (error) {
@@ -20,10 +29,12 @@ export const authService = {
         }
     },
 
-    // Función para cerrar sesión (simplemente borra los tokens del frontend)
+    // Función para cerrar sesión (borra los tokens de ambos almacenamientos)
     logout: () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
     },
 
     // --- Funciones para registro y verificación de cuenta ---
