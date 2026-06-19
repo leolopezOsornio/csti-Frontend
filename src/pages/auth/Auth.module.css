@@ -433,6 +433,8 @@
     padding: 2rem;
     color: white;
     overflow: hidden;
+    --color-success-feedback: #4ade80;
+    --color-error-feedback: #ff8787;
 }
 
 .split-left::before {
@@ -491,12 +493,10 @@
 .carousel-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0.15) 0%,
-        rgba(0, 0, 0, 0.4) 60%,
-        rgba(4, 15, 38, 0.85) 100%
-    );
+    background: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0.15) 0%,
+            rgba(0, 0, 0, 0.4) 60%,
+            rgba(4, 15, 38, 0.85) 100%);
     z-index: 3;
 }
 

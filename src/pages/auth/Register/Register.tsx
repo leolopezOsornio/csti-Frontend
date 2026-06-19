@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
-import logoFasterClick from '../../../assets/img/Fasterclick1.png';
 import { authService } from '../../../services/Auth.service';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
@@ -11,6 +10,7 @@ import { checkEmailTypo } from '../../../utils/emailValidation';
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const logoFasterClick = '/img/descarga.png';
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -25,6 +25,33 @@ const Register = () => {
   // Hook de validación robusta
   const { isValid: isPasswordValid } = usePasswordValidation(formData.password);
 
+  const carouselSlides = [
+    {
+      image: '/img/Fondo.png',
+      title: 'Velocidad sin límites',
+      subtitle: 'La plataforma más rápida y confiable para tus operaciones diarias.',
+    },
+    {
+      image: '/img/Fondo2.png',
+      title: 'Control Total',
+      subtitle: 'Monitorea y gestiona tus dispositivos y catálogos en tiempo real.',
+    },
+    {
+      image: '/img/Fondo3.jpeg',
+      title: 'Innovación Tecnológica',
+      subtitle: 'Herramientas de última generación diseñadas para tu crecimiento.',
+    },
+  ];
+
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +62,17 @@ const Register = () => {
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email);
   const passMatch = formData.password && formData.password === formData.password2;
 
-  const reqStyle = (isValid: boolean) => ({
-    color: isValid ? '#28a745' : '#dc3545',
+  const reqStyle = (isValid: boolean, isVisible: boolean) => ({
+    color: isValid ? 'var(--color-success-feedback, #4ade80)' : 'var(--color-error-feedback, #f87171)',
     fontSize: '0.75rem',
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
-    marginTop: '5px',
+    maxHeight: isVisible ? '30px' : '0px',
+    opacity: isVisible ? 1 : 0,
+    marginTop: isVisible ? '5px' : '0px',
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
   });
 
   // Bloqueo de UX: Formulario completo
@@ -63,7 +94,7 @@ const Register = () => {
         icon: 'warning',
         title: 'Verifica tus datos',
         html: emailError,
-        confirmButtonColor: '#00b8d4',
+        confirmButtonColor: '#00b5e2',
       });
       setCargando(false);
       return;
@@ -77,14 +108,14 @@ const Register = () => {
           icon: 'info',
           title: 'Cuenta reactivada',
           text: 'Tu cuenta estaba inactiva. Actualizamos tus datos y enviamos un nuevo código.',
-          confirmButtonColor: '#00b8d4',
+          confirmButtonColor: '#00b5e2',
         });
       } else {
         await Swal.fire({
           icon: 'success',
           title: '¡Registro exitoso!',
           text: 'Te enviamos un código de verificación por correo electrónico.',
-          confirmButtonColor: '#00b8d4',
+          confirmButtonColor: '#00b5e2',
         });
       }
 
@@ -100,7 +131,7 @@ const Register = () => {
         icon: 'error',
         title: 'No se pudo crear la cuenta',
         html: backendErrors,
-        confirmButtonColor: '#00b8d4',
+        confirmButtonColor: '#00b5e2',
       });
     } finally {
       setCargando(false);
@@ -108,160 +139,187 @@ const Register = () => {
   };
 
   return (
-    <div className={styles['auth-wrapper']}>
-      <div className={styles['auth-background']}></div>
-
-      <div
-        className={`${styles['auth-card']} animate__animated animate__fadeInUp`}
-        style={{ maxWidth: '500px' }}
-      >
-        <Link to="/home">
-          <img
-            src={logoFasterClick}
-            alt="Faster Click Logo"
-            className={styles['auth-logo']}
-          />
-        </Link>
-
-        <h1>Crear Cuenta</h1>
-
-        <form className={styles['auth-form']} onSubmit={handleSubmit}>
-          <div className={styles['form-row']}>
-            <div className={styles['form-group']}>
-              <label htmlFor="id_nombre" className={styles['form-label']}>
-                Nombre
-              </label>
-              <input
-                type="text"
-                id="id_nombre"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                className={styles['form-input']}
-                required
-              />
-            </div>
-
-            <div className={styles['form-group']}>
-              <label htmlFor="id_apellidos" className={styles['form-label']}>
-                Apellidos
-              </label>
-              <input
-                type="text"
-                id="id_apellidos"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                className={styles['form-input']}
-                required
-              />
+    <div className={styles['split-wrapper']}>
+      <div className={styles['split-right']}>
+        {carouselSlides.map((slide, index) => (
+          <div
+            key={index}
+            className={`${styles['carousel-slide']} ${index === activeSlide ? styles['active'] : ''}`}
+            style={{ backgroundImage: `url(${slide.image})` }}
+          >
+            <div className={styles['carousel-overlay']} />
+            <div className={styles['carousel-content']}>
+              <h2 className={styles['carousel-title']}>{slide.title}</h2>
+              <p className={styles['carousel-subtitle']}>{slide.subtitle}</p>
             </div>
           </div>
-
-          <div
-            className={styles['form-group']}
-            style={{ marginBottom: formData.email && !isEmailValid ? '5px' : '15px' }}
-          >
-            <label htmlFor="id_email" className={styles['form-label']}>
-              Correo Electrónico
-            </label>
-            <input
-              type="email"
-              id="id_email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={styles['form-input']}
-              placeholder="ejemplo@fasterclick.com"
-              required
+        ))}
+        <div className={styles['carousel-dots']}>
+          {carouselSlides.map((_, index) => (
+            <span
+              key={index}
+              className={`${styles['carousel-dot']} ${index === activeSlide ? styles['active'] : ''}`}
+              onClick={() => setActiveSlide(index)}
             />
+          ))}
+        </div>
+      </div>
 
-            {emailError && (
+      <div className={styles['split-left']}>
+        <div className={`${styles['split-left-inner']} animate__animated animate__fadeIn`}>
+          <Link to="/home">
+            <img
+              src={logoFasterClick}
+              alt="Faster Click Logo"
+              className={styles['split-logo']}
+            />
+          </Link>
+
+          <h1 className={styles['split-title']}>Crear Cuenta</h1>
+          <p className={styles['split-subtitle']}>Por favor, complete los datos para registrarse</p>
+
+          <form className={styles['split-form']} onSubmit={handleSubmit}>
+            <div className={styles['form-row']}>
+              <div className={styles['split-form-group']}>
+                <label htmlFor="id_nombre" className={styles['split-label']}>
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  id="id_nombre"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  className={styles['split-input']}
+                  required
+                />
+              </div>
+
+              <div className={styles['split-form-group']}>
+                <label htmlFor="id_apellidos" className={styles['split-label']}>
+                  Apellidos
+                </label>
+                <input
+                  type="text"
+                  id="id_apellidos"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  className={styles['split-input']}
+                  required
+                />
+              </div>
+            </div>
+
+            <div
+              className={styles['split-form-group']}
+              style={{ marginBottom: formData.email && !isEmailValid ? '5px' : '0px' }}
+            >
+              <label htmlFor="id_email" className={styles['split-label']}>
+                Correo Electrónico
+              </label>
+              <input
+                type="email"
+                id="id_email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={styles['split-input']}
+                placeholder="ejemplo@fasterclick.com"
+                required
+              />
+
               <span style={{ 
-                color: emailError.includes('¿Quisiste') ? '#00b8d4' : '#dc3545', 
+                color: emailError?.includes('¿Quisiste') ? 'var(--color-primary, #00b5e2)' : 'var(--color-error-feedback, #f87171)', 
                 fontSize: '0.75rem', 
-                marginTop: '5px', 
+                maxHeight: emailError ? '30px' : '0px',
+                opacity: emailError ? 1 : 0,
+                marginTop: emailError ? '5px' : '0px',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '5px',
+                overflow: 'hidden'
               }}>
-                <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
-                {emailError}
+                {emailError && (
+                  <>
+                    <i className={`fi ${emailError.includes('¿Quisiste') ? 'fi-br-info' : 'fi-br-cross-small'}`}></i>
+                    {emailError}
+                  </>
+                )}
               </span>
-            )}
-          </div>
-
-          <div
-            className={styles['form-group']}
-            style={{ marginBottom: formData.password ? '5px' : '15px' }}
-          >
-            <label htmlFor="id_password" className={styles['form-label']}>
-              Contraseña
-            </label>
-
-            <div className={styles['password-wrapper']}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="id_password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={styles['form-input']}
-                placeholder="Crea una contraseña segura"
-                required
-              />
-
-              <i
-                className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['toggle-password']}`}
-                onClick={togglePassword}
-              ></i>
             </div>
 
-            <PasswordFeedback password={formData.password} />
-          </div>
+            <div
+              className={styles['split-form-group']}
+              style={{ marginBottom: formData.password ? '5px' : '0px' }}
+            >
+              <label htmlFor="id_password" className={styles['split-label']}>
+                Contraseña
+              </label>
 
-          <div className={styles['form-group']}>
-            <label htmlFor="id_password2" className={styles['form-label']}>
-              Confirmar Contraseña
-            </label>
+              <div className={styles['split-input-wrapper']}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="id_password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={styles['split-input']}
+                  placeholder="Crea una contraseña segura"
+                  required
+                />
 
-            <div className={styles['password-wrapper']}>
-              <input
-                type="password"
-                id="id_password2"
-                name="password2"
-                value={formData.password2}
-                onChange={handleChange}
-                className={styles['form-input']}
-                placeholder="Repite tu contraseña"
-                required
-                disabled={!isPasswordValid}
-              />
+                <i
+                  className={`fi ${showPassword ? 'fi-br-eye-crossed' : 'fi-br-eye'} ${styles['split-toggle-password']}`}
+                  onClick={togglePassword}
+                ></i>
+              </div>
+
+              <PasswordFeedback password={formData.password} />
             </div>
 
-            {formData.password2 && (
-              <span style={reqStyle(!!passMatch)}>
+            <div className={styles['split-form-group']}>
+              <label htmlFor="id_password2" className={styles['split-label']}>
+                Confirmar Contraseña
+              </label>
+
+              <div className={styles['split-input-wrapper']}>
+                <input
+                  type="password"
+                  id="id_password2"
+                  name="password2"
+                  value={formData.password2}
+                  onChange={handleChange}
+                  className={styles['split-input']}
+                  placeholder="Repite tu contraseña"
+                  required
+                  disabled={!isPasswordValid}
+                />
+              </div>
+
+              <span style={reqStyle(!!passMatch, !!formData.password2)}>
                 <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
                 {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
               </span>
-            )}
-          </div>
+            </div>
 
-          <button
-            type="submit"
-            className={`${styles['btn-auth']} ${styles['btn-cyan']}`}
-            disabled={cargando || !isFormValid}
-          >
-            {cargando ? 'Registrando...' : 'Registrarse'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className={styles['split-btn']}
+              disabled={cargando || !isFormValid}
+            >
+              {cargando ? 'REGISTRANDO...' : 'REGISTRARSE'}
+            </button>
+          </form>
 
-        <p className={styles['auth-footer']}>
-          ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className={styles['link-dark']}>
-            Inicia sesión aquí
-          </Link>
-        </p>
+          <p className={styles['split-footer']}>
+            ¿Ya tienes cuenta?{' '}
+            <Link to="/login">
+              Inicia sesión aquí
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
