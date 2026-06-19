@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import { authService } from '../../../services/Auth.service';
+import { appAlert, appLoadingToast, appToast, closeAppAlert } from '../../../utils/alerts';
 
 const VerifyAccount = () => {
   const location = useLocation();
@@ -11,6 +11,7 @@ const VerifyAccount = () => {
 
   const [codigo, setCodigo] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     if (!userEmail) {
@@ -21,29 +22,28 @@ const VerifyAccount = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
+    appLoadingToast('Verificando codigo', 'Estamos activando tu cuenta.');
 
     try {
       await authService.verifyRegistration(userEmail, codigo);
 
-      await Swal.fire({
+      closeAppAlert();
+      await appAlert({
         icon: 'success',
-        title: '¡Cuenta verificada!',
-        text: 'Tu cuenta ha sido activada correctamente. Ahora puedes iniciar sesión.',
-        confirmButtonColor: '#00b8d4',
+        title: 'Cuenta verificada',
+        text: 'Tu cuenta ha sido activada correctamente. Ahora puedes iniciar sesion.',
       });
 
       navigate('/login', { state: { accountVerified: true, email: userEmail } });
     } catch (error: any) {
-      console.error('Error capturado al verificar:', error);
-
       const mensajeError =
-        error.response?.data?.error || 'El código es incorrecto o ha expirado.';
+        error.response?.data?.error || 'El codigo es incorrecto o ha expirado.';
 
-      await Swal.fire({
+      closeAppAlert();
+      await appAlert({
         icon: 'error',
-        title: 'Código incorrecto',
+        title: 'Codigo incorrecto',
         text: mensajeError,
-        confirmButtonColor: '#00b8d4',
       });
     } finally {
       setCargando(false);
@@ -51,22 +51,19 @@ const VerifyAccount = () => {
   };
 
   const handleResend = async () => {
+    setReenviando(true);
+    appLoadingToast('Reenviando codigo', 'Preparando un nuevo correo.');
+
     try {
       await authService.resendVerificationCode(userEmail);
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Código reenviado',
-        text: `Se ha enviado un nuevo código a ${userEmail}`,
-        confirmButtonColor: '#00b8d4',
-      });
+      closeAppAlert();
+      appToast('success', 'Codigo reenviado', `Se envio un nuevo codigo a ${userEmail}`);
     } catch {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Hubo un problema al reenviar el código. Intenta de nuevo más tarde.',
-        confirmButtonColor: '#00b8d4',
-      });
+      closeAppAlert();
+      appToast('error', 'No se pudo reenviar', 'Intenta de nuevo mas tarde.');
+    } finally {
+      setReenviando(false);
     }
   };
 
@@ -82,9 +79,9 @@ const VerifyAccount = () => {
         </div>
 
         <div className={styles['auth-header']}>
-          <h3 className={styles['auth-title']}>Ingresa tu código</h3>
+          <h3 className={styles['auth-title']}>Ingresa tu codigo</h3>
           <p className={styles['auth-subtitle']}>
-            Hemos enviado un código de 6 dígitos a <br />
+            Hemos enviado un codigo de 6 digitos a <br />
             <strong>{userEmail}</strong>
           </p>
         </div>
@@ -108,17 +105,18 @@ const VerifyAccount = () => {
             className={`${styles['btn-cyan']} ${styles['btn-auth']}`}
             disabled={cargando || codigo.length < 6}
           >
-            {cargando ? 'Verificando...' : 'Verificar Código'}
+            {cargando ? 'Verificando...' : 'Verificar Codigo'}
           </button>
 
           <div className={styles['resend-container']}>
-            ¿No llegó?{' '}
+            No llego?{' '}
             <button
               type="button"
               className={styles['btn-resend']}
               onClick={handleResend}
+              disabled={reenviando}
             >
-              Reenviar Código
+              {reenviando ? 'Reenviando...' : 'Reenviar Codigo'}
             </button>
           </div>
         </form>

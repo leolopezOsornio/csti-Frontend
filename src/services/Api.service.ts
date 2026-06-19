@@ -1,10 +1,9 @@
 // src/services/api.ts
 import axios from 'axios';
+import { appConfig } from '../config/appConfig';
 
-// Creamos la instancia apuntando a la URL donde corre tu Django
 const api = axios.create({
-  //baseURL: 'http://127.0.0.1:8000',
-  baseURL: 'https://csti-production.up.railway.app',
+  baseURL: appConfig.apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

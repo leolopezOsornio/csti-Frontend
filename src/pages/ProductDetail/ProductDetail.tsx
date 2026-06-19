@@ -1,7 +1,6 @@
 // src/pages/ProductDetail/ProductDetail.tsx
 import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
@@ -10,6 +9,7 @@ import { cartService } from '../../services/Cart.service';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
+import { appAlert, appToast } from '../../utils/alerts';
 import styles from '../ProductDetail/ProductDetail.module.css';
 
 const ProductDetail = () => {
@@ -39,7 +39,7 @@ const ProductDetail = () => {
           setMainImage(response.producto_local.imagen || '/img/no-image.png');
         }
       } catch (err) {
-        setError('Este producto no está disponible actualmente o no existe.');
+        setError('Este producto no esta disponible actualmente o no existe.');
       } finally {
         setLoading(false);
       }
@@ -52,16 +52,26 @@ const ProductDetail = () => {
     setQty((prev) => Math.max(1, prev + change));
   };
 
+  const showLoginRequired = async (text: string) => {
+    const result = await appAlert({
+      title: 'Inicia sesion',
+      text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ir al login',
+      cancelButtonText: 'Seguir viendo',
+    });
+
+    if (result.isConfirmed) {
+      navigate('/login');
+    }
+  };
+
   const handleAddToCart = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
-      Swal.fire({
-        title: '¡Inicia sesión!',
-        text: 'Debes iniciar sesión para agregar productos al carrito.',
-        icon: 'warning',
-        confirmButtonColor: '#00b4d8',
-      });
+      await showLoginRequired('Debes iniciar sesion para agregar productos al carrito.');
       return;
     }
 
@@ -69,53 +79,40 @@ const ProductDetail = () => {
       await cartService.addToCart(data.producto_local.id, qty);
       await refreshCart();
 
-      Swal.fire({
-        title: '¡Añadido al carrito!',
+      const result = await appAlert({
+        title: 'Anadido al carrito',
         text: `Agregaste ${qty} unidad(es) de ${data.producto_local.descripcion.substring(0, 30)}...`,
         icon: 'success',
         showCancelButton: true,
-        confirmButtonColor: '#00b4d8',
-        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Ir a mi carrito',
         cancelButtonText: 'Seguir comprando',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate('/carrito');
-        }
       });
+
+      if (result.isConfirmed) {
+        navigate('/carrito');
+      }
     } catch (error: any) {
-      Swal.fire('Error', error.response?.data?.error || 'No se pudo agregar al carrito', 'error');
+      appToast('error', 'No se pudo agregar', error.response?.data?.error || 'No se pudo agregar al carrito');
     }
   };
 
   const handleToggleFav = async () => {
     if (!isAuthenticated) {
-      Swal.fire({
-        title: '¡Inicia sesión!',
-        text: 'Debes iniciar sesión para usar la lista de deseos.',
-        icon: 'warning',
-        confirmButtonColor: '#00b4d8',
-      });
+      await showLoginRequired('Debes iniciar sesion para usar la lista de deseos.');
       return;
     }
 
     try {
       const added = await toggleWishlist(data.producto_local.id);
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: added ? 'success' : 'info',
-        title: added ? 'Agregado a favoritos ❤️' : 'Quitado de favoritos 🤍',
-        showConfirmButton: false,
-        timer: 2000,
-      });
+      appToast('success', added ? 'Agregado a favoritos' : 'Quitado de favoritos');
     } catch (error) {
       console.error(error);
+      appToast('error', 'Error al actualizar favoritos');
     }
   };
 
   if (loading) {
-    return <div className={styles.loadingState}>Cargando producto... ⏳</div>;
+    return <div className={styles.loadingState}>Cargando producto...</div>;
   }
 
   if (error) {
@@ -251,7 +248,7 @@ const ProductDetail = () => {
             className={`${styles.tabLink} ${activeTab === 'desc' ? styles.active : ''}`}
             onClick={() => setActiveTab('desc')}
           >
-            Descripción General
+            Descripcion General
           </button>
 
           <button
@@ -259,7 +256,7 @@ const ProductDetail = () => {
             className={`${styles.tabLink} ${activeTab === 'specs' ? styles.active : ''}`}
             onClick={() => setActiveTab('specs')}
           >
-            Especificaciones Técnicas
+            Especificaciones Tecnicas
           </button>
 
           <button
@@ -267,13 +264,13 @@ const ProductDetail = () => {
             className={`${styles.tabLink} ${activeTab === 'warranty' ? styles.active : ''}`}
             onClick={() => setActiveTab('warranty')}
           >
-            Garantía
+            Garantia
           </button>
         </div>
 
         <div className={`${styles.tabContent} ${activeTab === 'desc' ? styles.active : ''}`}>
           <p className={styles.textMuted}>
-            No hay descripción detallada disponible para este producto por el momento.
+            No hay descripcion detallada disponible para este producto por el momento.
           </p>
         </div>
 
@@ -290,14 +287,14 @@ const ProductDetail = () => {
               </tbody>
             </table>
           ) : (
-            <p>No hay especificaciones técnicas disponibles.</p>
+            <p>No hay especificaciones tecnicas disponibles.</p>
           )}
         </div>
 
         <div className={`${styles.tabContent} ${activeTab === 'warranty' ? styles.active : ''}`}>
           <p className={styles.textMuted}>
-            Todos nuestros productos cuentan con garantía directa de fabricante.
-            Para más información, consulte nuestra política de devoluciones y garantías.
+            Todos nuestros productos cuentan con garantia directa de fabricante.
+            Para mas informacion, consulte nuestra politica de devoluciones y garantias.
           </p>
         </div>
       </div>

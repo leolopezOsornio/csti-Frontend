@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
+import { appConfig } from '../../config/appConfig';
 import MegaMenu from './MegaMenu';
 import styles from '../Navbar/Navbar.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -44,12 +45,12 @@ const Navbar = () => {
       <div className={styles.topBar}>
         <div className={`container ${styles.topBarInner}`}>
           <div className={styles.topBarLeft}>
-            <a href="tel:+524421234567">
-              <FontAwesomeIcon icon={faPhone} /> 442 123 4567
+            <a href={`tel:${appConfig.contactPhoneHref}`}>
+              <FontAwesomeIcon icon={faPhone} /> {appConfig.contactPhone}
             </a>
             <span className={styles.separator}>|</span>
-            <a href="mailto:ventas@csti.com.mx">
-              <FontAwesomeIcon icon={faEnvelope} /> ventas@csti.com.mx
+            <a href={`mailto:${appConfig.contactEmail}`}>
+              <FontAwesomeIcon icon={faEnvelope} /> {appConfig.contactEmail}
             </a>
           </div>
 

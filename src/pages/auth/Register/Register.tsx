@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import styles from '../Auth.module.css';
 import { authService } from '../../../services/Auth.service';
 import { usePasswordValidation } from '../../../hooks/usePasswordValidation';
 import PasswordFeedback from '../../../components/Passwords/PasswordFeedback';
 import { checkEmailTypo } from '../../../utils/emailValidation';
+import { appAlert, appLoadingToast, appToast, closeAppAlert } from '../../../utils/alerts';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +21,6 @@ const Register = () => {
   });
 
   const [cargando, setCargando] = useState(false);
-
-  // Hook de validación robusta
   const { isValid: isPasswordValid } = usePasswordValidation(formData.password);
 
   const carouselSlides = [
@@ -75,7 +73,6 @@ const Register = () => {
     overflow: 'hidden',
   });
 
-  // Bloqueo de UX: Formulario completo
   const isFormValid =
     formData.first_name.trim() !== '' &&
     formData.last_name.trim() !== '' &&
@@ -88,9 +85,11 @@ const Register = () => {
     if (!isFormValid) return;
 
     setCargando(true);
+    appLoadingToast('Creando cuenta', 'Estamos registrando tus datos.');
 
     if (emailError) {
-      Swal.fire({
+      closeAppAlert();
+      appAlert({
         icon: 'warning',
         title: 'Verifica tus datos',
         html: emailError,
@@ -102,16 +101,17 @@ const Register = () => {
 
     try {
       const response = await authService.register(formData);
+      closeAppAlert();
 
       if (response.mensaje && response.mensaje.includes('Cuenta inactiva actualizada')) {
-        await Swal.fire({
+        await appAlert({
           icon: 'info',
           title: 'Cuenta reactivada',
           text: 'Tu cuenta estaba inactiva. Actualizamos tus datos y enviamos un nuevo código.',
           confirmButtonColor: '#00b5e2',
         });
       } else {
-        await Swal.fire({
+        await appAlert({
           icon: 'success',
           title: '¡Registro exitoso!',
           text: 'Te enviamos un código de verificación por correo electrónico.',
@@ -121,18 +121,20 @@ const Register = () => {
 
       navigate('/verificar-cuenta', { state: { email: formData.email } });
     } catch (error: any) {
-      let backendErrors = 'Ocurrió un error inesperado al registrar.';
+      let backendErrors = 'Ocurrio un error inesperado al registrar.';
 
       if (error.response?.data?.errores) {
         backendErrors = error.response.data.errores.join('<br>');
       }
 
-      Swal.fire({
+      closeAppAlert();
+      await appAlert({
         icon: 'error',
         title: 'No se pudo crear la cuenta',
         html: backendErrors,
         confirmButtonColor: '#00b5e2',
       });
+      appToast('error', 'Registro no completado', 'Revisa los datos e intenta de nuevo.');
     } finally {
       setCargando(false);
     }
@@ -300,7 +302,7 @@ const Register = () => {
 
               <span style={reqStyle(!!passMatch, !!formData.password2)}>
                 <i className={`fi ${passMatch ? 'fi-br-check' : 'fi-br-cross-small'}`}></i>
-                {passMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                {passMatch ? 'Las contrasenas coinciden' : 'Las contrasenas no coinciden'}
               </span>
             </div>
 

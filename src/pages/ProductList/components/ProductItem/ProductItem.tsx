@@ -2,13 +2,13 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
-import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../../../../contexts/AuthContext';
 import { CartContext } from '../../../../contexts/CartContext';
 import { WishlistContext } from '../../../../contexts/WishlistContext';
 import { cartService } from '../../../../services/Cart.service';
+import { appAlert, appToast } from '../../../../utils/alerts';
 
 import styles from '../ProductItem/ProductItem.module.css';
 
@@ -27,16 +27,26 @@ const ProductItem = ({ product }: ProductItemProps) => {
     navigate(`/producto/${product.clave}`);
   };
 
+  const showLoginRequired = async (text: string) => {
+    const result = await appAlert({
+      title: 'Inicia sesion',
+      text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ir al login',
+      cancelButtonText: 'Seguir viendo',
+    });
+
+    if (result.isConfirmed) {
+      navigate('/login');
+    }
+  };
+
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      Swal.fire({
-        title: '¡Inicia sesión!',
-        text: 'Debes iniciar sesión para agregar productos al carrito.',
-        icon: 'warning',
-        confirmButtonColor: '#00b4d8',
-      });
+      await showLoginRequired('Debes iniciar sesion para agregar productos al carrito.');
       return;
     }
 
@@ -44,22 +54,20 @@ const ProductItem = ({ product }: ProductItemProps) => {
       await cartService.addToCart(product.id, 1);
       await refreshCart();
 
-      Swal.fire({
-        title: '¡Añadido al carrito!',
-        text: `${product.descripcion.substring(0, 40)}... se agregó con éxito.`,
+      const result = await appAlert({
+        title: 'Anadido al carrito',
+        text: `${product.descripcion.substring(0, 40)}... se agrego con exito.`,
         icon: 'success',
         showCancelButton: true,
-        confirmButtonColor: '#00b4d8',
-        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Ir a mi carrito',
         cancelButtonText: 'Seguir comprando',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate('/carrito');
-        }
       });
+
+      if (result.isConfirmed) {
+        navigate('/carrito');
+      }
     } catch (error: any) {
-      Swal.fire('Error', error.response?.data?.error || 'Ocurrió un error al agregar', 'error');
+      appToast('error', 'No se pudo agregar', error.response?.data?.error || 'Ocurrio un error al agregar');
     }
   };
 
@@ -67,34 +75,15 @@ const ProductItem = ({ product }: ProductItemProps) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      Swal.fire({
-        title: '¡Inicia sesión!',
-        text: 'Debes iniciar sesión para agregar productos a tus favoritos.',
-        icon: 'warning',
-        confirmButtonColor: '#00b4d8',
-      });
+      await showLoginRequired('Debes iniciar sesion para agregar productos a tus favoritos.');
       return;
     }
 
     try {
       const added = await toggleWishlist(product.id);
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: added ? 'success' : 'info',
-        title: added ? 'Agregado a favoritos ❤️' : 'Quitado de favoritos 🤍',
-        showConfirmButton: false,
-        timer: 2000,
-      });
+      appToast('success', added ? 'Agregado a favoritos' : 'Quitado de favoritos');
     } catch (error) {
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al actualizar favoritos',
-        showConfirmButton: false,
-        timer: 3000,
-      });
+      appToast('error', 'Error al actualizar favoritos');
     }
   };
 

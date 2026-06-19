@@ -313,3 +313,108 @@ button:focus-visible {
     border-radius: var(--radius-sm);
   }
 }
+
+/* =========================
+   ALERTAS GLOBALES
+========================= */
+.app-alert-popup {
+  width: min(420px, calc(100vw - 32px));
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+}
+
+.app-alert-title {
+  padding: 0;
+  color: var(--color-secondary);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.app-alert-text {
+  margin: 10px 0 0;
+  color: var(--color-text-light);
+  font-size: 0.98rem;
+}
+
+.app-alert-actions {
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.app-alert-confirm,
+.app-alert-cancel {
+  min-width: 130px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-base);
+}
+
+.app-alert-confirm {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.app-alert-confirm:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.app-alert-cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-light);
+}
+
+.app-alert-cancel:hover {
+  background: var(--color-background-soft);
+  color: var(--color-secondary);
+}
+
+.app-toast-popup {
+  width: min(360px, calc(100vw - 24px));
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-text);
+}
+
+.app-toast-title {
+  color: var(--color-secondary);
+  font-size: 0.98rem;
+  letter-spacing: 0;
+}
+
+.app-toast-text {
+  color: var(--color-text-light);
+  font-size: 0.88rem;
+}
+
+.app-alert-progress {
+  background: var(--color-primary);
+}
+
+.swal2-loader {
+  border-color: var(--color-primary) transparent var(--color-primary) transparent;
+}
+
+.app-alert-enter {
+  animation-duration: 180ms;
+}
+
+.app-alert-exit {
+  animation-duration: 140ms;
+}

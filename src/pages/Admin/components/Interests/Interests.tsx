@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faHeart, faEye } from '@fortawesome/free-solid-svg-icons';
 import adminPanelService from '../../../../services/AdminPanel.service';
+import { getUserInitials } from '../../../../utils/userDisplay';
 import styles from './Interests.module.css';
 
 const Interests = () => {
@@ -103,11 +104,9 @@ const Interests = () => {
               <tr key={`${data.tipo}-${data.id}-${idx}`}>
                 <td>
                   <div className={styles.userInfo}>
-                    <img
-                      src={`https://i.pravatar.cc/150?u=${data.user.email}`}
-                      alt={data.user.first_name}
-                      className={styles.avatar}
-                    />
+                    <span className={styles.avatar} aria-hidden="true">
+                      {getUserInitials(data.user.first_name, data.user.last_name, data.user.email)}
+                    </span>
                     <span>{data.user.first_name} {data.user.last_name}</span>
                   </div>
                 </td>
