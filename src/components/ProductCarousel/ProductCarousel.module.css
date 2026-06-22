@@ -35,7 +35,8 @@
 .cinta {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: clamp(220px, 22vw, 280px);
+    /* Mostrar exactamente 6 tarjetas completas en PC (100% - 5 huecos de 16px / 6) */
+    grid-auto-columns: calc((100% - 80px) / 6);
     gap: 16px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -51,6 +52,7 @@
 .item {
     scroll-snap-align: start;
     display: block;
+    height: 100%;
 }
 
 /* =========================
@@ -104,6 +106,13 @@
 /* =========================
    RESPONSIVE
 ========================= */
+@media (max-width: 1024px) {
+    .cinta {
+        /* En tablets, mostramos 3 tarjetas exactas */
+        grid-auto-columns: calc((100% - 32px) / 3);
+    }
+}
+
 @media (max-width: 768px) {
     .flecha {
         opacity: 1;
@@ -116,10 +125,39 @@
     .der {
         right: 4px;
     }
+
+    .cinta {
+        /* En celulares grandes, mostramos 2 tarjetas exactas */
+        grid-auto-columns: calc((100% - 16px) / 2);
+    }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
     .cinta {
-        grid-auto-columns: clamp(160px, 45vw, 220px);
+        /* En celulares muy pequeños, es normal que se asome la siguiente (UX) */
+        grid-auto-columns: 80%;
     }
+    
+    .verMas {
+        font-size: 13px;
+    }
+}
+
+/* =========================
+   VER MÁS
+========================= */
+.verMas {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary, #1e40af);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.verMas:hover {
+    color: var(--color-secondary, #0f172a);
+    transform: translateX(3px);
 }

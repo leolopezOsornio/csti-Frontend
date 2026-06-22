@@ -20,10 +20,7 @@ const ProductCard = ({ producto }: ProductCardProps) => {
   const esOferta =
     producto.porcentaje_descuento && producto.porcentaje_descuento > 0;
 
-  const titulo =
-    producto.descripcion?.length > 60
-      ? `${producto.descripcion.substring(0, 60)}...`
-      : producto.descripcion;
+  const titulo = producto.descripcion;
 
   return (
     <Link to={`/producto/${producto.clave}`} className={styles.catalogoLink}>

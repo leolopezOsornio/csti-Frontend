@@ -1,5 +1,6 @@
 // src/components/ProductCarousel/ProductCarousel.tsx
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 import ProductCard from '../ProductCard/ProductCard';
 import BrandCard from '../BrandCard/BrandCard';
 import styles from '../ProductCarousel/ProductCarousel.module.css';
@@ -18,12 +19,14 @@ interface ProductCarouselProps {
   titulo: string;
   items: any[];
   tipo?: 'producto' | 'marca';
+  linkVerMas?: string;
 }
 
 const ProductCarousel = ({
   titulo,
   items,
   tipo = 'producto',
+  linkVerMas = '/catalogo',
 }: ProductCarouselProps) => {
   const cintaRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +43,9 @@ const ProductCarousel = ({
     <section className={styles.bloque}>
       <div className={styles.bloqueHeader}>
         <h2 className={styles.bloqueTitulo}>{titulo.toUpperCase()}</h2>
+        <Link to={linkVerMas} className={styles.verMas}>
+          Ver más <span>&rarr;</span>
+        </Link>
       </div>
 
       <button
