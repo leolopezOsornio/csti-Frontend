@@ -16,6 +16,7 @@ import {
   faMagnifyingGlass,
   faCartShopping,
   faRightFromBracket,
+  faHeart as faHeartSolid
 } from '@fortawesome/free-solid-svg-icons';
 import { faHeart, faUser } from '@fortawesome/free-regular-svg-icons';
 
@@ -106,7 +107,7 @@ const Navbar = () => {
               className={styles.iconLink}
               title="Mis Favoritos"
             >
-              <FontAwesomeIcon icon={faHeart} />
+              <FontAwesomeIcon icon={wishlistIds.length > 0 ? faHeartSolid : faHeart} />
               {wishlistIds.length > 0 && (
                 <span className={`${styles.cartBadge} ${styles.wishlistBadge}`}>
                   {wishlistIds.length}
@@ -116,7 +117,7 @@ const Navbar = () => {
 
             <Link
               to="/carrito"
-              className={`${styles.iconLink} ${styles.cartLink}`}
+              className={`${styles.iconLink} ${styles.cartLink} ${cartItemsCount === 0 ? styles.emptyCart : ''}`}
               title="Mi Carrito"
             >
               <FontAwesomeIcon icon={faCartShopping} />
