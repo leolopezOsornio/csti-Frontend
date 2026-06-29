@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
 import { appConfig } from '../../config/appConfig';
-import MegaMenu from './MegaMenu';
+import DeliveryButton from './DeliveryButton';
 import styles from '../Navbar/Navbar.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -77,7 +77,7 @@ const Navbar = () => {
             </Link>
 
             <div className={styles.categoriesWrapper}>
-              <MegaMenu />
+              <DeliveryButton />
             </div>
           </div>
 
