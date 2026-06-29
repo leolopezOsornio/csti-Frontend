@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { CartContext } from '../../contexts/CartContext';
 import { WishlistContext } from '../../contexts/WishlistContext';
 import { appConfig } from '../../config/appConfig';
-import MegaMenu from './MegaMenu';
+import DeliveryButton from './DeliveryButton';
 import styles from '../Navbar/Navbar.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -16,6 +16,7 @@ import {
   faMagnifyingGlass,
   faCartShopping,
   faRightFromBracket,
+  faHeart as faHeartSolid
 } from '@fortawesome/free-solid-svg-icons';
 import { faHeart, faUser } from '@fortawesome/free-regular-svg-icons';
 
@@ -77,7 +78,7 @@ const Navbar = () => {
             </Link>
 
             <div className={styles.categoriesWrapper}>
-              <MegaMenu />
+              <DeliveryButton />
             </div>
           </div>
 
@@ -106,7 +107,7 @@ const Navbar = () => {
               className={styles.iconLink}
               title="Mis Favoritos"
             >
-              <FontAwesomeIcon icon={faHeart} />
+              <FontAwesomeIcon icon={wishlistIds.length > 0 ? faHeartSolid : faHeart} />
               {wishlistIds.length > 0 && (
                 <span className={`${styles.cartBadge} ${styles.wishlistBadge}`}>
                   {wishlistIds.length}
@@ -116,7 +117,7 @@ const Navbar = () => {
 
             <Link
               to="/carrito"
-              className={`${styles.iconLink} ${styles.cartLink}`}
+              className={`${styles.iconLink} ${styles.cartLink} ${cartItemsCount === 0 ? styles.emptyCart : ''}`}
               title="Mi Carrito"
             >
               <FontAwesomeIcon icon={faCartShopping} />

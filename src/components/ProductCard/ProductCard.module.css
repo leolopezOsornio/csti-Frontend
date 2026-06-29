@@ -2,6 +2,7 @@
     text-decoration: none;
     color: inherit;
     display: block;
+    height: 100%;
 }
 
 .cardProd {
@@ -15,12 +16,19 @@
         transform var(--transition-base),
         box-shadow var(--transition-base),
         border-color var(--transition-base);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .cardProd:hover {
     transform: translateY(-4px);
     box-shadow: 0 14px 35px rgba(15, 23, 42, 0.12);
     border-color: var(--color-primary);
+}
+
+.cardProd:hover .cardProdImg {
+    transform: scale(1.06);
 }
 
 .badgeOffer {
@@ -42,8 +50,9 @@
     height: 160px;
     object-fit: contain;
     margin-bottom: 10px;
-    background: var(--color-background-soft);
+    background: transparent;
     border-radius: var(--radius-md);
+    transition: transform 0.3s ease;
 }
 
 .cardProdTitle {
@@ -53,7 +62,11 @@
     line-height: 1.4;
     min-height: 44px;
     margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .catalogoMarca {
@@ -64,7 +77,8 @@
 
 .catalogoPrecioContainer {
     margin-top: auto;
-    padding-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
 }
 
 .catalogoPrecio {
@@ -107,5 +121,52 @@
 
     .priceNew {
         font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .cardProd {
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .cardProdImg {
+        height: 110px; /* Imagen más pequeña para ahorrar espacio vertical */
+        margin-bottom: 8px;
+    }
+
+    .cardProdTitle {
+        font-size: 12px; /* Texto más compacto */
+        min-height: 34px;
+        -webkit-line-clamp: 2; /* Solo 2 líneas de título en móvil para no saturar */
+        margin-bottom: 4px;
+    }
+
+    .catalogoMarca {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .catalogoPrecioContainer {
+        padding-top: 8px;
+    }
+
+    .catalogoPrecio {
+        font-size: 14px;
+    }
+
+    .priceOld {
+        font-size: 0.8rem;
+    }
+
+    .priceNew {
+        font-size: 0.95rem;
+    }
+    
+    .badgeOffer {
+        padding: 2px 6px;
+        font-size: 0.65rem;
+        top: 6px;
+        left: 6px;
     }
 }

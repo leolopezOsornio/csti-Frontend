@@ -30,7 +30,7 @@
     height: 100px;
     object-fit: contain;
     margin-bottom: 10px;
-    background: var(--color-background-soft);
+    background: transparent;
     border-radius: var(--radius-md);
 }
 
