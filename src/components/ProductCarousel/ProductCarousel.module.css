@@ -1,19 +1,22 @@
 .bloque {
     position: relative;
     margin: 28px auto;
+    width: 100%;
     max-width: 1260px;
     padding: 0 12px;
+    box-sizing: border-box;
 }
 
 .bloqueHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 12px;
 }
 
 .bloqueTitulo {
-    font-size: clamp(20px, 3vw, 28px);
+    font-size: clamp(16px, 4vw, 28px);
     font-weight: 900;
     letter-spacing: 0.3px;
     position: relative;
@@ -56,7 +59,7 @@
 }
 
 /* =========================
-   FLECHAS
+   FLECHAS (Solo Desktop)
 ========================= */
 .ctrl {
     border: none;
@@ -108,39 +111,68 @@
 ========================= */
 @media (max-width: 1024px) {
     .cinta {
-        /* En tablets, mostramos 3 tarjetas exactas */
-        grid-auto-columns: calc((100% - 32px) / 3);
+        /* En tablets, mostramos 4 columnas si es carrusel */
+        grid-auto-columns: calc((100% - 48px) / 4);
     }
 }
 
 @media (max-width: 768px) {
-    .flecha {
-        opacity: 1;
-    }
-
-    .izq {
-        left: 4px;
-    }
-
-    .der {
-        right: 4px;
-    }
-
     .cinta {
-        /* En celulares grandes, mostramos 2 tarjetas exactas */
-        grid-auto-columns: calc((100% - 16px) / 2);
+        /* En móviles, 2 columnas estáticas expandibles como MercadoLibre */
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow-x: visible;
+        gap: 12px;
+        padding: 12px 0;
+    }
+    .item {
+        scroll-snap-align: none;
     }
 }
 
-@media (max-width: 500px) {
-    .cinta {
-        /* En celulares muy pequeños, es normal que se asome la siguiente (UX) */
-        grid-auto-columns: 80%;
+@media (max-width: 480px) {
+    .bloqueTitulo {
+        font-size: 15px; /* Para pantallas muy pequeñas evitar que choque */
     }
-    
     .verMas {
-        font-size: 13px;
+        font-size: 13px; /* Reducir botón para hacer espacio */
+        gap: 4px;
     }
+}
+
+/* =========================
+   BOTON EXPANDIR ABAJO
+========================= */
+.footerCentrado {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding-bottom: 10px;
+}
+
+.botonVerMasAbajo {
+    background-color: transparent;
+    color: var(--color-primary, #1e40af);
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 24px;
+    border-radius: 24px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.botonVerMasAbajo:hover {
+    background-color: #f1f5f9;
+    color: var(--color-secondary, #0f172a);
+}
+
+.botonVerMasAbajo span {
+    font-size: 16px;
 }
 
 /* =========================

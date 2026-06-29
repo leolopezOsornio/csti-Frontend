@@ -123,3 +123,50 @@
         font-size: 1rem;
     }
 }
+
+@media (max-width: 480px) {
+    .cardProd {
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .cardProdImg {
+        height: 110px; /* Imagen más pequeña para ahorrar espacio vertical */
+        margin-bottom: 8px;
+    }
+
+    .cardProdTitle {
+        font-size: 12px; /* Texto más compacto */
+        min-height: 34px;
+        -webkit-line-clamp: 2; /* Solo 2 líneas de título en móvil para no saturar */
+        margin-bottom: 4px;
+    }
+
+    .catalogoMarca {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .catalogoPrecioContainer {
+        padding-top: 8px;
+    }
+
+    .catalogoPrecio {
+        font-size: 14px;
+    }
+
+    .priceOld {
+        font-size: 0.8rem;
+    }
+
+    .priceNew {
+        font-size: 0.95rem;
+    }
+    
+    .badgeOffer {
+        padding: 2px 6px;
+        font-size: 0.65rem;
+        top: 6px;
+        left: 6px;
+    }
+}

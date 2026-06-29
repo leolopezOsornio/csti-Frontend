@@ -82,3 +82,46 @@
     font-size: 0.95rem;
     color: var(--color-secondary);
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .catGrid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 16px;
+        padding-bottom: 12px;
+        scrollbar-width: none;
+    }
+
+    .catGrid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .catCard {
+        flex: 0 0 calc((100% - 16px) / 2);
+        scroll-snap-align: start;
+    }
+
+    /* ===== DOTS INDICADORES ===== */
+    .dotsContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 4px;
+        background-color: var(--color-border, #cbd5e1);
+        transition: all 0.3s ease;
+    }
+
+    .dotActive {
+        width: 24px;
+        background-color: var(--color-primary, #00b5e2);
+    }
+}
