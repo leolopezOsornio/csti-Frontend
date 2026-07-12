@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderService } from '../../../../services/Order.service';
+import { shippingService } from '../../../../services/Shipping.service';
+import TrackingTimeline from './TrackingTimeline';
 import styles from './OrderDetail.module.css';
 
 const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<any>(null);
+  const [trackingData, setTrackingData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const data = await orderService.getOrderById(id);
-        setOrder(data);
+        const [orderData, tracking] = await Promise.all([
+          orderService.getOrderById(id),
+          shippingService.getTracking(id as string)
+        ]);
+        setOrder(orderData);
+        setTrackingData(tracking);
       } catch (error) {
         console.error("Error fetching order detail:", error);
       } finally {
@@ -71,6 +78,11 @@ const OrderDetail = () => {
             {order.direccion_envio}
           </p>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <h3 className={styles.cardTitle} style={{ marginBottom: '0' }}>Rastreo de Envío</h3>
+        <TrackingTimeline trackingData={trackingData} />
       </div>
 
       <div className={styles.itemsCard}>

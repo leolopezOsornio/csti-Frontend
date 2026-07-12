@@ -2,11 +2,12 @@
 import api from './Api.service';
 
 export const paymentService = {
-  verifyPayment: async (orderID: string, direccionID: number) => {
+  verifyPayment: async (orderID: string, direccionID: number, shippingCost: number = 0) => {
     try {
       const response = await api.post('/api/pagos/verificar/', {
         orderID,
-        direccionID
+        direccionID,
+        shippingCost
       });
       return response.data;
     } catch (error) {

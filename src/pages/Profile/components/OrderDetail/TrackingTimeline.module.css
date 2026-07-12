@@ -1,0 +1,134 @@
+.timelineContainer {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #eaeaea;
+  padding: 24px;
+  margin-top: 20px;
+}
+
+.timelineHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.carrierInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.carrierIcon {
+  width: 48px;
+  height: 48px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 1.5rem;
+}
+
+.carrierName {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.trackingNumber {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 2px 0 0 0;
+}
+
+.estimatedDelivery {
+  text-align: right;
+}
+
+.estimatedDelivery p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.estimatedDelivery strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #10b981;
+  margin-top: 4px;
+}
+
+/* Timeline Logic */
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 11px;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.event {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.event:last-child {
+  margin-bottom: 0;
+}
+
+.eventDot {
+  position: absolute;
+  left: -35.5px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #e2e8f0;
+}
+
+.event.active .eventDot {
+  background: #10b981;
+  box-shadow: 0 0 0 2px #10b981;
+}
+
+.eventContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.eventStatus {
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 4px 0;
+}
+
+.event.active .eventStatus {
+  color: #10b981;
+}
+
+.eventDesc {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.eventDate {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
