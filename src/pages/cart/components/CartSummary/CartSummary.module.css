@@ -85,20 +85,19 @@
         z-index: 100;
     }
     
-    /* Efecto de difuminado (blur) detrás de la tarjeta en móvil */
     .cartSummaryCol::before {
         content: '';
         position: absolute;
-        top: -80px; /* Extended much higher above the card */
+        top: -80px;
         left: -16px;
         right: -16px;
         bottom: -30px;
-        background: rgba(248, 249, 250, 0.8); /* Slightly more opaque to ensure contrast */
-        backdrop-filter: blur(16px); /* Stronger blur effect */
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         z-index: -1;
         pointer-events: none;
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 80px); /* Slower, taller fade */
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 80px);
         mask-image: linear-gradient(to bottom, transparent 0%, black 80px);
         transition: opacity 0.3s ease;
     }
