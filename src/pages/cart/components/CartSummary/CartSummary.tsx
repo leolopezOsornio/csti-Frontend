@@ -14,6 +14,7 @@ const CartSummary = ({ total }: CartSummaryProps) => {
   const [shippingRate, setShippingRate] = useState<ShippingRate | null>(null);
   const [address, setAddress] = useState<any>(null);
   const [loadingShipping, setLoadingShipping] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(false);
 
   useEffect(() => {
     const fetchDefaultShipping = async () => {
@@ -42,6 +43,25 @@ const CartSummary = ({ total }: CartSummaryProps) => {
     fetchDefaultShipping();
   }, []);
 
+  useEffect(() => {
+    const marker = document.getElementById('cart-bottom-marker');
+    if (!marker) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setIsAtBottom(entries[0].isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -280px 0px',
+        threshold: 0
+      }
+    );
+
+    observer.observe(marker);
+    return () => observer.disconnect();
+  }, [total]);
+
   const handleCheckout = () => {
     navigate('/payment');
   };
@@ -49,7 +69,7 @@ const CartSummary = ({ total }: CartSummaryProps) => {
   const finalTotal = total + (shippingRate?.price || 0);
 
   return (
-    <aside className={styles.cartSummaryCol}>
+    <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>
       <div className={styles.cartSummaryCard}>
         <h2 className={styles.summaryTitle}>Resumen de compra</h2>
 
