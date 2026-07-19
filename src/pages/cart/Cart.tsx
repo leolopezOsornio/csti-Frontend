@@ -14,6 +14,9 @@ import styles from '../cart/Cart.module.css';
 const Cart = () => {
   const [cartData, setCartData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  
   const { refreshCart } = useContext(CartContext);
 
   const fetchCart = async () => {
@@ -30,6 +33,11 @@ const Cart = () => {
   useEffect(() => {
     fetchCart();
   }, []);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
 
   const handleUpdateQty = async (itemId: number, newQty: number) => {
     try {
@@ -51,8 +59,16 @@ const Cart = () => {
   const handleRemoveItem = async (itemId: number) => {
     try {
       await cartService.removeItem(itemId);
-      await fetchCart();
+      const updatedData = await cartService.getCart();
+      setCartData(updatedData);
       refreshCart();
+      
+      // Check if current page is now empty
+      const updatedTotalPages = Math.ceil((updatedData?.items?.length || 0) / itemsPerPage);
+      if (currentPage > updatedTotalPages && updatedTotalPages > 0) {
+        setCurrentPage(updatedTotalPages);
+      }
+      
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -81,6 +97,13 @@ const Cart = () => {
     );
   }
 
+  // Pagination Logic
+  const totalItems = cartData?.items?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = cartData?.items?.slice(indexOfFirstItem, indexOfLastItem) || [];
+
   return (
     <div className={styles.cartPageWrapper}>
       {cartData && cartData.total_items > 0 ? (
@@ -91,7 +114,7 @@ const Cart = () => {
             </h1>
 
             <div className={styles.cartItemsList}>
-              {cartData.items.map((item: any) => (
+              {currentItems.map((item: any) => (
                 <CartItem
                   key={item.id}
                   item={item}
@@ -101,9 +124,44 @@ const Cart = () => {
               ))}
             </div>
 
+            {totalPages > 1 && (
+              <div className={styles.paginationContainer}>
+                <button 
+                  className={styles.navBtn} 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Página anterior"
+                >
+                  &#10094;
+                </button>
+
+                <div className={styles.paginationDots}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      className={`${styles.dot} ${page === currentPage ? styles.activeDot : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                      aria-label={`Ir a la página ${page}`}
+                    />
+                  ))}
+                </div>
+
+                <button 
+                  className={styles.navBtn} 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="Página siguiente"
+                >
+                  &#10095;
+                </button>
+              </div>
+            )}
+
             <Link to="/home" className={styles.continueShopping}>
               ← Seguir comprando
             </Link>
+            
+            <div id="cart-bottom-marker" style={{ height: '1px', marginTop: '16px' }}></div>
           </div>
 
           <CartSummary total={cartData.total} />

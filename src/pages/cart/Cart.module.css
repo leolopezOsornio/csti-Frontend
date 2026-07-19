@@ -48,6 +48,69 @@
     color: var(--color-secondary);
 }
 
+/* Pagination Styles */
+.paginationContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+}
+
+.paginationDots {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-primary, #00a8e8);
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.navBtn:hover:not(:disabled) {
+    transform: scale(1.1);
+    background: rgba(0, 168, 232, 0.08);
+}
+
+.navBtn:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2.5px solid #8792a2;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.activeDot {
+    width: 32px;
+    height: 12px;
+    border-radius: 12px; 
+    background: var(--color-primary, #00a8e8);
+    border: none;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .cartPageWrapper {

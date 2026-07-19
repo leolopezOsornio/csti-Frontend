@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../CartSummary/CartSummary.module.css';
 
@@ -7,13 +8,34 @@ interface CartSummaryProps {
 
 const CartSummary = ({ total }: CartSummaryProps) => {
   const navigate = useNavigate();
+  
+  const [isAtBottom, setIsAtBottom] = useState(false);
+
+  useEffect(() => {
+    const marker = document.getElementById('cart-bottom-marker');
+    if (!marker) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setIsAtBottom(entries[0].isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -280px 0px',
+        threshold: 0
+      }
+    );
+
+    observer.observe(marker);
+    return () => observer.disconnect();
+  }, [total]);
 
   const handleCheckout = () => {
     navigate('/payment');
   };
 
   return (
-    <aside className={styles.cartSummaryCol}>
+    <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>
       <div className={styles.cartSummaryCard}>
         <h2 className={styles.summaryTitle}>Resumen del Pedido</h2>
 
