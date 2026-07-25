@@ -66,7 +66,7 @@ const CartSummary = ({ total }: CartSummaryProps) => {
     navigate('/payment');
   };
 
-  const finalTotal = total + (shippingRate?.price || 0);
+  const finalTotal = Number(total) + (shippingRate?.price || 0);
 
   return (
     <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>

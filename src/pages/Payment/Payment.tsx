@@ -27,7 +27,7 @@ const Payment = () => {
       try {
         const rate = shippingService.getSelectedRate();
         const addressIdStr = localStorage.getItem('selectedAddressId');
-        
+
         if (!rate || !addressIdStr) {
           Swal.fire('Información incompleta', 'Debes seleccionar una dirección y método de envío primero.', 'warning');
           navigate('/carrito');
@@ -46,7 +46,7 @@ const Payment = () => {
 
         setCartData(cart);
         setAvailableRates(allRates);
-        
+
         const selectedAddress = addr.find((a: any) => a.id === addressId);
         setAddressDetails(selectedAddress);
 
@@ -102,7 +102,7 @@ const Payment = () => {
             <h2 className={styles.sectionTitle}>
               <i className="fa-solid fa-truck"></i> Información de Envío
             </h2>
-            
+
             {addressDetails && (
               <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '2px solid #eaeaea', marginBottom: '1rem' }}>
                 <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>Entregar a: {addressDetails.destinatario}</h3>
@@ -157,7 +157,7 @@ const Payment = () => {
 
                 <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
                   {!showShippingOptions ? (
-                    <button 
+                    <button
                       onClick={() => setShowShippingOptions(true)}
                       style={{ background: 'none', border: 'none', color: '#00b4d8', fontWeight: 500, cursor: 'pointer', padding: 0 }}
                     >
@@ -168,7 +168,7 @@ const Payment = () => {
                       <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem' }}>Otras opciones disponibles:</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {availableRates.map((rate) => (
-                          <div 
+                          <div
                             key={rate.id}
                             onClick={() => handleSelectRate(rate)}
                             style={{
@@ -182,7 +182,7 @@ const Payment = () => {
                           </div>
                         ))}
                       </div>
-                      <button 
+                      <button
                         onClick={() => setShowShippingOptions(false)}
                         style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.85rem', cursor: 'pointer', marginTop: '1rem', padding: 0 }}
                       >
@@ -203,10 +203,10 @@ const Payment = () => {
               {cartData.items.map((item: any) => (
                 <div key={item.id} className={styles.productCard}>
                   <div className={styles.productImageContainer}>
-                    <img 
-                      src={item.producto.imagen || '/img/no-image.png'} 
-                      alt={item.producto.descripcion} 
-                      className={styles.productImage} 
+                    <img
+                      src={item.producto.imagen || '/img/no-image.png'}
+                      alt={item.producto.descripcion}
+                      className={styles.productImage}
                     />
                   </div>
                   <div className={styles.productDetails}>
@@ -270,7 +270,7 @@ const Payment = () => {
                   onApprove={async (data, _actions) => {
                     try {
                       await paymentService.verifyPayment(data.orderID, selectedAddressId, shippingCost);
-                      
+
                       shippingService.clearSelectedRate();
                       localStorage.removeItem('selectedAddressId');
 
@@ -283,9 +283,10 @@ const Payment = () => {
                       }).then(() => {
                         navigate('/perfil/pedidos');
                       });
-                    } catch (error) {
+                    } catch (error: any) {
                       console.error("Error en la verificación:", error);
-                      Swal.fire('Error', 'El pago se autorizó pero hubo un problema al registrarlo.', 'error');
+                      const errorMsg = error.response?.data?.error || 'El pago se autorizó pero hubo un problema al registrarlo.';
+                      Swal.fire('Error', errorMsg, 'error');
                     }
                   }}
                   onError={(err) => {
