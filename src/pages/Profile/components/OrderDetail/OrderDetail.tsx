@@ -14,10 +14,8 @@ const OrderDetail = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const [orderData, tracking] = await Promise.all([
-          orderService.getOrderById(id),
-          shippingService.getTracking(id as string)
-        ]);
+        const orderData = await orderService.getOrderById(id);
+        const tracking = await shippingService.getTracking(id as string, orderData);
         setOrder(orderData);
         setTrackingData(tracking);
       } catch (error) {
@@ -81,8 +79,8 @@ const OrderDetail = () => {
       </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <h3 className={styles.cardTitle} style={{ marginBottom: '0' }}>Rastreo de Envío</h3>
-        <TrackingTimeline trackingData={trackingData} />
+        <h3 className={styles.cardTitle} style={{ marginBottom: '16px' }}>Rastreo de Envío</h3>
+        <TrackingTimeline trackingData={trackingData} order={order} />
       </div>
 
       <div className={styles.itemsCard}>
