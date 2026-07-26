@@ -1,13 +1,13 @@
-// src/services/paymentService.ts
 import api from './Api.service';
 
 export const paymentService = {
-  verifyPayment: async (orderID: string, direccionID: number, shippingCost: number = 0) => {
+  verifyPayment: async (orderID: string, direccionID: number, shippingCost: number = 0, shippingCarrier: string = "FedEx Express") => {
     try {
       const response = await api.post('/api/pagos/verificar/', {
         orderID,
         direccionID,
-        shippingCost
+        shippingCost,
+        shippingCarrier
       });
       return response.data;
     } catch (error) {

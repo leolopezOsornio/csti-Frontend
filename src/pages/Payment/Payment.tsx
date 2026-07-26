@@ -1,4 +1,3 @@
-// src/pages/Payment/Payment.tsx
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
@@ -269,7 +268,8 @@ const Payment = () => {
                   }}
                   onApprove={async (data, _actions) => {
                     try {
-                      await paymentService.verifyPayment(data.orderID, selectedAddressId, shippingCost);
+                      const carrierName = shippingRate ? `${shippingRate.internalProvider || shippingRate.title}` : "FedEx Express";
+                      await paymentService.verifyPayment(data.orderID, selectedAddressId, shippingCost, carrierName);
 
                       shippingService.clearSelectedRate();
                       localStorage.removeItem('selectedAddressId');
