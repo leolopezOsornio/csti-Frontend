@@ -7,6 +7,8 @@ import {
   faMapLocationDot,
   faBoxOpen,
   faRightFromBracket,
+  faFileInvoiceDollar,
+  faFileLines,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { AuthContext } from '../../contexts/AuthContext';
@@ -66,6 +68,30 @@ const Profile = () => {
               >
                 <FontAwesomeIcon icon={faHeart} />
                 <span>Lista de Deseos</span>
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/perfil/facturacion/datos"
+                className={({ isActive }) =>
+                  `${styles.sidebarLink} ${isActive ? styles.active : ''}`
+                }
+              >
+                <FontAwesomeIcon icon={faFileInvoiceDollar} />
+                <span>Datos Fiscales</span>
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/perfil/facturacion/historial"
+                className={({ isActive }) =>
+                  `${styles.sidebarLink} ${isActive ? styles.active : ''}`
+                }
+              >
+                <FontAwesomeIcon icon={faFileLines} />
+                <span>Mis Facturas</span>
               </NavLink>
             </li>
 
