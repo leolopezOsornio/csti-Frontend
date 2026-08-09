@@ -100,7 +100,7 @@ export const shippingService = {
 
       const baseDate = orderData?.creado_en ? new Date(orderData.creado_en) : new Date();
       const carrierLower = String(carrier || '').toLowerCase();
-      
+
       let deliveryDays = 3;
       if (carrierLower.includes('dhl') || carrierLower.includes('siguiente') || carrierLower.includes('domestic')) {
         deliveryDays = 1;
@@ -114,7 +114,7 @@ export const shippingService = {
       const t_recolectado = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 2 : 4));
       const t_transito_1 = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 8 : 14));
       const t_transito_2 = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 16 : deliveryDays * 12));
-      
+
       const estimatedDeliveryDate = new Date(baseDate.getTime() + 86400000 * deliveryDays);
       const t_entregado = orderData?.actualizado_en ? new Date(orderData.actualizado_en) : new Date(baseDate.getTime() + 86400000 * deliveryDays);
 

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderService } from '../../../../services/Order.service';
 import { shippingService } from '../../../../services/Shipping.service';
+import { billingService } from '../../../../services/Billing.service';
+import Swal from 'sweetalert2';
 import TrackingTimeline from './TrackingTimeline';
 import styles from './OrderDetail.module.css';
 
@@ -10,6 +12,7 @@ const OrderDetail = () => {
   const [order, setOrder] = useState<any>(null);
   const [trackingData, setTrackingData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -50,14 +53,77 @@ const OrderDetail = () => {
     }
   };
 
+  const handleGenerateInvoice = async () => {
+    try {
+      setGeneratingInvoice(true);
+      const invoice = await billingService.generateInvoice(id!);
+      
+      Swal.fire({
+        icon: 'success',
+        title: '¡Factura generada!',
+        text: 'Su factura ha sido timbrada correctamente.',
+        confirmButtonColor: '#007bff'
+      });
+      
+      // Update local state to hide button
+      setOrder(prev => ({ ...prev, facturada: true }));
+      
+    } catch (error: any) {
+      console.error(error);
+      if (error.response?.status === 404) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Datos Fiscales Faltantes',
+          text: 'Antes de facturar, por favor guarde sus Datos Fiscales en su perfil.',
+          showCancelButton: true,
+          confirmButtonText: 'Ir a Datos Fiscales',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#007bff'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = '/perfil/facturacion/datos';
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al facturar',
+          text: error.response?.data?.error || 'Ocurrió un problema inesperado.',
+        });
+      }
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
   return (
     <div className={styles.orderDetailContainer}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Pedido #{order.id}</h1>
-        <Link to="/perfil/pedidos" className={styles.btnBack}>
+      <div style={{ marginBottom: '30px' }}>
+        <Link to="/perfil/pedidos" className={styles.btnBack} style={{ marginBottom: '15px' }}>
           ← Volver a mis pedidos
         </Link>
-      </header>
+        <header className={styles.header} style={{ marginBottom: 0 }}>
+          <h1 className={styles.title}>Pedido #{order.id}</h1>
+
+          {order.estado_pago === 'COMPLETADO' && (
+            <div className={styles.headerActions}>
+              {order.facturada ? (
+                <Link to="/perfil/facturacion/historial" className={styles.btnSuccess}>
+                  ✓ Pedido facturado (Descargar)
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleGenerateInvoice} 
+                  className={styles.btnPrimary} 
+                  disabled={generatingInvoice}
+                >
+                  {generatingInvoice ? 'Generando...' : 'Generar Factura CFDI'}
+                </button>
+              )}
+            </div>
+          )}
+        </header>
+      </div>
 
       <div className={styles.grid}>
         <div className={styles.card}>
