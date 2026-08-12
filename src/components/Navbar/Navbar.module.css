@@ -161,7 +161,7 @@
 .emptyCart svg path {
     fill: transparent;
     stroke: currentColor;
-    stroke-width: 45; /* Grosor similar al de faHeart regular */
+    stroke-width: 45;
 }
 
 .cartLink {

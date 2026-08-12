@@ -36,6 +36,7 @@ import Users from '../pages/Admin/components/Users/Users';
 import Interests from '../pages/Admin/components/Interests/Interests';
 import OrdersList from '../pages/Admin/components/Orders/OrdersList';
 import AdminOrderDetail from '../pages/Admin/components/Orders/OrderDetail';
+import ReturnsList from '../pages/Admin/components/Returns/ReturnsList';
 
 export const AppRouter = () => {
   return (
@@ -58,6 +59,7 @@ export const AppRouter = () => {
             <Route path="pedidos/:id" element={<AdminOrderDetail />} />
             <Route path="usuarios" element={<Users />} />
             <Route path="intereses" element={<Interests />} />
+            <Route path="devoluciones" element={<ReturnsList />} />
           </Route>
         </Route>
 
