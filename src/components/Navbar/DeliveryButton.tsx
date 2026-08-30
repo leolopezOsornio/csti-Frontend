@@ -1,4 +1,3 @@
-// src/components/Navbar/DeliveryButton.tsx
 import { useContext, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -7,7 +6,11 @@ import styles from './DeliveryButton.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faChevronDown, faChevronUp, faTruck } from '@fortawesome/free-solid-svg-icons';
 
-const DeliveryButton = () => {
+interface DeliveryButtonProps {
+  isMobile?: boolean;
+}
+
+const DeliveryButton = ({ isMobile = false }: DeliveryButtonProps) => {
   const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -60,21 +63,35 @@ const DeliveryButton = () => {
     ? `CP ${defaultAddress.codigo_postal}`
     : (isAuthenticated ? 'Agregar dirección' : 'Inicia sesión para envío');
 
+  const mobileFullText = defaultAddress
+    ? `Enviar a ${defaultAddress.alias || defaultAddress.ciudad_municipio} - CP ${defaultAddress.codigo_postal}`
+    : (isAuthenticated ? 'Agregar dirección de envío' : 'Inicia sesión para envío');
+
   return (
     <div className={styles.deliveryWrapper} ref={wrapperRef}>
       <button 
-        className={`${styles.deliveryBtn} ${isOpen ? styles.open : ''}`} 
+        className={`${styles.deliveryBtn} ${isMobile ? styles.mobileBtn : ''} ${isOpen ? styles.open : ''}`} 
         onClick={toggleDropdown} 
         type="button"
       >
-        <div className={styles.iconCircle}>
-          <FontAwesomeIcon icon={faMapMarkerAlt} />
-        </div>
-        <div className={styles.textContainer}>
-          <span className={styles.mainTitle}>{mainText}</span>
-          <span className={styles.subTitle}>{subText}</span>
-        </div>
-        <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} className={styles.chevron} />
+        {isMobile ? (
+          <>
+            <FontAwesomeIcon icon={faMapMarkerAlt} className={styles.mobileMarkerIcon} />
+            <span className={styles.mobileSingleText}>{mobileFullText}</span>
+            <FontAwesomeIcon icon={faChevronDown} className={styles.mobileChevron} />
+          </>
+        ) : (
+          <>
+            <div className={styles.iconCircle}>
+              <FontAwesomeIcon icon={faMapMarkerAlt} />
+            </div>
+            <div className={styles.textContainer}>
+              <span className={styles.mainTitle}>{mainText}</span>
+              <span className={styles.subTitle}>{subText}</span>
+            </div>
+            <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} className={styles.chevron} />
+          </>
+        )}
       </button>
 
       {isOpen && (

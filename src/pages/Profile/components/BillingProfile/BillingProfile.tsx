@@ -6,6 +6,7 @@ import styles from './BillingProfile.module.css';
 const BillingProfile = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [formData, setFormData] = useState<FiscalData>({
     rfc: '',
     razon_social: '',
@@ -19,8 +20,9 @@ const BillingProfile = () => {
     const fetchDatos = async () => {
       try {
         const data = await billingService.getFiscalData();
-        if (data) {
+        if (data && data.rfc) {
           setFormData(data);
+          setIsEditing(false); // Si ya tiene datos, empezamos con el formulario bloqueado
         }
       } catch (error) {
         console.error("Error al obtener datos fiscales", error);
@@ -54,7 +56,6 @@ const BillingProfile = () => {
       ...prev,
       [name]: name === 'rfc' ? value.toUpperCase() : value
     }));
-    // Limpiar error al escribir
     if (errors[name as keyof FiscalData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -67,6 +68,7 @@ const BillingProfile = () => {
     setSubmitting(true);
     try {
       await billingService.saveFiscalData(formData);
+      setIsEditing(false); // Bloquear el formulario otra vez al guardar con éxito
       Swal.fire({
         icon: 'success',
         title: '¡Datos Guardados!',
@@ -113,6 +115,7 @@ const BillingProfile = () => {
             className={errors.rfc ? styles.errorInput : ''}
             placeholder="Ej. XAXX010101000"
             maxLength={13}
+            disabled={!isEditing}
           />
           {errors.rfc && <span className={styles.errorText}>{errors.rfc}</span>}
         </div>
@@ -127,6 +130,7 @@ const BillingProfile = () => {
             className={errors.codigo_postal ? styles.errorInput : ''}
             placeholder="Código Postal (5 dígitos)"
             maxLength={5}
+            disabled={!isEditing}
           />
           {errors.codigo_postal && <span className={styles.errorText}>{errors.codigo_postal}</span>}
         </div>
@@ -140,6 +144,7 @@ const BillingProfile = () => {
             onChange={handleChange} 
             className={errors.razon_social ? styles.errorInput : ''}
             placeholder="Ej. JUAN PEREZ MARTINEZ"
+            disabled={!isEditing}
           />
           {errors.razon_social && <span className={styles.errorText}>{errors.razon_social}</span>}
         </div>
@@ -151,6 +156,7 @@ const BillingProfile = () => {
             value={formData.regimen_fiscal} 
             onChange={handleChange}
             className={errors.regimen_fiscal ? styles.errorInput : ''}
+            disabled={!isEditing}
           >
             <option value="">Seleccione una opción...</option>
             <option value="601">601 - General de Ley Personas Morales</option>
@@ -172,6 +178,7 @@ const BillingProfile = () => {
             name="uso_cfdi" 
             value={formData.uso_cfdi} 
             onChange={handleChange}
+            disabled={!isEditing}
           >
             <option value="G01">G01 - Adquisición de mercancias</option>
             <option value="G03">G03 - Gastos en general</option>
@@ -180,9 +187,22 @@ const BillingProfile = () => {
           </select>
         </div>
 
-        <button type="submit" className={styles.submitBtn} disabled={submitting}>
-          {submitting ? 'Guardando...' : 'Guardar Datos Fiscales'}
-        </button>
+        {!isEditing ? (
+          <button 
+            type="button" 
+            className={styles.submitBtn} 
+            onClick={(e) => {
+              e.preventDefault();
+              setIsEditing(true);
+            }}
+          >
+            Actualizar Datos
+          </button>
+        ) : (
+          <button type="submit" className={styles.submitBtn} disabled={submitting}>
+            {submitting ? 'Guardando...' : 'Guardar Datos Fiscales'}
+          </button>
+        )}
       </form>
     </div>
   );

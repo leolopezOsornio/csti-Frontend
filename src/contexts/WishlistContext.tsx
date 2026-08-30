@@ -1,4 +1,3 @@
-// src/contexts/WishlistContext.tsx
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { wishlistService } from '../services/Wishlist.service';
 import { AuthContext } from './AuthContext';
@@ -23,7 +22,6 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
     if (isAuthenticated) {
       try {
         const data = await wishlistService.getWishlist();
-        // Extraemos solo los IDs de los productos para hacer validaciones rápidas en el frontend
         const ids = data.items.map((item: any) => item.producto.id);
         setWishlistIds(ids);
       } catch (error) {
@@ -37,7 +35,6 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   const toggleWishlist = async (productoId: number) => {
     try {
       const response = await wishlistService.toggleWishlist(productoId);
-      // Actualizamos el estado local sin tener que volver a consultar al backend
       if (response.is_fav) {
         setWishlistIds((prev) => [...prev, productoId]);
       } else {

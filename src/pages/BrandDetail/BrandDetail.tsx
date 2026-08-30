@@ -1,4 +1,3 @@
-// src/pages/BrandDetail/BrandDetail.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../services/Catalog.service';

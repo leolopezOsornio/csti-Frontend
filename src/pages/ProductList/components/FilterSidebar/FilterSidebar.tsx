@@ -1,4 +1,3 @@
-// src/pages/ProductList/components/FilterSidebar.tsx
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { catalogService } from '../../../../services/Catalog.service';
@@ -16,10 +15,8 @@ const FilterSidebar = () => {
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
 
   useEffect(() => {
-    // Cada vez que cambia la URL (searchParams), recargamos los filtros para obtener marcas dinámicas y contadores
     catalogService.getFilters(searchParams.toString()).then((data) => {
       setFiltros(data);
-      // Sincronizamos los inputs locales de precio con la URL
       setMinPrice(searchParams.get('min_price') || '');
       setMaxPrice(searchParams.get('max_price') || '');
     });
@@ -54,12 +51,10 @@ const FilterSidebar = () => {
   };
 
   const handleCategoryClick = (slug: string) => {
-    // Lógica visual del acordeón
     setExpandedCats((prev) => 
       prev.includes(slug) ? prev.filter((item) => item !== slug) : [...prev, slug]
     );
 
-    // Lógica de URL existente
     searchParams.set('categoria', slug);
     searchParams.delete('grupo');
     searchParams.set('page', '1');

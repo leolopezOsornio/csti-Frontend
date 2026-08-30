@@ -32,7 +32,6 @@ const Interests = () => {
   };
 
   const getMostDesiredProduct = () => {
-    // Lógica simplificada: primer producto de la primera wishlist
     const wishlists = interestsData.filter((i: any) => i.tipo === 'Wishlist');
     if (wishlists.length > 0 && (wishlists[0] as any).productos.length > 0) {
       return (wishlists[0] as any).productos[0].descripcion;

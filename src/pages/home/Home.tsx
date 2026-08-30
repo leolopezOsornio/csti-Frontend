@@ -1,4 +1,3 @@
-// src/pages/Home/Home.tsx
 import { useEffect, useState } from 'react';
 import { catalogService } from '../../services/Catalog.service';
 
@@ -58,7 +57,18 @@ const Home = () => {
         titulo="Nuevos Productos"
         items={data.nuevos_productos}
         tipo="producto"
+        linkVerMas="/listado?sort=novedades"
       />
+
+      {data.productos_por_categoria && data.productos_por_categoria.map((catData: any, index: number) => (
+        <ProductCarousel
+          key={index}
+          titulo={catData.titulo}
+          items={catData.productos}
+          tipo="producto"
+          linkVerMas={`/listado?categoria=${catData.slug}`}
+        />
+      ))}
 
       <ProductCarousel
         titulo="Marcas Destacadas"

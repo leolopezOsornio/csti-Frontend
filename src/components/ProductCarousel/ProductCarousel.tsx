@@ -1,4 +1,3 @@
-// src/components/ProductCarousel/ProductCarousel.tsx
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../ProductCard/ProductCard';
@@ -27,11 +26,10 @@ const ProductCarousel = ({
   titulo,
   items,
   tipo = 'producto',
-  linkVerMas = '/catalogo',
+  linkVerMas = '/listado',
 }: ProductCarouselProps) => {
   const cintaRef = useRef<HTMLDivElement>(null);
   
-  // Detección de dispositivo
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -52,8 +50,22 @@ const ProductCarousel = ({
 
   const scroll = (direccion: 'izq' | 'der') => {
     if (cintaRef.current) {
-      const scrollAmount = 260 * 3 * (direccion === 'der' ? 1 : -1);
-      cintaRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      const { scrollLeft, scrollWidth, clientWidth } = cintaRef.current;
+      const scrollAmount = 260 * 3;
+
+      if (direccion === 'der') {
+        if (Math.ceil(scrollLeft + clientWidth) >= scrollWidth - 10) {
+          cintaRef.current.scrollTo({ left: 0, behavior: 'smooth' }); // Rewind al inicio
+        } else {
+          cintaRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      } else {
+        if (scrollLeft <= 10) {
+          cintaRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' }); // Fast-forward al final
+        } else {
+          cintaRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        }
+      }
     }
   };
 

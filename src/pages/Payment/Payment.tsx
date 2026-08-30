@@ -154,42 +154,44 @@ const Payment = () => {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                  {!showShippingOptions ? (
-                    <button
-                      onClick={() => setShowShippingOptions(true)}
-                      style={{ background: 'none', border: 'none', color: '#00b4d8', fontWeight: 500, cursor: 'pointer', padding: 0 }}
-                    >
-                      Elegir otra opción de envío
-                    </button>
-                  ) : (
-                    <div>
-                      <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem' }}>Otras opciones disponibles:</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {availableRates.map((rate) => (
-                          <div
-                            key={rate.id}
-                            onClick={() => handleSelectRate(rate)}
-                            style={{
-                              display: 'flex', justifyContent: 'space-between', padding: '0.75rem',
-                              border: rate.id === shippingRate.id ? '1px solid #10b981' : '1px solid #cbd5e1',
-                              borderRadius: '8px', cursor: 'pointer', background: rate.id === shippingRate.id ? '#f0fdf4' : 'white'
-                            }}
-                          >
-                            <span style={{ fontWeight: rate.id === shippingRate.id ? 600 : 400 }}>{rate.title}</span>
-                            <span>${rate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                        ))}
-                      </div>
+                {availableRates.length > 1 && (
+                  <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                    {!showShippingOptions ? (
                       <button
-                        onClick={() => setShowShippingOptions(false)}
-                        style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.85rem', cursor: 'pointer', marginTop: '1rem', padding: 0 }}
+                        onClick={() => setShowShippingOptions(true)}
+                        style={{ background: 'none', border: 'none', color: '#00b4d8', fontWeight: 500, cursor: 'pointer', padding: 0 }}
                       >
-                        Cancelar
+                        Elegir otra opción de envío
                       </button>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div>
+                        <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem' }}>Otras opciones disponibles:</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {availableRates.map((rate) => (
+                            <div
+                              key={rate.id}
+                              onClick={() => handleSelectRate(rate)}
+                              style={{
+                                display: 'flex', justifyContent: 'space-between', padding: '0.75rem',
+                                border: rate.id === shippingRate.id ? '1px solid #10b981' : '1px solid #cbd5e1',
+                                borderRadius: '8px', cursor: 'pointer', background: rate.id === shippingRate.id ? '#f0fdf4' : 'white'
+                              }}
+                            >
+                              <span style={{ fontWeight: rate.id === shippingRate.id ? 600 : 400 }}>{rate.title}</span>
+                              <span>${rate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => setShowShippingOptions(false)}
+                          style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.85rem', cursor: 'pointer', marginTop: '1rem', padding: 0 }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </section>

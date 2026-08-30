@@ -1,4 +1,3 @@
-// src/components/ProductCard/ProductCard.tsx
 import { Link } from 'react-router-dom';
 import styles from '../ProductCard/ProductCard.module.css';
 
@@ -35,6 +34,10 @@ const ProductCard = ({ producto }: ProductCardProps) => {
           src={producto.imagen || '/img/no-image.png'}
           alt={producto.descripcion}
           className={styles.cardProdImg}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/img/no-image.png';
+          }}
         />
 
         <h3 className={styles.cardProdTitle}>{titulo}</h3>

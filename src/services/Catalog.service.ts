@@ -1,4 +1,3 @@
-// src/services/catalogService.ts
 import api from './Api.service';
 
 export const catalogService = {
@@ -12,7 +11,6 @@ export const catalogService = {
     }
   },
 
-  // NUEVO: Obtener detalle de marca y sus productos
   getBrandDetail: async (slug: string, page: number = 1) => {
     try {
       const response = await api.get(`/catalogo/api/marca/${slug}/?page=${page}`);
@@ -23,7 +21,6 @@ export const catalogService = {
     }
   },
 
-  // NUEVO: Obtener ficha técnica del producto
   getProductDetail: async (clave: string) => {
     try {
       const response = await api.get(`/catalogo/api/productos/${clave}/`);
@@ -34,9 +31,7 @@ export const catalogService = {
     }
   },
 
-  // --- NUEVAS FUNCIONES PARA EL LISTADO ---
 
-  // 1. Obtener filtros dinámicos (Categorías, Marcas y Precio Máximo)
   getFilters: async (queryString: string = '') => {
     try {
       const response = await api.get(`/catalogo/api/filtros/?${queryString}`);
@@ -47,10 +42,8 @@ export const catalogService = {
     }
   },
 
-  // 2. Obtener lista de productos basados en la URL actual
   getProductsList: async (queryString: string) => {
     try {
-      // queryString será algo como "desc=gaming&marcas=HP&page=2"
       const response = await api.get(`/catalogo/api/listado/?${queryString}`);
       return response.data;
     } catch (error) {

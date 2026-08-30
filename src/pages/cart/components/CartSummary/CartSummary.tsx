@@ -6,30 +6,31 @@ import styles from '../CartSummary/CartSummary.module.css';
 
 interface CartSummaryProps {
   total: number;
+  items: any[];
 }
 
-const CartSummary = ({ total }: CartSummaryProps) => {
+const CartSummary = ({ total, items }: CartSummaryProps) => {
   const navigate = useNavigate();
   
   const [shippingRate, setShippingRate] = useState<ShippingRate | null>(null);
   const [address, setAddress] = useState<any>(null);
   const [loadingShipping, setLoadingShipping] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(false);
+  
+  const itemsKey = items?.map((i: any) => `${i.id}-${i.cantidad}`).join(',');
 
   useEffect(() => {
     const fetchDefaultShipping = async () => {
+      setLoadingShipping(true);
       try {
         const addresses = await addressService.getAddresses();
         if (addresses && addresses.length > 0) {
-          // Tomar la principal o la primera
           const principal = addresses.find((a: any) => a.es_principal) || addresses[0];
           setAddress(principal);
 
-          // Obtener tarifa más barata por defecto
-          const defaultRate = await shippingService.getDefaultRate(principal.id, []);
+          const defaultRate = await shippingService.getDefaultRate(principal.id, items);
           setShippingRate(defaultRate);
           
-          // Guardarlo en localStorage para el Payment
           shippingService.saveSelectedRate(defaultRate);
           localStorage.setItem('selectedAddressId', principal.id.toString());
         }
@@ -41,7 +42,7 @@ const CartSummary = ({ total }: CartSummaryProps) => {
     };
 
     fetchDefaultShipping();
-  }, []);
+  }, [itemsKey]);
 
   useEffect(() => {
     const marker = document.getElementById('cart-bottom-marker');

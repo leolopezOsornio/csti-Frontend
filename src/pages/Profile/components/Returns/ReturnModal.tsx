@@ -33,7 +33,7 @@ const ReturnModal = ({ isOpen, onClose, orderId, onSuccess }: ReturnModalProps) 
       const newTotal = fotos.length + selectedFiles.length;
       
       if (newTotal > 5) {
-        Swal.fire('Límite excedido', 'Solo puedes subir un máximo de 5 fotos como evidencia.', 'warning');
+        Swal.fire('Límite excedido', 'No puede subir más de 5 fotografías', 'warning');
         return;
       }
       
@@ -165,7 +165,12 @@ const ReturnModal = ({ isOpen, onClose, orderId, onSuccess }: ReturnModalProps) 
                 multiple 
                 accept="image/*"
                 onChange={handleFileChange}
-                disabled={fotos.length >= 5}
+                onClick={(e) => {
+                  if (fotos.length >= 5) {
+                    e.preventDefault();
+                    Swal.fire('Límite excedido', 'No puede subir más de 5 fotografías', 'warning');
+                  }
+                }}
               />
             </div>
             

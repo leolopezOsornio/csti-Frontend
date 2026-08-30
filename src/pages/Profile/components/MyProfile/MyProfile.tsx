@@ -29,7 +29,6 @@ const MyProfile = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Validación robusta
   const { isValid: isPasswordValid } = usePasswordValidation(newPassword);
   const passMatch = newPassword && newPassword === confirmPassword;
 

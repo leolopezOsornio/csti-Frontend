@@ -17,7 +17,6 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const logoFasterClick = '/img/descarga.png';
 
-  // Verificar si hay un correo recordado al iniciar
   useEffect(() => {
     const savedEmail = localStorage.getItem('remembered_email');
     if (savedEmail) {
@@ -76,7 +75,6 @@ const Login = () => {
     appLoadingToast('Iniciando sesion', 'Estamos validando tus datos.');
 
     try {
-      // Pasamos 'rememberMe' tanto al login de backend como al contexto
       const data = await authService.login(email, password, rememberMe);
       const profile = await login(data.access, rememberMe);
       const role = profile?.perfil?.role;

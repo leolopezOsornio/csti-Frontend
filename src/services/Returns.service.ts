@@ -13,16 +13,13 @@ export interface ReturnRequest {
 }
 
 export const returnsService = {
-  // Enviar una solicitud de devolución
   requestReturn: async (data: FormData | ReturnRequest): Promise<ReturnRequest> => {
-    // Si mandamos archivos, debe ser un FormData
     const response = await api.post('/api/pagos/envios/devoluciones/', data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
     });
     return response.data;
   },
 
-  // Obtener estado de devolución de una orden específica (Cliente)
   getReturnStatus: async (ordenId: string | number): Promise<ReturnRequest | null> => {
     try {
       const response = await api.get(`/api/pagos/envios/devoluciones/orden/${ordenId}/`);
@@ -33,13 +30,16 @@ export const returnsService = {
     }
   },
 
-  // Obtener todas las devoluciones (Administrador)
+  marcarDevolucionLeida: async (ordenId: string | number): Promise<any> => {
+    const response = await api.post(`/api/pagos/envios/devoluciones/orden/${ordenId}/marcar-leida/`);
+    return response.data;
+  },
+
   getAllReturns: async (): Promise<ReturnRequest[]> => {
     const response = await api.get('/api/pagos/envios/devoluciones/admin/');
     return response.data;
   },
 
-  // Cambiar estado de una devolución (Administrador)
   updateReturnStatus: async (devolucionId: number, estado: string, motivoRechazo?: string): Promise<ReturnRequest> => {
     const response = await api.post(`/api/pagos/envios/devoluciones/admin/${devolucionId}/transicionar/`, {
       estado,

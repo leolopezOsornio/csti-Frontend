@@ -11,7 +11,6 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<any>(null);
 
@@ -34,10 +33,8 @@ const Users = () => {
   const handleToggleActive = async (id: number, currentStatus: boolean) => {
     try {
       if (currentStatus) {
-        // Estaba activo, lo desactivamos (Soft Delete)
         await adminPanelService.deactivateUser(id);
       } else {
-        // Estaba inactivo, lo activamos
         await adminPanelService.updateUser(id, { is_active: true });
       }
       fetchUsers(); // Recargar lista
