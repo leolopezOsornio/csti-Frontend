@@ -12,22 +12,13 @@ export interface ShippingRate {
 
 const mockRates: ShippingRate[] = [
   {
-    id: 'rate_standard_1',
+    id: 'estandar_cva',
     type: 'standard',
-    title: 'Envío Estándar',
+    title: 'Envío Estándar Nacional',
     description: 'Llega entre 3 a 5 días hábiles.',
     days: 4,
-    price: 99.0,
-    internalProvider: 'Estafeta'
-  },
-  {
-    id: 'rate_express_1',
-    type: 'express',
-    title: 'Envío Express',
-    description: 'Llega mañana o el siguiente día hábil.',
-    days: 1,
-    price: 250.0,
-    internalProvider: 'DHL'
+    price: 150.0,
+    internalProvider: 'CVA'
   }
 ];
 
@@ -37,7 +28,11 @@ export const shippingService = {
       return mockRates;
     }
     try {
-      const response = await api.post('/api/pagos/envios/cotizar/', { direccionID: addressId });
+      const productIds = cartItems.map(item => item.product?.id || item.producto?.id || item.id).filter(id => id);
+      const response = await api.post('/api/pagos/envios/cotizar/', { 
+        direccionID: addressId,
+        productos: productIds 
+      });
       if (response.data && response.data.rates && response.data.rates.length > 0) {
         return response.data.rates.map((rate: any) => ({
           id: rate.id,
@@ -55,10 +50,16 @@ export const shippingService = {
     return mockRates;
   },
 
-  getDefaultRate: async (addressId: number, cartItems: any[]): Promise<ShippingRate> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockRates[0]), 800);
-    });
+  getDefaultRate: async (addressId: number, cartItems: any[] = []): Promise<ShippingRate> => {
+    try {
+      const rates = await shippingService.getRates(addressId, cartItems);
+      if (rates && rates.length > 0) {
+        return rates.reduce((prev, curr) => prev.price < curr.price ? prev : curr);
+      }
+    } catch (e) {
+      console.warn("Error getting default rate, falling back to mock");
+    }
+    return mockRates[0];
   },
 
   saveSelectedRate: (rate: ShippingRate) => {
@@ -127,6 +128,11 @@ export const shippingService = {
         }
       }
 
+      const currentDate = new Date();
+      if ((status === 'EN_TRANSITO' || status === 'CREADO') && currentDate >= estimatedDeliveryDate) {
+        status = 'ENTREGADO';
+      }
+
       let m1Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'COMPLETED';
       let m2Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'PENDING';
       let m3Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'PENDING';
@@ -160,7 +166,7 @@ export const shippingService = {
           title: 'En preparación',
           status: m1Status,
           date: t_creado.toISOString(),
-          location: 'Almacén Central CSTI - Querétaro, QRO',
+          location: 'Centro de Distribución',
           details: m1Status !== 'PENDING' ? [
             'Tu pedido ha sido confirmado y el pago autorizado por el sistema.',
             'Estamos empaquetando tus productos con protección de alta seguridad.',
@@ -174,8 +180,8 @@ export const shippingService = {
           date: (m2Status !== 'PENDING' ? t_transito_1 : t_recolectado).toISOString(),
           location: `Centro Logístico Regional - ${carrier}`,
           details: m2Status !== 'PENDING' ? [
-            `El paquete fue recolectado por el mensajero de ${carrier} en la bodega de Querétaro.`,
-            'Salió del centro de distribución regional de Querétaro y sigue en viaje por carretera.',
+            `El paquete fue recolectado por el mensajero de ${carrier} en el Centro de Distribución.`,
+            'Salió del centro de distribución regional y sigue en viaje por carretera.',
             `En tránsito interurbano hacia el centro logístico de tu zona (${destinationCity}).`
           ] : [`El paquete será recolectado y transportado por ${carrier}.`]
         },

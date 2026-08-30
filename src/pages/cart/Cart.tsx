@@ -1,4 +1,3 @@
-// src/pages/cart/Cart.tsx
 import { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -34,7 +33,6 @@ const Cart = () => {
     fetchCart();
   }, []);
 
-  // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
@@ -63,7 +61,6 @@ const Cart = () => {
       setCartData(updatedData);
       refreshCart();
       
-      // Check if current page is now empty
       const updatedTotalPages = Math.ceil((updatedData?.items?.length || 0) / itemsPerPage);
       if (currentPage > updatedTotalPages && updatedTotalPages > 0) {
         setCurrentPage(updatedTotalPages);
@@ -97,7 +94,6 @@ const Cart = () => {
     );
   }
 
-  // Pagination Logic
   const totalItems = cartData?.items?.length || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -164,7 +160,7 @@ const Cart = () => {
             <div id="cart-bottom-marker" style={{ height: '1px', marginTop: '16px' }}></div>
           </div>
 
-          <CartSummary total={cartData.total} />
+          <CartSummary total={cartData.total} items={cartData.items} />
         </div>
       ) : (
         <EmptyCart />

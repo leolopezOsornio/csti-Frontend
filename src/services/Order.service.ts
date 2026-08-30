@@ -5,8 +5,13 @@ export const orderService = {
     const response = await api.get('/api/pagos/mis-pedidos/');
     return response.data;
   },
+  getNotificaciones: async () => {
+    const response = await api.get('/api/pagos/notificaciones/');
+    return response.data;
+  },
   getOrderById: async (id: string | undefined) => {
     const response = await api.get(`/api/pagos/mis-pedidos/${id}/`);
     return response.data;
   }
 };
+

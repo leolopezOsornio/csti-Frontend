@@ -1,4 +1,3 @@
-// src/pages/Admin/AdminLayout.tsx
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';

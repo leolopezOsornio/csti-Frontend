@@ -37,12 +37,16 @@ const Wishlist = () => {
     navigate(`/producto/${clave}`);
   };
 
-  const handleAddToCart = async (e: React.MouseEvent, producto: any) => {
+  const handleAddToCart = async (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
 
     try {
-      await cartService.addToCart(producto.id, 1);
+      await cartService.addToCart(item.producto.id, 1);
       await refreshCart();
+
+      setWishlist((prev) => prev.filter((i) => i.id !== item.id));
+      await wishlistService.removeItem(item.id);
+      await refreshWishlist();
 
       Swal.fire({
         toast: true,
@@ -154,7 +158,7 @@ const Wishlist = () => {
                 <button
                   className={styles.wlBtnCart}
                   disabled={item.producto.disponible <= 0}
-                  onClick={(e) => handleAddToCart(e, item.producto)}
+                  onClick={(e) => handleAddToCart(e, item)}
                   title={item.producto.disponible <= 0 ? 'Sin stock' : 'Agregar al carrito'}
                   type="button"
                 >

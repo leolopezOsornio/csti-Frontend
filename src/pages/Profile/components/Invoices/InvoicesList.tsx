@@ -7,6 +7,9 @@ import styles from './InvoicesList.module.css';
 const InvoicesList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -22,10 +25,18 @@ const InvoicesList = () => {
     fetchInvoices();
   }, []);
 
+  const totalPages = Math.ceil(invoices.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentInvoices = invoices.slice(indexOfFirstItem, indexOfLastItem);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+      year: '2-digit', month: '2-digit', day: '2-digit'
     };
     return new Date(dateString).toLocaleDateString('es-MX', options);
   };
@@ -42,9 +53,6 @@ const InvoicesList = () => {
   return (
     <div className={styles.invoicesContainer}>
       <h2>Mis Facturas</h2>
-      <p className={styles.subtitle}>
-        Historial de todos sus comprobantes fiscales (CFDI 4.0).
-      </p>
 
       {invoices.length === 0 ? (
         <div className={styles.emptyState}>
@@ -63,7 +71,7 @@ const InvoicesList = () => {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => (
+              {currentInvoices.map((invoice) => (
                 <tr key={invoice.id}>
                   <td>#{invoice.orden_id}</td>
                   <td>{formatDate(invoice.creado_en)}</td>
@@ -91,6 +99,39 @@ const InvoicesList = () => {
               ))}
             </tbody>
           </table>
+          
+          {totalPages > 1 && (
+            <div className={styles.paginationContainer}>
+              <button 
+                className={styles.navBtn} 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                aria-label="Página anterior"
+              >
+                &#10094;
+              </button>
+
+              <div className={styles.paginationDots}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`${styles.dot} ${page === currentPage ? styles.activeDot : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                    aria-label={`Ir a la página ${page}`}
+                  />
+                ))}
+              </div>
+
+              <button 
+                className={styles.navBtn} 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="Página siguiente"
+              >
+                &#10095;
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

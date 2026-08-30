@@ -85,6 +85,10 @@
     align-items: center;
 }
 
+.mobileDelivery {
+    display: none;
+}
+
 /* =========================
    CENTER / SEARCH
 ========================= */
@@ -228,8 +232,15 @@
 }
 
 @media (max-width: 768px) {
+    .mainHeader {
+        background-color: var(--color-secondary);
+        color: var(--color-white);
+        border-bottom: none;
+        padding: 16px 0;
+    }
+
     .mainHeaderInner {
-        gap: 15px;
+        gap: 16px;
         flex-wrap: wrap;
     }
 
@@ -252,7 +263,14 @@
     }
 
     .brandLogo {
-        height: 35px;
+        height: 42px;
+        background-color: var(--color-white);
+        padding: 4px 10px;
+        border-radius: 8px;
+    }
+
+    .iconLink {
+        color: var(--color-white);
     }
 
     .userName,
@@ -265,8 +283,24 @@
         font-size: 0.9rem;
     }
 
+    .searchBar {
+        border: none;
+        padding: 4px;
+    }
+
     .searchInput {
         width: 100%;
         min-width: 0;
+        font-size: 0.95rem;
+    }
+    
+    .desktopDelivery {
+        display: none;
+    }
+
+    .mobileDelivery {
+        display: block;
+        width: 100%;
+        margin-top: 12px;
     }
 }

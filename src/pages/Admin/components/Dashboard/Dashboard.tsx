@@ -32,8 +32,6 @@ const Dashboard = () => {
         adminPanelService.getOrders()
       ]);
       setStats(statsRes);
-      // La API devuelve { fecha: 'DD/MM', total: X }
-      // Recharts espera que el campo coincida con dataKey (sales)
       const formattedChart = chartRes.map((d: any) => ({
         name: d.fecha,
         sales: d.total

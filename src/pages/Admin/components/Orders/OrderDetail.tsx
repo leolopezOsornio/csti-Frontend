@@ -36,7 +36,6 @@ const OrderDetail = () => {
   if (!order) return <div className={styles.errorContainer}>Pedido no encontrado.</div>;
 
   const subtotal = order.items.reduce((acc: number, item: any) => acc + (Number(item.precio_unitario) * item.cantidad), 0);
-  // Asumiendo que el total ya incluye el IVA en la base de datos
   const total = Number(order.monto_total);
   const iva = total - subtotal;
 

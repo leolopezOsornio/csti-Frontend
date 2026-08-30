@@ -1,4 +1,3 @@
-// src/services/addressService.ts
 import api from './Api.service';
 
 export const addressService = {

@@ -140,13 +140,11 @@ const ReturnsList = () => {
     };
 
     const filteredReturns = returns.filter(ret => {
-        // Text Search
         const clientName = ret.cliente_nombre || 'Cliente'; 
         const orderIdStr = String(ret.orden || '');
         const searchMatch = clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             orderIdStr.toLowerCase().includes(searchTerm.toLowerCase());
         
-        // Tab Filter
         let tabMatch = true;
         if (activeTab === 'PENDIENTE') tabMatch = ret.estado === 'PENDIENTE';
         if (activeTab === 'EN_TRANSITO') tabMatch = ret.estado === 'EN_TRANSITO';
@@ -257,6 +255,16 @@ const ReturnsList = () => {
                                                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                                     Atendido por: <strong style={{ color: '#475569' }}>{ret.atendido_por_nombre}</strong>
                                                 </span>
+                                            )}
+                                            {ret.estado === 'EN_TRANSITO' && ret.url_guia && (
+                                                <a href={ret.url_guia} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#0ea5e9', textDecoration: 'none', fontWeight: 600 }}>
+                                                    Ver Guía Inversa
+                                                </a>
+                                            )}
+                                            {ret.estado === 'RECHAZADA' && ret.url_guia_rechazo && (
+                                                <a href={ret.url_guia_rechazo} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#ef4444', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    Descargar Guía Retorno
+                                                </a>
                                             )}
                                         </div>
                                     </td>

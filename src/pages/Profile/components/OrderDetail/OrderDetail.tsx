@@ -16,7 +16,6 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
-  // Return logic state
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [returnStatus, setReturnStatus] = useState<ReturnRequest | null>(null);
 
@@ -74,7 +73,6 @@ const OrderDetail = () => {
         confirmButtonColor: '#007bff'
       });
       
-      // Update local state to hide button
       setOrder(prev => ({ ...prev, facturada: true }));
       
     } catch (error: any) {
@@ -106,7 +104,6 @@ const OrderDetail = () => {
   };
 
   const handleReturnSuccess = async () => {
-    // Recargar el status de la devolución
     const retStatus = await returnsService.getReturnStatus(id as string);
     setReturnStatus(retStatus);
   };
@@ -177,25 +174,35 @@ const OrderDetail = () => {
                 icon: 'error',
                 title: 'Solicitud Rechazada',
                 html: `
-                  <div style="text-align: left; margin-top: 10px; font-size: 0.95rem; color: #334155;">
-                    <div style="margin-bottom: 16px;">
-                      <strong>Motivo del rechazo:</strong>
-                      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 8px; color: #475569;">
-                        ${returnStatus.motivo_rechazo}
+                    <div style="text-align: left; margin-top: 10px; font-size: 0.95rem; color: #334155;">
+                      <div style="margin-bottom: 16px;">
+                        <strong>Motivo del rechazo:</strong>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 8px; color: #475569;">
+                          ${returnStatus.motivo_rechazo}
+                        </div>
                       </div>
+                      
+                      <strong>¿Qué sucede ahora?</strong>
+                      <ul style="margin-top: 8px; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.5;">
+                        <li style="margin-bottom: 6px;">Si el producto aún está contigo, la solicitud queda cerrada de forma definitiva.</li>
+                        ${returnStatus.url_guia_rechazo 
+                          ? `<li style="margin-bottom: 6px;"><strong>Tu paquete va de regreso.</strong> El producto ha sido re-empaquetado en nuestra bodega y enviado de vuelta a tu domicilio. Puedes descargar la etiqueta y rastrear el paquete con el número: <strong>${returnStatus.numero_de_guia_rechazo}</strong>.
+                              <br><br>
+                              <a href="${returnStatus.url_guia_rechazo}" target="_blank" style="display:inline-block; padding: 6px 12px; background: #0d47a1; color: white; border-radius: 4px; text-decoration: none; font-weight: 500;">Descargar Guía de Regreso</a>
+                             </li>` 
+                          : `<li style="margin-bottom: 6px;">Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>`
+                        }
+                        <li>Para dudas o aclaraciones, contacta a <a href="mailto:ventas@csti.com.mx" style="color: #0d47a1; font-weight: 600; text-decoration: none;">Soporte CSTI</a>.</li>
+                      </ul>
                     </div>
-                    
-                    <strong>¿Qué sucede ahora?</strong>
-                    <ul style="margin-top: 8px; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.5;">
-                      <li style="margin-bottom: 6px;">Si el producto aún está contigo, la solicitud queda cerrada de forma definitiva.</li>
-                      <li style="margin-bottom: 6px;">Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>
-                      <li>Para dudas o aclaraciones, contacta a <a href="mailto:ventas@csti.com.mx" style="color: #0d47a1; font-weight: 600; text-decoration: none;">Soporte CSTI</a>.</li>
-                    </ul>
-                  </div>
                 `,
                 confirmButtonColor: '#0d47a1',
                 confirmButtonText: 'Entendido',
                 width: '600px'
+              }).then(() => {
+                returnsService.marcarDevolucionLeida(id as string).then(() => {
+                  window.location.reload();
+                }).catch(console.error);
               });
             }
           }}

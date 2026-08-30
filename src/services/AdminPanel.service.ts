@@ -1,7 +1,6 @@
 import api from './Api.service';
 
 const adminPanelService = {
-  // Dashboard & Charts
   getDashboardStats: async () => {
     const response = await api.get('/api/admin-panel/stats/');
     return response.data;
@@ -12,7 +11,6 @@ const adminPanelService = {
     return response.data;
   },
 
-  // Users
   getUsers: async () => {
     const response = await api.get('/api/admin-panel/users/');
     return response.data;
@@ -33,13 +31,11 @@ const adminPanelService = {
     return response.data;
   },
 
-  // Interest Monitoring
   getInterests: async () => {
     const response = await api.get('/api/admin-panel/interests/');
     return response.data;
   },
 
-  // Orders
   getOrders: async () => {
     const response = await api.get('/api/admin-panel/orders/');
     return response.data;

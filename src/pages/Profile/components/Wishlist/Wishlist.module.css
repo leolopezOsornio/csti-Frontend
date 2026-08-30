@@ -153,19 +153,25 @@
 }
 
 .wlBtnRemove {
-  background: none;
-  border: none;
-  color: #adb5bd;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: color 0.2s;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background-color: #ef4444; /* Rojo vibrante moderno */
+  color: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: var(--transition-base);
+  border: none;
+  cursor: pointer;
 }
 
 .wlBtnRemove:hover {
-  color: #fa5252;
+  background-color: #dc2626; /* Rojo mas oscuro en hover */
+  color: var(--color-white);
 }
 
 .emptyState {

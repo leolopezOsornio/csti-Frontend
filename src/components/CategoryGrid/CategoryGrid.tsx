@@ -1,4 +1,3 @@
-// src/components/CategoryGrid/CategoryGrid.tsx
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styles from '../CategoryGrid/CategoryGrid.module.css';
@@ -39,9 +38,7 @@ const CategoryGrid = ({ categorias }: CategoryGridProps) => {
   const handleScroll = () => {
     if (gridRef.current && isMobile) {
       const scrollLeft = gridRef.current.scrollLeft;
-      // Ancho de una tarjeta (aproximadamente la mitad de la pantalla)
       const cardWidth = gridRef.current.clientWidth / 2; 
-      // Calculamos el índice base: cada 2 elementos es una "página"
       const currentIndex = Math.round(scrollLeft / (cardWidth * 2));
       setActiveIndex(currentIndex);
     }

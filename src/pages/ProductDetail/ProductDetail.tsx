@@ -1,4 +1,3 @@
-// src/pages/ProductDetail/ProductDetail.tsx
 import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -149,9 +148,13 @@ const ProductDetail = () => {
           <div className={styles.mainImageWrapper}>
             <img
               id="mainImage"
-              src={mainImage}
+              src={mainImage || '/img/no-image.png'}
               alt={producto_local.clave}
               className={styles.mainImage}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/img/no-image.png';
+              }}
             />
           </div>
 
@@ -164,7 +167,15 @@ const ProductDetail = () => {
                   className={`${styles.thumbBtn} ${mainImage === img ? styles.active : ''}`}
                   onClick={() => setMainImage(img)}
                 >
-                  <img src={img} className={styles.thumbImg} alt="Thumbnail" />
+                  <img 
+                    src={img || '/img/no-image.png'} 
+                    className={styles.thumbImg} 
+                    alt="Thumbnail" 
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/img/no-image.png';
+                    }}
+                  />
                 </button>
               ))}
             </div>
