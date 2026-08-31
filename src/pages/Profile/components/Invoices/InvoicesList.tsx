@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faFileCode } from '@fortawesome/free-solid-svg-icons';
-import { billingService, Invoice } from '../../../../services/Billing.service';
+import { billingService } from '../../../../services/Billing.service';
+import type { Invoice } from '../../../../services/Billing.service';
+import { appConfig } from '../../../../config/appConfig';
 import styles from './InvoicesList.module.css';
 
 const InvoicesList = () => {
@@ -84,12 +86,12 @@ const InvoicesList = () => {
                   <td>
                     <div className={styles.actions}>
                       {invoice.facturapi_id && (
-                        <a href={`http://localhost:8000/api/facturacion/descargar/${invoice.facturapi_id}/pdf/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar PDF">
+                        <a href={`${appConfig.apiBaseUrl}/api/facturacion/descargar/${invoice.facturapi_id}/pdf/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar PDF">
                           <FontAwesomeIcon icon={faFilePdf} /> PDF
                         </a>
                       )}
                       {invoice.facturapi_id && (
-                        <a href={`http://localhost:8000/api/facturacion/descargar/${invoice.facturapi_id}/xml/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar XML">
+                        <a href={`${appConfig.apiBaseUrl}/api/facturacion/descargar/${invoice.facturapi_id}/xml/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar XML">
                           <FontAwesomeIcon icon={faFileCode} /> XML
                         </a>
                       )}

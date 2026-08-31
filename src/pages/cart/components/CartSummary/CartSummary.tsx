@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addressService } from '../../../../services/Address.service';
-import { shippingService, ShippingRate } from '../../../../services/Shipping.service';
+import { shippingService } from '../../../../services/Shipping.service';
+import type { ShippingRate } from '../../../../services/Shipping.service';
 import styles from '../CartSummary/CartSummary.module.css';
 
 interface CartSummaryProps {

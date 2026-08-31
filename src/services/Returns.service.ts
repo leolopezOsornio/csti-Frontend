@@ -10,6 +10,8 @@ export interface ReturnRequest {
   numero_de_guia?: string | null;
   motivo_rechazo?: string | null;
   fecha_solicitud?: string;
+  url_guia_rechazo?: string | null;
+  numero_de_guia_rechazo?: string | null;
 }
 
 export const returnsService = {

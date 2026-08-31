@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { billingService, FiscalData } from '../../../../services/Billing.service';
+import { billingService } from '../../../../services/Billing.service';
+import type { FiscalData } from '../../../../services/Billing.service';
 import styles from './BillingProfile.module.css';
 
 const BillingProfile = () => {
