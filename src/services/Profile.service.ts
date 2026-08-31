@@ -1,4 +1,3 @@
-// src/services/profileService.ts
 import api from './Api.service';
 
 export const profileService = {
@@ -13,7 +12,6 @@ export const profileService = {
     }
   },
 
-  // Actualizar nombre, apellido y teléfono
   updateProfile: async (data: { first_name: string; last_name: string; telefono: string }) => {
     try {
       const response = await api.put('/accounts/api/perfil/', data);
@@ -23,7 +21,6 @@ export const profileService = {
     }
   },
 
-  // Cambiar contraseña por seguridad
   changePassword: async (data: any) => {
     try {
       const response = await api.put('/accounts/api/perfil/cambiar-password/', data);

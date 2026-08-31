@@ -1,6 +1,7 @@
-// src/pages/Profile/components/MyOrders/MyOrders.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { orderService } from '../../../../services/Order.service';
 import styles from '../MyOrders/MyOrders.module.css';
 
@@ -41,7 +42,27 @@ const MyOrders = () => {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
   if (loading) return <p>Cargando pedidos...</p>;
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handlePageClick = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <>
@@ -54,7 +75,7 @@ const MyOrders = () => {
             <Link to="/listado" className={styles.btnDetails}>Ir a la tienda</Link>
           </div>
         ) : (
-          orders.map((orden) => {
+          currentOrders.map((orden) => {
             const date = new Date(orden.creado_en).toLocaleDateString('es-MX', { 
               year: 'numeric', 
               month: 'short', 
@@ -68,6 +89,17 @@ const MyOrders = () => {
                   <span className={`${styles.statusPill} ${getStatusClass(orden.estado_pago)}`}>
                     {formatStatus(orden.estado_pago)}
                   </span>
+                  
+                  {orden.tiene_novedad_devolucion && (
+                    <span className={styles.badgeAlert}>
+                      <i className="fa-solid fa-bell"></i> Acción Requerida
+                    </span>
+                  )}
+                  {orden.devolucion_estado && !orden.tiene_novedad_devolucion && (
+                    <span className={`${styles.statusPill} ${styles.processing}`} style={{ marginLeft: 'auto', background: '#e2e8f0', color: '#475569' }}>
+                      Devolución {orden.devolucion_estado.toLowerCase()}
+                    </span>
+                  )}
                 </div>
 
                 <div className={styles.orderBody}>
@@ -103,6 +135,35 @@ const MyOrders = () => {
           })
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button 
+            className={styles.pageArrow} 
+            onClick={handlePrevPage} 
+            disabled={currentPage === 1}
+          >
+            <FontAwesomeIcon icon={faChevronLeft} />
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => handlePageClick(page)}
+              className={`${styles.pageDot} ${currentPage === page ? styles.activeDot : ''}`}
+              title={`Página ${page}`}
+            />
+          ))}
+
+          <button 
+            className={styles.pageArrow} 
+            onClick={handleNextPage} 
+            disabled={currentPage === totalPages}
+          >
+            <FontAwesomeIcon icon={faChevronRight} />
+          </button>
+        </div>
+      )}
     </>
   );
 };

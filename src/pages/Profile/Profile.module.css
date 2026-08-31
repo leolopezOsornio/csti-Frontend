@@ -68,6 +68,10 @@
     background: none;
 }
 
+.profileContent {
+    min-width: 0; /* Crucial para evitar que el Grid se desborde en móvil */
+}
+
 .profileContent h1 {
     font-size: 1.8rem;
     color: var(--color-secondary);
@@ -75,14 +79,124 @@
     font-weight: 800;
 }
 
+/* Mobile Toggle and Header */
+.mobileMenuContainer {
+    display: none;
+}
+
+.sidebarHeaderMobile {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 10px;
+}
+
+.sidebarHeaderMobile h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--color-secondary);
+}
+
+.closeSidebarBtn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-light);
+    cursor: pointer;
+}
+
+.closeSidebarBtn:hover {
+    color: #ef4444;
+}
+
+.overlay {
+    display: none;
+}
+
 @media (max-width: 900px) {
     .profileGrid {
         grid-template-columns: 1fr;
     }
 
+    .mobileMenuContainer {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 25px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .mobileMenuBtn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background-color: transparent;
+        color: var(--color-text);
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 5px 0;
+        transition: color 0.2s ease;
+    }
+
+    .mobileMenuBtn:active, .mobileMenuBtn:hover {
+        color: var(--color-secondary);
+    }
+
+    .menuIcon {
+        color: var(--color-secondary);
+        font-size: 1.2rem;
+    }
+
+    .overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        backdrop-filter: blur(2px);
+    }
+
     .profileSidebar {
-        position: static;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        z-index: 1050;
+        border-radius: 0;
+        border: none;
         display: flex;
         flex-direction: column;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
     }
+
+    .sidebarOpen {
+        transform: translateX(0);
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebarHeaderMobile {
+        display: flex;
+    }
+}.badgeNotifSidebar {
+  background: #dc3545;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
 }

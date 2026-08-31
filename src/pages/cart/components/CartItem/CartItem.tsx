@@ -1,4 +1,3 @@
-// File: /src/pages/cart/components/CartItem/CartItem.tsx
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';

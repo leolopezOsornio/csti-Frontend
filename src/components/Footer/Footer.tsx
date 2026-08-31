@@ -8,8 +8,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faFacebookF,
-  faLinkedinIn,
   faInstagram,
+  faWhatsapp,
 } from '@fortawesome/free-brands-svg-icons';
 import { appConfig } from '../../config/appConfig';
 
@@ -39,11 +39,11 @@ const Footer = () => {
             </h3>
 
             <div className={styles.socialIcons}>
-              <a href="#" className={styles.socialLink} title="Facebook" aria-label="Facebook">
+              <a href="https://www.facebook.com/csti.qro" target="_blank" rel="noopener noreferrer" className={styles.socialLink} title="Facebook" aria-label="Facebook">
                 <FontAwesomeIcon icon={faFacebookF} />
               </a>
-              <a href="#" className={styles.socialLink} title="LinkedIn" aria-label="LinkedIn">
-                <FontAwesomeIcon icon={faLinkedinIn} />
+              <a href="https://wa.me/524423793144" target="_blank" rel="noopener noreferrer" className={styles.socialLink} title="WhatsApp" aria-label="WhatsApp">
+                <FontAwesomeIcon icon={faWhatsapp} />
               </a>
               <a href="#" className={styles.socialLink} title="Instagram" aria-label="Instagram">
                 <FontAwesomeIcon icon={faInstagram} />

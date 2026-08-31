@@ -1,4 +1,3 @@
-// src/pages/admin/AdminDashboard/AdminDashboard.tsx
 const AdminDashboard = () => {
     return (
         <div style={{ padding: '2rem' }}>

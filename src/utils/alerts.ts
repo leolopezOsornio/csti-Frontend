@@ -57,7 +57,6 @@ export const appLoadingToast = (title: string, text?: string) =>
     title,
     text,
     allowEscapeKey: false,
-    allowOutsideClick: false,
     showConfirmButton: false,
     customClass: toastClasses,
     didOpen: () => {

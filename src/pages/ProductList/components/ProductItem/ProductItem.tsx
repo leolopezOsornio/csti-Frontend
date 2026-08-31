@@ -1,4 +1,3 @@
-// src/pages/ProductList/components/ProductItem.tsx
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping, faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
@@ -89,11 +88,19 @@ const ProductItem = ({ product }: ProductItemProps) => {
 
   return (
     <article className={styles.card} onClick={handleCardClick}>
-      <span className={styles.cardBrand}>{product.marca}</span>
-
-      <img src={product.imagen} alt={product.descripcion} className={styles.cardImg} />
+      <img 
+        src={product.imagen || '/img/no-image.png'} 
+        alt={product.descripcion} 
+        className={styles.cardImg} 
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = '/img/no-image.png';
+        }}
+      />
 
       <h3 className={styles.cardTitle}>{product.descripcion}</h3>
+      
+      <span className={styles.cardBrand}>{product.marca}</span>
 
       <div className={styles.cardFooter}>
         <span className={styles.cardPrice}>

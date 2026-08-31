@@ -1,4 +1,3 @@
-// src/components/BrandCard/BrandCard.tsx
 import { Link } from 'react-router-dom';
 import styles from '../BrandCard/BrandCard.module.css';
 

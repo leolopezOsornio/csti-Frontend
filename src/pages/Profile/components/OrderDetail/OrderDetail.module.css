@@ -16,6 +16,56 @@
     flex-wrap: wrap;
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btnPrimary {
+    background-color: #0d47a1;
+    color: var(--color-white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btnPrimary:hover {
+    background-color: var(--color-secondary, #001f3f);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.btnPrimary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btnSuccess {
+    background: rgba(46, 213, 115, 0.14);
+    color: #1f8f4d;
+    border: 1px solid rgba(46, 213, 115, 0.5);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btnSuccess:hover {
+    background: rgba(46, 213, 115, 0.25);
+}
+
 .title {
     font-size: 1.8rem;
     color: var(--color-secondary);

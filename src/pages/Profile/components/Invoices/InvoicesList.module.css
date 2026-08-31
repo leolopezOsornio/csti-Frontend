@@ -1,0 +1,203 @@
+.invoicesContainer {
+  padding: 2rem;
+  background-color: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  max-width: 950px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .invoicesContainer {
+    padding: 1rem; /* Menos espacio muerto en celulares */
+  }
+}
+
+
+.invoicesContainer h2 {
+  font-size: 1.5rem;
+  color: var(--text-dark, #333);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+  padding-bottom: 0.5rem; /* Espacio para la barra de scroll */
+  width: 100%;
+}
+
+.invoicesTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px; /* Asegura espacio suficiente para UUID y fechas */
+}
+
+.invoicesTable th,
+.invoicesTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap; /* Evita que el texto se haga un chorizo hacia abajo */
+}
+
+.invoicesTable th {
+  background-color: #f8f9fa;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.invoicesTable td {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.statusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusBadge.valida {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.statusBadge.cancelada {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.downloadBtn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #0d47a1;
+  background-color: transparent;
+  color: #0d47a1;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.downloadBtn:hover {
+  background-color: #0d47a1;
+  color: white;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #777;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+/* Loader */
+.loaderContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #666;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 123, 255, 0.2);
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pagination Styles */
+.paginationContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+}
+
+.paginationDots {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-primary, #00a8e8);
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.navBtn:hover:not(:disabled) {
+    transform: scale(1.1);
+    background: rgba(0, 168, 232, 0.08);
+}
+
+.navBtn:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2.5px solid #8792a2;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.activeDot {
+    width: 32px;
+    height: 12px;
+    border-radius: 12px; 
+    background: var(--color-primary, #00a8e8);
+    border: none;
+}
+

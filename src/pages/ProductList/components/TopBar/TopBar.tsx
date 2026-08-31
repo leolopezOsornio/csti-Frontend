@@ -1,4 +1,3 @@
-// src/pages/ProductList/components/TopBar.tsx
 import { Link, useSearchParams } from 'react-router-dom';
 import styles from '../TopBar/TopBar.module.css';
 

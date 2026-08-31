@@ -1,4 +1,3 @@
-// src/components/Navbar/Navbar.tsx
 import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -68,7 +67,7 @@ const Navbar = () => {
 
       <div className={styles.mainHeader}>
         <div className={`container ${styles.mainHeaderInner}`}>
-          <div className={styles.headerLeft}>
+          <div className={`${styles.headerLeft}`}>
             <Link to="/home" className={styles.brand}>
               <img
                 src="/img/Fasterclick2.webp"
@@ -77,7 +76,7 @@ const Navbar = () => {
               />
             </Link>
 
-            <div className={styles.categoriesWrapper}>
+            <div className={styles.desktopDelivery}>
               <DeliveryButton />
             </div>
           </div>
@@ -99,6 +98,10 @@ const Navbar = () => {
                 Buscar
               </button>
             </form>
+            
+            <div className={styles.mobileDelivery}>
+              <DeliveryButton isMobile={true} />
+            </div>
           </div>
 
           <div className={styles.headerRight}>

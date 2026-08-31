@@ -1,4 +1,3 @@
-// src/pages/ProductList/components/Pagination.tsx
 import { useSearchParams } from 'react-router-dom';
 import styles from '../Pagination/Pagination.module.css';
 
@@ -18,7 +17,35 @@ const Pagination = ({ totalPages, currentPage }: PaginationProps) => {
     window.scrollTo(0, 0);
   };
 
-  const pagesArray = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const getVisiblePages = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    pages.push(1);
+
+    if (currentPage > 3) {
+      pages.push('...');
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push('...');
+    }
+
+    pages.push(totalPages);
+
+    return pages;
+  };
+
+  const pagesArray = getVisiblePages();
 
   return (
     <div className={styles.pagination}>
@@ -28,15 +55,19 @@ const Pagination = ({ totalPages, currentPage }: PaginationProps) => {
         </button>
       )}
 
-      {pagesArray.map((page) => (
-        <button
-          key={page}
-          className={`${styles.pageBtn} ${page === currentPage ? styles.active : ''}`}
-          onClick={() => handlePageChange(page)}
-          type="button"
-        >
-          {page}
-        </button>
+      {pagesArray.map((page, idx) => (
+        page === '...' ? (
+          <span key={`dots-${idx}`} className={styles.dots}>...</span>
+        ) : (
+          <button
+            key={page}
+            className={`${styles.pageBtn} ${page === currentPage ? styles.active : ''}`}
+            onClick={() => handlePageChange(page as number)}
+            type="button"
+          >
+            {page}
+          </button>
+        )
       ))}
 
       {currentPage < totalPages && (

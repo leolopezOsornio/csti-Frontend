@@ -28,12 +28,15 @@ import MyAddresses from '../pages/Profile/components/MyAddresses/MyAddresses';
 import MyOrders from '../pages/Profile/components/MyOrders/MyOrders';
 import OrderDetail from '../pages/Profile/components/OrderDetail/OrderDetail';
 import Wishlist from '../pages/Profile/components/Wishlist/Wishlist';
+import BillingProfile from '../pages/Profile/components/BillingProfile/BillingProfile';
+import InvoicesList from '../pages/Profile/components/Invoices/InvoicesList';
 
 import Dashboard from '../pages/Admin/components/Dashboard/Dashboard';
 import Users from '../pages/Admin/components/Users/Users';
 import Interests from '../pages/Admin/components/Interests/Interests';
 import OrdersList from '../pages/Admin/components/Orders/OrdersList';
 import AdminOrderDetail from '../pages/Admin/components/Orders/OrderDetail';
+import ReturnsList from '../pages/Admin/components/Returns/ReturnsList';
 
 export const AppRouter = () => {
   return (
@@ -56,6 +59,7 @@ export const AppRouter = () => {
             <Route path="pedidos/:id" element={<AdminOrderDetail />} />
             <Route path="usuarios" element={<Users />} />
             <Route path="intereses" element={<Interests />} />
+            <Route path="devoluciones" element={<ReturnsList />} />
           </Route>
         </Route>
 
@@ -74,6 +78,8 @@ export const AppRouter = () => {
               <Route path="pedidos" element={<MyOrders />} />
               <Route path="pedidos/:id" element={<OrderDetail />} />
               <Route path="deseos" element={<Wishlist />} />
+              <Route path="facturacion/datos" element={<BillingProfile />} />
+              <Route path="facturacion/historial" element={<InvoicesList />} />
             </Route>
           </Route>
 

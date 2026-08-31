@@ -1,4 +1,3 @@
-// src/contexts/CartContext.tsx
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { cartService } from '../services/Cart.service';
 import { AuthContext } from './AuthContext';
@@ -30,7 +29,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Se ejecuta cada vez que el usuario inicia o cierra sesión
   useEffect(() => {
     refreshCart();
   }, [isAuthenticated]);
