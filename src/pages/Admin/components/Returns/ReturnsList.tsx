@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faImage } from '@fortawesome/free-solid-svg-icons';
@@ -6,7 +6,7 @@ import { getUserInitials } from '../../../../utils/userDisplay';
 import styles from './ReturnsList.module.css';
 import { returnsService } from '../../../../services/Returns.service';
 
-type EstadoDevolucion = 'PENDIENTE' | 'EN_TRANSITO' | 'INSPECCION' | 'REEMBOLSADO' | 'RECHAZADA';
+
 
 
 const TABS = ['Todas', 'PENDIENTE', 'EN_TRANSITO', 'INSPECCION', 'COMPLETADAS'];

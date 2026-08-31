@@ -81,17 +81,12 @@ export const shippingService = {
       const tracking_number = orderData?.numero_de_guia || '782349102384';
       let status = orderData?.estado_envio || 'CREADO';
       const url_guia = orderData?.url_guia || null;
-      let liveEvents: any[] = [];
 
       try {
         if (orderId && orderId !== 'undefined') {
           const res = await api.get(`/api/pagos/envios/rastrear/${orderId}/`);
           if (res.data && res.data.live_tracking) {
             console.log("📍 [Envia.com API] Datos de rastreo en vivo recibidos:", res.data.live_tracking);
-            const liveData = res.data.live_tracking;
-            if (liveData.events && Array.isArray(liveData.events) && liveData.events.length > 0) {
-              liveEvents = liveData.events;
-            }
             if (res.data.status) status = res.data.status;
           }
         }
@@ -167,11 +162,11 @@ export const shippingService = {
           status: m1Status,
           date: t_creado.toISOString(),
           location: 'Centro de Distribución',
-          details: m1Status !== 'PENDING' ? [
+          details: [
             'Tu pedido ha sido confirmado y el pago autorizado por el sistema.',
             'Estamos empaquetando tus productos con protección de alta seguridad.',
             `La etiqueta de envío de ${carrier} ha sido generada con guía ${tracking_number}.`
-          ] : ['El pedido será procesado en el almacén central.']
+          ]
         },
         {
           id: '2',

@@ -5,7 +5,8 @@ import Swal from 'sweetalert2';
 import { CartContext } from '../../contexts/CartContext';
 import { cartService } from '../../services/Cart.service';
 import { paymentService } from '../../services/Payment.service';
-import { shippingService, ShippingRate } from '../../services/Shipping.service';
+import { shippingService } from '../../services/Shipping.service';
+import type { ShippingRate } from '../../services/Shipping.service';
 import { addressService } from '../../services/Address.service';
 import styles from './Payment.module.css';
 

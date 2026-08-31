@@ -15,7 +15,7 @@ interface TrackingTimelineProps {
   order?: any;
 }
 
-const TrackingTimeline = ({ trackingData, order }: TrackingTimelineProps) => {
+const TrackingTimeline = ({ trackingData }: TrackingTimelineProps) => {
   if (!trackingData) {
     return (
       <div className={styles.timelineContainer}>

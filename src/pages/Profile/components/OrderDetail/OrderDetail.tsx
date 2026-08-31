@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { orderService } from '../../../../services/Order.service';
 import { shippingService } from '../../../../services/Shipping.service';
 import { billingService } from '../../../../services/Billing.service';
-import { returnsService, ReturnRequest } from '../../../../services/Returns.service';
+import { returnsService } from '../../../../services/Returns.service';
+import type { ReturnRequest } from '../../../../services/Returns.service';
 import ReturnModal from '../Returns/ReturnModal';
 import Swal from 'sweetalert2';
 import TrackingTimeline from './TrackingTimeline';
@@ -64,7 +65,7 @@ const OrderDetail = () => {
   const handleGenerateInvoice = async () => {
     try {
       setGeneratingInvoice(true);
-      const invoice = await billingService.generateInvoice(id!);
+      await billingService.generateInvoice(id!);
       
       Swal.fire({
         icon: 'success',
@@ -73,7 +74,7 @@ const OrderDetail = () => {
         confirmButtonColor: '#007bff'
       });
       
-      setOrder(prev => ({ ...prev, facturada: true }));
+      setOrder((prev: any) => ({ ...prev, facturada: true }));
       
     } catch (error: any) {
       console.error(error);
