@@ -24,21 +24,28 @@ const MyOrders = () => {
     fetchOrders();
   }, []);
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'COMPLETADO': return styles.delivered;
-      case 'PENDIENTE': return styles.processing;
-      case 'FALLIDO': return styles.processing; // O crear una roja si existiera
-      default: return styles.processing;
+  const getOverallStatusClass = (orden: any) => {
+    if (orden.estado_pago === 'FALLIDO') return styles.cancelled || styles.processing;
+    if (orden.estado_pago === 'PENDIENTE') return styles.processing;
+    
+    // Si el pago se completó, el estado lo dicta el envío
+    switch (orden.estado_envio) {
+      case 'ENTREGADO': return styles.delivered;
+      default: return styles.processing; // En Preparación, Tránsito, etc se ven como procesamiento (amarillo/naranja)
     }
   };
 
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case 'COMPLETADO': return 'Completado';
-      case 'PENDIENTE': return 'Pendiente';
-      case 'FALLIDO': return 'Fallido';
-      default: return status;
+  const getOverallStatusText = (orden: any) => {
+    if (orden.estado_pago === 'FALLIDO') return 'Pago Fallido';
+    if (orden.estado_pago === 'PENDIENTE') return 'Pago Pendiente';
+    
+    // Si el pago se completó, el estado lo dicta el envío
+    switch (orden.estado_envio) {
+      case 'CREADO': return 'En Preparación';
+      case 'RECOLECTADO': return 'Enviado';
+      case 'EN_TRANSITO': return 'En Tránsito';
+      case 'ENTREGADO': return 'Completado';
+      default: return 'Procesando';
     }
   };
 
@@ -86,8 +93,8 @@ const MyOrders = () => {
               <div key={orden.id} className={styles.orderCard}>
                 <div className={styles.orderHeader}>
                   <span className={styles.orderId}>Pedido #{orden.id}</span>
-                  <span className={`${styles.statusPill} ${getStatusClass(orden.estado_pago)}`}>
-                    {formatStatus(orden.estado_pago)}
+                  <span className={`${styles.statusPill} ${getOverallStatusClass(orden)}`}>
+                    {getOverallStatusText(orden)}
                   </span>
                   
                   {orden.tiene_novedad_devolucion && (
