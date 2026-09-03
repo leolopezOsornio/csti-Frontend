@@ -32,6 +32,7 @@
     margin-bottom: 10px;
     background: transparent;
     border-radius: var(--radius-md);
+    mix-blend-mode: multiply;
 }
 
 .brandName {
