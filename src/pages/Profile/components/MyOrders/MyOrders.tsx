@@ -28,10 +28,9 @@ const MyOrders = () => {
     if (orden.estado_pago === 'FALLIDO') return styles.cancelled || styles.processing;
     if (orden.estado_pago === 'PENDIENTE') return styles.processing;
     
-    // Si el pago se completó, el estado lo dicta el envío
     switch (orden.estado_envio) {
       case 'ENTREGADO': return styles.delivered;
-      default: return styles.processing; // En Preparación, Tránsito, etc se ven como procesamiento (amarillo/naranja)
+      default: return styles.processing;
     }
   };
 
@@ -39,7 +38,6 @@ const MyOrders = () => {
     if (orden.estado_pago === 'FALLIDO') return 'Pago Fallido';
     if (orden.estado_pago === 'PENDIENTE') return 'Pago Pendiente';
     
-    // Si el pago se completó, el estado lo dicta el envío
     switch (orden.estado_envio) {
       case 'CREADO': return 'En Preparación';
       case 'RECOLECTADO': return 'Enviado';
