@@ -110,7 +110,33 @@ const OrderDetail = () => {
   };
 
   const renderReturnButton = () => {
+    // Calcular días pasados desde la compra
+    const daysPassed = order?.creado_en ? 
+      (new Date().getTime() - new Date(order.creado_en).getTime()) / (1000 * 3600 * 24) : 0;
+
+    const RETURN_WINDOW_DAYS = 15; // Límite de 15 días
+
     if (!returnStatus) {
+      if (daysPassed > RETURN_WINDOW_DAYS) {
+        return (
+          <button 
+            onClick={() => {
+              import('sweetalert2').then(Swal => {
+                Swal.default.fire(
+                  'Plazo Vencido', 
+                  `Han pasado más de ${RETURN_WINDOW_DAYS} días desde tu compra. El periodo de devoluciones ha finalizado.`, 
+                  'info'
+                );
+              });
+            }} 
+            className={styles.btnSecondary}
+            style={{ background: '#f8f9fa', color: '#6c757d', border: '1px solid #6c757d', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Devolución no disponible
+          </button>
+        );
+      }
+
       return (
         <button 
           onClick={() => setIsReturnModalOpen(true)} 
