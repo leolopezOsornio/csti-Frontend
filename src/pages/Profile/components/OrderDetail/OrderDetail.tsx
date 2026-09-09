@@ -26,7 +26,7 @@ const OrderDetail = () => {
         const orderData = await orderService.getOrderById(id);
         const tracking = await shippingService.getTracking(id as string, orderData);
         const retStatus = await returnsService.getReturnStatus(id as string);
-        
+
         setOrder(orderData);
         setTrackingData(tracking);
         setReturnStatus(retStatus);
@@ -66,16 +66,16 @@ const OrderDetail = () => {
     try {
       setGeneratingInvoice(true);
       await billingService.generateInvoice(id!);
-      
+
       Swal.fire({
         icon: 'success',
         title: '¡Factura generada!',
         text: 'Su factura ha sido timbrada correctamente.',
         confirmButtonColor: '#007bff'
       });
-      
+
       setOrder((prev: any) => ({ ...prev, facturada: true }));
-      
+
     } catch (error: any) {
       console.error(error);
       if (error.response?.status === 404) {
@@ -110,25 +110,25 @@ const OrderDetail = () => {
   };
 
   const renderReturnButton = () => {
-    // Calcular días pasados desde la compra
-    const daysPassed = order?.creado_en ? 
+
+    const daysPassed = order?.creado_en ?
       (new Date().getTime() - new Date(order.creado_en).getTime()) / (1000 * 3600 * 24) : 0;
 
-    const RETURN_WINDOW_DAYS = 15; // Límite de 15 días
+    const RETURN_WINDOW_DAYS = 15;
 
     if (!returnStatus) {
       if (daysPassed > RETURN_WINDOW_DAYS) {
         return (
-          <button 
+          <button
             onClick={() => {
               import('sweetalert2').then(Swal => {
                 Swal.default.fire(
-                  'Plazo Vencido', 
-                  `Han pasado más de ${RETURN_WINDOW_DAYS} días desde tu compra. El periodo de devoluciones ha finalizado.`, 
+                  'Plazo Vencido',
+                  `Han pasado más de ${RETURN_WINDOW_DAYS} días desde tu compra. El periodo de devoluciones ha finalizado.`,
                   'info'
                 );
               });
-            }} 
+            }}
             className={styles.btnSecondary}
             style={{ background: '#f8f9fa', color: '#6c757d', border: '1px solid #6c757d', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
           >
@@ -138,8 +138,8 @@ const OrderDetail = () => {
       }
 
       return (
-        <button 
-          onClick={() => setIsReturnModalOpen(true)} 
+        <button
+          onClick={() => setIsReturnModalOpen(true)}
           className={styles.btnSecondary}
           style={{ background: '#f8f9fa', color: '#dc3545', border: '1px solid #dc3545', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
         >
@@ -159,9 +159,9 @@ const OrderDetail = () => {
     if (returnStatus.estado === 'EN_TRANSITO') {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
-          <a 
-            href={returnStatus.url_guia || '#'} 
-            target="_blank" 
+          <a
+            href={returnStatus.url_guia || '#'}
+            target="_blank"
             rel="noopener noreferrer"
             style={{ background: '#28a745', color: '#fff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 600, display: 'inline-block' }}
           >
@@ -194,7 +194,7 @@ const OrderDetail = () => {
 
     if (returnStatus.estado === 'RECHAZADA') {
       return (
-        <button 
+        <button
           onClick={() => {
             if (returnStatus.motivo_rechazo) {
               Swal.fire({
@@ -212,13 +212,13 @@ const OrderDetail = () => {
                       <strong>¿Qué sucede ahora?</strong>
                       <ul style="margin-top: 8px; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.5;">
                         <li style="margin-bottom: 6px;">Si el producto aún está contigo, la solicitud queda cerrada de forma definitiva.</li>
-                        ${returnStatus.url_guia_rechazo 
-                          ? `<li style="margin-bottom: 6px;"><strong>Tu paquete va de regreso.</strong> El producto ha sido re-empaquetado en nuestra bodega y enviado de vuelta a tu domicilio. Puedes descargar la etiqueta y rastrear el paquete con el número: <strong>${returnStatus.numero_de_guia_rechazo}</strong>.
+                        ${returnStatus.url_guia_rechazo
+                    ? `<li style="margin-bottom: 6px;"><strong>Tu paquete va de regreso.</strong> El producto ha sido re-empaquetado en nuestra bodega y enviado de vuelta a tu domicilio. Puedes descargar la etiqueta y rastrear el paquete con el número: <strong>${returnStatus.numero_de_guia_rechazo}</strong>.
                               <br><br>
                               <a href="${returnStatus.url_guia_rechazo}" target="_blank" style="display:inline-block; padding: 6px 12px; background: #0d47a1; color: white; border-radius: 4px; text-decoration: none; font-weight: 500;">Descargar Guía de Regreso</a>
-                             </li>` 
-                          : `<li style="margin-bottom: 6px;">Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>`
-                        }
+                             </li>`
+                    : `<li style="margin-bottom: 6px;">Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>`
+                  }
                         <li>Para dudas o aclaraciones, contacta a <a href="mailto:ventas@csti.com.mx" style="color: #0d47a1; font-weight: 600; text-decoration: none;">Soporte CSTI</a>.</li>
                       </ul>
                     </div>
@@ -233,13 +233,13 @@ const OrderDetail = () => {
               });
             }
           }}
-          style={{ 
-            padding: '10px 15px', 
-            background: '#f8d7da', 
-            color: '#721c24', 
-            border: '1px solid #f5c6cb', 
-            borderRadius: '8px', 
-            fontWeight: 600, 
+          style={{
+            padding: '10px 15px',
+            background: '#f8d7da',
+            color: '#721c24',
+            border: '1px solid #f5c6cb',
+            borderRadius: '8px',
+            fontWeight: 600,
             cursor: returnStatus.motivo_rechazo ? 'pointer' : 'default',
             transition: 'all 0.2s',
             display: 'flex',
@@ -274,15 +274,15 @@ const OrderDetail = () => {
           {order.estado_pago === 'COMPLETADO' && (
             <div className={styles.headerActions} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               {renderReturnButton()}
-              
+
               {order.facturada ? (
                 <Link to="/perfil/facturacion/historial" className={styles.btnSuccess}>
                   ✓ Pedido facturado (Descargar)
                 </Link>
               ) : (
-                <button 
-                  onClick={handleGenerateInvoice} 
-                  className={styles.btnPrimary} 
+                <button
+                  onClick={handleGenerateInvoice}
+                  className={styles.btnPrimary}
                   disabled={generatingInvoice}
                 >
                   {generatingInvoice ? 'Generando...' : 'Generar Factura CFDI'}
@@ -322,9 +322,9 @@ const OrderDetail = () => {
         <div className={styles.itemsList}>
           {order.items.map((item: any) => (
             <div key={item.id} className={styles.itemRow}>
-              <img 
-                src={item.producto.imagen || '/img/brand-placeholder.png'} 
-                alt={item.producto.descripcion} 
+              <img
+                src={item.producto.imagen || '/img/brand-placeholder.png'}
+                alt={item.producto.descripcion}
                 className={styles.itemImage}
               />
               <div className={styles.itemInfo}>
@@ -353,11 +353,11 @@ const OrderDetail = () => {
         </div>
       </footer>
 
-      <ReturnModal 
-        isOpen={isReturnModalOpen} 
-        onClose={() => setIsReturnModalOpen(false)} 
-        orderId={id!} 
-        onSuccess={handleReturnSuccess} 
+      <ReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        orderId={id!}
+        onSuccess={handleReturnSuccess}
       />
     </div>
   );
