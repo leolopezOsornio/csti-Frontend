@@ -1,42 +1,29 @@
 import styles from './TrackingTimeline.module.css';
 
-interface TrackingData {
-  carrier: string;
-  tracking_number: string;
-  status: string;
-  estimated_delivery: string;
-  delivered_date?: string | null;
-  destination_city?: string;
-  url_guia?: string | null;
-}
-
-interface TrackingTimelineProps {
-  trackingData: TrackingData | null;
-  order?: any;
-}
+import type { TrackingData } from '../../../../services/Shipping.service';
+interface TrackingTimelineProps { trackingData: TrackingData | null }
 
 const TrackingTimeline = ({ trackingData }: TrackingTimelineProps) => {
   if (!trackingData) {
     return (
       <div className={styles.timelineContainer}>
         <p style={{ color: '#64748b', textAlign: 'center', margin: 0 }}>
-          Información de rastreo no disponible aún.
+          Rastreo temporalmente no disponible
         </p>
       </div>
     );
   }
 
-  const isDelivered = trackingData.status === 'ENTREGADO' || trackingData.status === 'COMPLETADO';
+  const isDelivered = trackingData.status === 'ENTREGADO';
   const isInTransit = trackingData.status === 'EN_TRANSITO' || trackingData.status === 'RECOLECTADO';
-  const isCreated = trackingData.status === 'CREADO';
 
   const getTrackingUrl = (carrier: string, trackingNumber: string) => {
-    if (!carrier || !trackingNumber) return '#';
+    if (!carrier || !trackingNumber) return null;
     const c = carrier.toLowerCase();
-    if (c.includes('dhl')) return `https://www.dhl.com/mx-es/home/rastreo.html?tracking-id=${trackingNumber}`;
-    if (c.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+    if (c.includes('dhl')) return `https://www.dhl.com/mx-es/home/rastreo.html?tracking-id=${encodeURIComponent(trackingNumber)}`;
+    if (c.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(trackingNumber)}`;
     if (c.includes('estafeta')) return `https://www.estafeta.com/Herramientas/Rastreo`;
-    return `https://www.google.com/search?q=rastreo+${carrier}+${trackingNumber}`;
+    return null;
   };
 
   return (
@@ -53,14 +40,15 @@ const TrackingTimeline = ({ trackingData }: TrackingTimelineProps) => {
         </div>
         <div className={styles.bannerText}>
           <h2 className={styles.bannerTitle}>
-            {isDelivered ? 'Entregado' : isInTransit ? 'En camino' : 'En preparación'}
+            {isDelivered ? 'Entregado' : isInTransit ? 'En camino' : trackingData.status || 'Estado no disponible'}
           </h2>
           <p className={styles.bannerSubtitle}>
-            {isDelivered ? 'El paquete ha sido entregado exitosamente.' : isCreated ? 'Tu pedido está siendo procesado en el almacén.' : 'Tu paquete está en manos de la paquetería.'}
+            {trackingData.message || 'Estado confirmado por el backend de rastreo.'}
           </p>
         </div>
       </div>
 
+      {trackingData.estimated_delivery && <p>Fecha estimada por la paquetería: {new Date(trackingData.estimated_delivery).toLocaleDateString('es-MX')}. No constituye confirmación de entrega.</p>}
       <div className={styles.carrierCard} style={{ background: '#f0fdf4', border: '2px solid #10b981', borderRadius: '12px' }}>
         <div className={styles.carrierLeft}>
           <div style={{
@@ -78,16 +66,16 @@ const TrackingTimeline = ({ trackingData }: TrackingTimelineProps) => {
             </svg>
           </div>
           <div>
-            <h4 className={styles.carrierTitle}>{trackingData.carrier || 'Envío Estándar'}</h4>
+            <h4 className={styles.carrierTitle}>{trackingData.carrier || 'Transportista no informado'}</h4>
             <p className={styles.carrierCode}>
               Guía de rastreo: <strong>{trackingData.tracking_number || 'Aún no asignada'}</strong>
             </p>
           </div>
         </div>
 
-        {trackingData.tracking_number && (
+        {trackingData.tracking_number && trackingData.carrier && getTrackingUrl(trackingData.carrier, trackingData.tracking_number) && (
           <a
-            href={getTrackingUrl(trackingData.carrier, trackingData.tracking_number)}
+            href={getTrackingUrl(trackingData.carrier, trackingData.tracking_number)!}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.pdfButton}

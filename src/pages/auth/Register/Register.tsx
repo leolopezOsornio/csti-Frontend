@@ -92,7 +92,7 @@ const Register = () => {
       appAlert({
         icon: 'warning',
         title: 'Verifica tus datos',
-        html: emailError,
+        text: emailError,
         confirmButtonColor: '#00b5e2',
       });
       setCargando(false);
@@ -124,14 +124,14 @@ const Register = () => {
       let backendErrors = 'Ocurrio un error inesperado al registrar.';
 
       if (error.response?.data?.errores) {
-        backendErrors = error.response.data.errores.join('<br>');
+        backendErrors = error.response.data.errores.join('\n');
       }
 
       closeAppAlert();
       await appAlert({
         icon: 'error',
         title: 'No se pudo crear la cuenta',
-        html: backendErrors,
+        text: backendErrors,
         confirmButtonColor: '#00b5e2',
       });
       appToast('error', 'Registro no completado', 'Revisa los datos e intenta de nuevo.');

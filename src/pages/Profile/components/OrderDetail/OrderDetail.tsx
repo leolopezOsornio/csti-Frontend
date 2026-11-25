@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderService } from '../../../../services/Order.service';
+import type { TrackingData } from '../../../../services/Shipping.service';
 import { shippingService } from '../../../../services/Shipping.service';
 import { billingService } from '../../../../services/Billing.service';
+import InvoiceDownloads from '../../../../components/InvoiceDownloads/InvoiceDownloads';
 import { returnsService } from '../../../../services/Returns.service';
 import type { ReturnRequest } from '../../../../services/Returns.service';
 import ReturnModal from '../Returns/ReturnModal';
 import Swal from 'sweetalert2';
+import { showReactAlert } from '../../../../utils/reactAlert';
+import { safeMediaUrl } from '../../../../utils/safeMediaUrl';
 import TrackingTimeline from './TrackingTimeline';
 import styles from './OrderDetail.module.css';
 
 const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<any>(null);
-  const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
@@ -24,12 +28,11 @@ const OrderDetail = () => {
     const fetchOrder = async () => {
       try {
         const orderData = await orderService.getOrderById(id);
-        const tracking = await shippingService.getTracking(id as string, orderData);
-        const retStatus = await returnsService.getReturnStatus(id as string);
-
         setOrder(orderData);
+        const tracking = await shippingService.getTracking(id as string, orderData);
         setTrackingData(tracking);
-        setReturnStatus(retStatus);
+        try { setReturnStatus(await returnsService.getReturnStatus(id as string)); }
+        catch { /* Post-sale errors must not hide confirmed tracking. */ }
       } catch (error) {
         console.error("Error fetching order detail:", error);
       } finally {
@@ -160,7 +163,7 @@ const OrderDetail = () => {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
           <a
-            href={returnStatus.url_guia || '#'}
+            href={safeMediaUrl(returnStatus.url_guia) ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
             style={{ background: '#28a745', color: '#fff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 600, display: 'inline-block' }}
@@ -197,32 +200,20 @@ const OrderDetail = () => {
         <button
           onClick={() => {
             if (returnStatus.motivo_rechazo) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Solicitud Rechazada',
-                html: `
-                    <div style="text-align: left; margin-top: 10px; font-size: 0.95rem; color: #334155;">
-                      <div style="margin-bottom: 16px;">
-                        <strong>Motivo del rechazo:</strong>
-                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 8px; color: #475569;">
-                          ${returnStatus.motivo_rechazo}
-                        </div>
-                      </div>
-                      
-                      <strong>¿Qué sucede ahora?</strong>
-                      <ul style="margin-top: 8px; padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.5;">
-                        <li style="margin-bottom: 6px;">Si el producto aún está contigo, la solicitud queda cerrada de forma definitiva.</li>
-                        ${returnStatus.url_guia_rechazo
-                    ? `<li style="margin-bottom: 6px;"><strong>Tu paquete va de regreso.</strong> El producto ha sido re-empaquetado en nuestra bodega y enviado de vuelta a tu domicilio. Puedes descargar la etiqueta y rastrear el paquete con el número: <strong>${returnStatus.numero_de_guia_rechazo}</strong>.
-                              <br><br>
-                              <a href="${returnStatus.url_guia_rechazo}" target="_blank" style="display:inline-block; padding: 6px 12px; background: #0d47a1; color: white; border-radius: 4px; text-decoration: none; font-weight: 500;">Descargar Guía de Regreso</a>
-                             </li>`
-                    : `<li style="margin-bottom: 6px;">Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>`
-                  }
-                        <li>Para dudas o aclaraciones, contacta a <a href="mailto:ventas@csti.com.mx" style="color: #0d47a1; font-weight: 600; text-decoration: none;">Soporte CSTI</a>.</li>
-                      </ul>
-                    </div>
-                `,
+              const guide = safeMediaUrl(returnStatus.url_guia_rechazo);
+              showReactAlert(<div style={{ textAlign: 'left', fontSize: '0.95rem', color: '#334155' }}>
+                <strong>Motivo del rechazo:</strong>
+                <p style={{ background: '#f8f9fa', padding: 12, borderRadius: 8, whiteSpace: 'pre-wrap' }}>{returnStatus.motivo_rechazo}</p>
+                <strong>¿Qué sucede ahora?</strong>
+                <ul>
+                  <li>Si el producto aún está contigo, la solicitud queda cerrada de forma definitiva.</li>
+                  {guide ? <li>Tu paquete va de regreso. El producto ha sido re-empaquetado en nuestra bodega y enviado de vuelta a tu domicilio. Guía: {returnStatus.numero_de_guia_rechazo}
+                    <p><a href={guide} target="_blank" rel="noopener noreferrer">Descargar Guía de Regreso</a></p>
+                  </li> : <li>Si el producto ya se encontraba en nuestra bodega, un asesor te contactará para coordinar el retorno del artículo a tu domicilio (el costo de paquetería será cubierto por el cliente).</li>}
+                  <li>Para dudas o aclaraciones, contacta a <a href="mailto:ventas@csti.com.mx">Soporte CSTI</a>.</li>
+                </ul>
+              </div>, {
+                icon: 'error', title: 'Solicitud Rechazada',
                 confirmButtonColor: '#0d47a1',
                 confirmButtonText: 'Entendido',
                 width: '600px'
@@ -276,9 +267,10 @@ const OrderDetail = () => {
               {renderReturnButton()}
 
               {order.facturada ? (
-                <Link to="/perfil/facturacion/historial" className={styles.btnSuccess}>
-                  ✓ Pedido facturado (Descargar)
-                </Link>
+                <div>
+                  <Link to="/perfil/facturacion/historial" className={styles.btnSuccess}>✓ Pedido facturado (Historial)</Link>
+                  <InvoiceDownloads key={order.id} invoice={{ orden_id: order.id }} className={styles.btnPrimary} />
+                </div>
               ) : (
                 <button
                   onClick={handleGenerateInvoice}
@@ -314,7 +306,7 @@ const OrderDetail = () => {
 
       <div style={{ marginBottom: '30px' }}>
         <h3 className={styles.cardTitle} style={{ marginBottom: '16px' }}>Rastreo de Envío</h3>
-        <TrackingTimeline trackingData={trackingData} order={order} />
+        <TrackingTimeline trackingData={trackingData} />
       </div>
 
       <div className={styles.itemsCard}>

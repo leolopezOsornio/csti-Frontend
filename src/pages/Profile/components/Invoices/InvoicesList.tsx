@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faFileCode } from '@fortawesome/free-solid-svg-icons';
-import { billingService } from '../../../../services/Billing.service';
+import { billingService, invoiceDownloadMessage } from '../../../../services/Billing.service';
 import type { Invoice } from '../../../../services/Billing.service';
-import { appConfig } from '../../../../config/appConfig';
+import InvoiceDownloads from '../../../../components/InvoiceDownloads/InvoiceDownloads';
 import styles from './InvoicesList.module.css';
 
 const InvoicesList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -19,7 +18,7 @@ const InvoicesList = () => {
         const data = await billingService.getInvoices();
         setInvoices(data);
       } catch (error) {
-        console.error("Error al obtener historial de facturas", error);
+        setLoadError(invoiceDownloadMessage(error));
       } finally {
         setLoading(false);
       }
@@ -56,7 +55,7 @@ const InvoicesList = () => {
     <div className={styles.invoicesContainer}>
       <h2>Mis Facturas</h2>
 
-      {invoices.length === 0 ? (
+      {loadError ? <p role="alert">{loadError}</p> : invoices.length === 0 ? (
         <div className={styles.emptyState}>
           <p>Aún no ha generado ninguna factura.</p>
         </div>
@@ -85,16 +84,7 @@ const InvoicesList = () => {
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      {invoice.facturapi_id && (
-                        <a href={`${appConfig.apiBaseUrl}/api/facturacion/descargar/${invoice.facturapi_id}/pdf/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar PDF">
-                          <FontAwesomeIcon icon={faFilePdf} /> PDF
-                        </a>
-                      )}
-                      {invoice.facturapi_id && (
-                        <a href={`${appConfig.apiBaseUrl}/api/facturacion/descargar/${invoice.facturapi_id}/xml/`} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Descargar XML">
-                          <FontAwesomeIcon icon={faFileCode} /> XML
-                        </a>
-                      )}
+                      <InvoiceDownloads invoice={invoice} className={styles.downloadBtn} />
                     </div>
                   </td>
                 </tr>

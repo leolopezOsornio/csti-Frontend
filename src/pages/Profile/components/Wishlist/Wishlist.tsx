@@ -61,7 +61,7 @@ const Wishlist = () => {
         toast: true,
         position: 'top-end',
         icon: 'error',
-        title: error.response?.data?.error || 'Error al agregar',
+        titleText: error.response?.data?.error || 'Error al agregar',
         showConfirmButton: false,
         timer: 3000,
       });

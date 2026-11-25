@@ -1,65 +1,79 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import Swal from 'sweetalert2';
 import { CartContext } from '../../contexts/CartContext';
 import { cartService } from '../../services/Cart.service';
 import { paymentService } from '../../services/Payment.service';
-import { shippingService } from '../../services/Shipping.service';
-import type { ShippingRate } from '../../services/Shipping.service';
+import { cartQuoteKey, shippingService } from '../../services/Shipping.service';
+import { revalidateCheckoutShipping } from '../../services/CheckoutShipping.service';
+import { useShippingQuote } from '../../hooks/useShippingQuote';
+import ShippingQuoteGate from '../../components/ShippingQuoteGate';
+import type { ShippingRate, ShippingCartItem } from '../../services/Shipping.service';
 import { addressService } from '../../services/Address.service';
 import styles from './Payment.module.css';
+
+const EMPTY_ITEMS: ShippingCartItem[] = [];
 
 const Payment = () => {
   const navigate = useNavigate();
   const { refreshCart } = useContext(CartContext);
 
   const [cartData, setCartData] = useState<any>(null);
-  const [shippingRate, setShippingRate] = useState<ShippingRate | null>(null);
-  const [availableRates, setAvailableRates] = useState<ShippingRate[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [addressDetails, setAddressDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadedAttempt, setLoadedAttempt] = useState(-1);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const paymentInProgress = useRef(false);
   const [showShippingOptions, setShowShippingOptions] = useState(false);
 
+  const items: ShippingCartItem[] = cartData?.items ?? EMPTY_ITEMS;
+  const context = { addressId: selectedAddressId ?? 0, cartKey: cartQuoteKey(items, cartData?.total ?? '') };
+  const { quote, selectedRate: shippingRate, loading: loadingQuote, error: quoteError, retry, selectRate } =
+    useShippingQuote(context, items, JSON.stringify([addressDetails, loadAttempt]));
+  const availableRates = quote?.rates ?? [];
+  const loading = loadedAttempt !== loadAttempt;
+
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
       try {
-        const rate = shippingService.getSelectedRate();
-        const addressIdStr = localStorage.getItem('selectedAddressId');
-
-        if (!rate || !addressIdStr) {
-          Swal.fire('Información incompleta', 'Debes seleccionar una dirección y método de envío primero.', 'warning');
-          navigate('/carrito');
-          return;
-        }
-
-        const addressId = parseInt(addressIdStr);
-        setShippingRate(rate);
-        setSelectedAddressId(addressId);
-
-        const [cart, addr, allRates] = await Promise.all([
-          cartService.getCart(),
-          addressService.getAddresses(),
-          shippingService.getRates(addressId, [])
-        ]);
-
+        const [cart, addresses] = await Promise.all([cartService.getCart(), addressService.getAddresses()]);
+        if (!active) return;
+        let savedId: number | null = null;
+        try {
+          const value = localStorage.getItem('selectedAddressId') || '';
+          if (/^[1-9]\d*$/.test(value)) savedId = Number(value);
+        } catch { /* Storage is optional. */ }
+        const address = addresses.find((candidate: { id: number }) => candidate.id === savedId) ??
+          addresses.find((candidate: { es_principal?: boolean }) => candidate.es_principal) ?? addresses[0];
         setCartData(cart);
-        setAvailableRates(allRates);
-
-        const selectedAddress = addr.find((a: any) => a.id === addressId);
-        setAddressDetails(selectedAddress);
-
-      } catch (error) {
-        console.error("Error al cargar datos de pago:", error);
-        Swal.fire('Error', 'No se pudieron cargar los datos de la orden.', 'error');
+        setSelectedAddressId(address?.id ?? null);
+        setAddressDetails(address ?? null);
+        setCheckoutError(address ? null : 'Agrega una dirección válida en tu perfil para continuar.');
+      } catch {
+        if (!active) return;
+        setCartData(null);
+        setSelectedAddressId(null);
+        setAddressDetails(null);
+        setCheckoutError('No se pudieron cargar los datos del checkout. Intenta de nuevo.');
       } finally {
-        setLoading(false);
+        if (active) setLoadedAttempt(loadAttempt);
       }
     };
+    void fetchData();
+    return () => { active = false; };
+  }, [loadAttempt]);
 
-    fetchData();
-  }, [navigate]);
+  useEffect(() => {
+    const invalidate = () => {
+      if (!paymentInProgress.current) setLoadAttempt(value => value + 1);
+    };
+    window.addEventListener('focus', invalidate);
+    window.addEventListener('storage', invalidate);
+    return () => { window.removeEventListener('focus', invalidate); window.removeEventListener('storage', invalidate); };
+  }, []);
 
   if (loading) {
     return (
@@ -68,6 +82,14 @@ const Payment = () => {
         <p>Cargando detalles de tu pago...</p>
       </div>
     );
+  }
+
+  if (checkoutError) {
+    return <div className={styles.paymentContainer} role="alert">
+      <p>{checkoutError}</p>
+      <button type="button" onClick={() => setLoadAttempt(value => value + 1)}>Reintentar</button>
+      <Link to="/perfil/direcciones">Revisar direcciones</Link>
+    </div>;
   }
 
   if (!cartData || !cartData.items || cartData.items.length === 0) {
@@ -87,8 +109,7 @@ const Payment = () => {
   const total = subtotal + shippingCost;
 
   const handleSelectRate = (rate: ShippingRate) => {
-    setShippingRate(rate);
-    shippingService.saveSelectedRate(rate);
+    selectRate(rate.id);
     setShowShippingOptions(false);
   };
 
@@ -234,7 +255,7 @@ const Payment = () => {
             </div>
             <div className={styles.totalRow}>
               <span>Envío ({shippingRate?.title})</span>
-              <span>${shippingCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span>{shippingRate ? `$${shippingCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}</span>
             </div>
             <div className={styles.totalRow}>
               <span>IVA (16%)</span>
@@ -242,11 +263,16 @@ const Payment = () => {
             </div>
             <div className={`${styles.totalRow} ${styles.grandTotal}`}>
               <span>Total a Pagar</span>
-              <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span>{shippingRate ? `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}</span>
             </div>
           </div>
 
-          {selectedAddressId && (
+          {(quoteError || loadingQuote) && <div role="status">
+            <p>{quoteError || 'Cotizando envío...'}</p>
+            {quoteError && <button type="button" onClick={retry}>Reintentar cotización</button>}
+          </div>}
+          <ShippingQuoteGate quote={quote} context={context} selectedRateId={shippingRate?.id ?? null}>
+          {selectedAddressId && shippingRate && (
             <div className={styles.paypalContainer}>
               <PayPalScriptProvider options={{
                 clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
@@ -254,9 +280,13 @@ const Payment = () => {
               }}>
                 <PayPalButtons
                   style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
-                  forceReRender={[selectedAddressId, cartData, total]}
-                  createOrder={(_data, actions) => {
-                    return actions.order.create({
+                  forceReRender={[selectedAddressId, cartData, total, shippingRate.id, shippingRate.internalProvider, quote?.expiresAt]}
+                  onClick={() => { paymentInProgress.current = true; }}
+                  onCancel={() => { paymentInProgress.current = false; }}
+                  createOrder={async (_data, actions) => {
+                    try {
+                      await revalidateCheckoutShipping(quote, context, shippingRate.id, addressDetails);
+                      return await actions.order.create({
                       intent: "CAPTURE",
                       purchase_units: [
                         {
@@ -267,11 +297,17 @@ const Payment = () => {
                           description: `Compra en CSTI - ${cartData?.items?.length || 0} productos`
                         }
                       ]
-                    });
+                      });
+                    } catch (error) {
+                      paymentInProgress.current = false;
+                      shippingService.clearSelectedRate();
+                      setLoadAttempt(value => value + 1);
+                      throw error;
+                    }
                   }}
                   onApprove={async (data, _actions) => {
                     try {
-                      const carrierName = shippingRate ? `${shippingRate.internalProvider || shippingRate.title}` : "FedEx Express";
+                      const carrierName = shippingRate.internalProvider;
                       await paymentService.verifyPayment(data.orderID, selectedAddressId, shippingCost, carrierName);
 
                       shippingService.clearSelectedRate();
@@ -289,10 +325,13 @@ const Payment = () => {
                     } catch (error: any) {
                       console.error("Error en la verificación:", error);
                       const errorMsg = error.response?.data?.error || 'El pago se autorizó pero hubo un problema al registrarlo.';
-                      Swal.fire('Error', errorMsg, 'error');
+                      Swal.fire({ title: 'Error', text: errorMsg, icon: 'error' });
+                    } finally {
+                      paymentInProgress.current = false;
                     }
                   }}
                   onError={(err) => {
+                    paymentInProgress.current = false;
                     console.error("PayPal Error:", err);
                     Swal.fire('Error', 'Ocurrió un error con la pasarela de PayPal.', 'error');
                   }}
@@ -300,6 +339,7 @@ const Payment = () => {
               </PayPalScriptProvider>
             </div>
           )}
+          </ShippingQuoteGate>
         </aside>
       </div>
     </div>

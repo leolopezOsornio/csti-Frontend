@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { appConfig } from '../config/appConfig';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Fiscal downloads surface terminal 401 in the UI instead of navigating. */
+    redirectOnAuthFailure?: boolean;
+  }
+}
+
 const api = axios.create({
   baseURL: appConfig.apiBaseUrl,
   headers: {
@@ -55,7 +62,7 @@ api.interceptors.response.use(
         localStorage.removeItem('refresh_token');
         sessionStorage.removeItem('access_token');
         sessionStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (originalRequest.redirectOnAuthFailure !== false) window.location.href = '/login';
       }
     }
     return Promise.reject(error);
