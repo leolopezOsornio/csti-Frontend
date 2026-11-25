@@ -21,6 +21,8 @@ export interface CheckoutIntent {
   paypal_order_id: string | null; capture_id: string | null; order_id: number | null;
   last_error_code: string; fulfillment_state: FulfillmentState | null; created_at: string; updated_at: string;
 }
+export interface DiscoveredIntent extends CheckoutIntent { idempotency_key: string }
+export interface ActiveIntents { count: number; next: string | null; previous: string | null; results: DiscoveredIntent[] }
 export class CheckoutError extends Error {
   code: string; status: number;
   constructor(code: string, status = 0) {
@@ -86,6 +88,17 @@ export function checkoutError(error: unknown): CheckoutError {
   const r = error && typeof error === 'object' ? error as { response?: { status?: number; data?: { code?: unknown } } } : {};
   return new CheckoutError(typeof r.response?.data?.code === 'string' ? r.response.data.code : 'RESULT_UNKNOWN', r.response?.status ?? 0);
 }
+export function validateActiveIntents(value: unknown): ActiveIntents {
+  const page = object(value);
+  if (typeof page.count !== 'number' || !Number.isSafeInteger(page.count) || page.count < 0 ||
+      !Array.isArray(page.results) || page.results.length > 10) return invalid();
+  return { count: page.count, next: nullableText(page.next), previous: nullableText(page.previous),
+    results: page.results.map(raw => {
+      const row = object(raw), intent = validateCheckoutIntent(row);
+      if (intent.state === 'CAPTURED' || intent.state === 'FAILED') return invalid();
+      return { ...intent, idempotency_key: id(row.idempotency_key) };
+    }) };
+}
 // String formatting only: no conversion to floating-point or financial calculation.
 export const displayMoney = (value: Money | null | undefined) => {
   if (value == null) return 'Pendiente';
@@ -107,6 +120,10 @@ async function request<T>(method: 'get' | 'post', path: string, body: object | u
 }
 const intentPath = (value: string) => { if (!isUUID(value)) throw new CheckoutError('INVALID_REFERENCE'); return `intentos/${value}/`; };
 export const checkoutService = {
+  listActive: (page = 1) => {
+    if (!Number.isSafeInteger(page) || page < 1) return Promise.reject(new CheckoutError('INVALID_REFERENCE'));
+    return request('get', `intentos/?page=${page}`, undefined, validateActiveIntents, [200]);
+  },
   quote: (addressId: number) => {
     if (!Number.isSafeInteger(addressId) || addressId <= 0) return Promise.reject(new CheckoutError('INVALID_ADDRESS'));
     return request('post', 'cotizaciones/', { direccionID: addressId }, validateCheckoutQuote, [201]);

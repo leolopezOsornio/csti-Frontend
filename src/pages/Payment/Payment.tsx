@@ -6,7 +6,8 @@ import { cartService } from '../../services/Cart.service';
 import { addressService } from '../../services/Address.service';
 import { cartQuoteKey, isQuoteCurrent } from '../../services/Shipping.service';
 import type { ShippingCartItem } from '../../services/Shipping.service';
-import { CheckoutError, displayMoney } from '../../services/Checkout.service';
+import { CheckoutError, displayMoney, checkoutService } from '../../services/Checkout.service';
+import type { DiscoveredIntent } from '../../services/Checkout.service';
 import { checkoutAccount } from '../../services/CheckoutRecovery';
 import { CheckoutSession } from '../../services/CheckoutSession';
 import { revalidateCheckoutShipping } from '../../services/CheckoutShipping.service';
@@ -30,6 +31,10 @@ function AccountCheckout({ accountId }: { accountId: number }) {
   const [loaded, setLoaded] = useState(-1);
   const [error, setError] = useState('');
   const [code, setCode] = useState('');
+  const [pending, setPending] = useState<DiscoveredIntent[]>([]);
+  const [pendingPage, setPendingPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [finding, setFinding] = useState(false);
   const address = addresses.find(candidate => candidate.id === addressId);
   const items = cart?.items ?? EMPTY;
   const context = { addressId, cartKey: cartQuoteKey(items, cart?.total ?? '') };
@@ -38,7 +43,7 @@ function AccountCheckout({ accountId }: { accountId: number }) {
   const quote = shipping.quote;
   const quoteReady = !!quote && isQuoteCurrent(quote, context) && !!quote.selected_rate_id && quote.total !== null;
   const busy = ['creating_intent', 'creating_paypal', 'capturing', 'reconciling'].includes(state.phase);
-  const resumeReady = !!state.reference?.intentId && ['CREATED', 'PAYPAL_ORDER_CREATED'].includes(state.intent?.state ?? '');
+  const resumeReady = !state.purchasesDisabled && !!state.reference?.intentId && ['CREATED', 'PAYPAL_ORDER_CREATED'].includes(state.intent?.state ?? '');
 
   useEffect(() => { void session.restore(); }, [session]);
   useEffect(() => {
@@ -67,10 +72,11 @@ function AccountCheckout({ accountId }: { accountId: number }) {
     catch { setError('Cambió el carrito o la dirección. Revisa una nueva cotización.'); setLoad(value => value + 1); throw new CheckoutError('QUOTE_CHANGED', 409); }
     return quote;
   };
-  const showPayPal = quoteReady || resumeReady || ['creating_intent', 'creating_paypal', 'awaiting_approval', 'capturing'].includes(state.phase);
+  const showPayPal = !state.purchasesDisabled && (quoteReady || resumeReady || ['creating_intent', 'creating_paypal', 'awaiting_approval', 'capturing'].includes(state.phase));
   return <div className={styles.paymentContainer}>
     <h1 className={styles.paymentTitle}>Finalizar compra</h1>
     <CheckoutStatus state={state} />
+    {state.purchasesDisabled && state.phase !== 'paid' && <p role="status">Las compras están temporalmente no disponibles. Puedes consultar, recuperar o solicitar cancelar tu compra existente.</p>}
     {state.reference && <section>
       <p>Guarda este código de recuperación antes de cerrar sesión. Contiene referencias de la compra, no datos de pago.</p>
       <textarea aria-label="Código de recuperación de esta compra" readOnly value={JSON.stringify(state.reference)} rows={4} />
@@ -85,6 +91,27 @@ function AccountCheckout({ accountId }: { accountId: number }) {
       <textarea aria-label="Código de recuperación guardado" value={code} onChange={event => setCode(event.target.value)} />
       <button onClick={() => { try { session.importCode(code); setCode(''); void session.restore(); } catch { setError('El código no es válido para esta cuenta.'); } }}>Recuperar referencia</button>
     </details>}
+    {!state.reference && state.phase !== 'paid' && <section>
+      <button disabled={finding} onClick={async () => {
+        setFinding(true);
+        try {
+          const page = await checkoutService.listActive(1);
+          setPending(page.results); setPendingPage(1); setHasMore(!!page.next);
+          if (!page.count) setError('No hay compras pendientes en esta cuenta. Los pagos confirmados aparecen en Mis pedidos.');
+        } catch { setError('No se pudieron consultar las compras pendientes. Inicia sesión con la cuenta original e intenta de nuevo.'); }
+        finally { setFinding(false); }
+      }}>Buscar compras pendientes de esta cuenta</button>
+      {pending.map(intent => <div key={intent.intent_id}>
+        <p>Compra pendiente {intent.intent_id} · {displayMoney(intent.total)}</p>
+        <button onClick={() => { try { session.adoptDiscovered(intent); setPending([]); } catch { setError('La sesión cambió. Vuelve a consultar las compras pendientes.'); } }}>Recuperar esta compra</button>
+      </div>)}
+      {hasMore && <button disabled={finding} onClick={async () => {
+        setFinding(true);
+        try { const page = await checkoutService.listActive(pendingPage + 1); setPending(page.results); setPendingPage(value => value + 1); setHasMore(!!page.next); }
+        catch { setError('No se pudo cargar la siguiente página.'); }
+        finally { setFinding(false); }
+      }}>Siguientes compras pendientes</button>}
+    </section>}
     {error && <div role="alert"><p>{error}</p><button onClick={() => setLoad(value => value + 1)}>Reintentar carga</button></div>}
     {!state.reference && state.phase === 'idle' && <div className={styles.paymentLayout}>
       <section className={styles.paymentMain}>

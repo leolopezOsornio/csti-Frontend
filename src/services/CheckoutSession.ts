@@ -1,16 +1,16 @@
 import { checkoutService, CheckoutError, checkoutError } from './Checkout.service';
-import type { CheckoutAPI, CheckoutIntent, CheckoutQuote } from './Checkout.service';
+import type { CheckoutAPI, CheckoutIntent, CheckoutQuote, DiscoveredIntent } from './Checkout.service';
 import { checkoutGeneration, parseRecovery, recoveryStore } from './CheckoutRecovery';
 import type { RecoveryReference } from './CheckoutRecovery';
 
 export type CheckoutPhase = 'idle' | 'creating_intent' | 'creating_paypal' | 'awaiting_approval' | 'capturing' |
   'pending' | 'reconciling' | 'paid' | 'cancelled' | 'attention' | 'unavailable' | 'requote';
-export interface CheckoutState { phase: CheckoutPhase; intent: CheckoutIntent | null; message: string; reference: RecoveryReference | null }
+export interface CheckoutState { phase: CheckoutPhase; intent: CheckoutIntent | null; message: string; reference: RecoveryReference | null; purchasesDisabled: boolean }
 const pendingStates = ['PAYPAL_ORDER_PENDING', 'CAPTURE_PENDING', 'CAPTURE_UNKNOWN', 'RECONCILIATION_REQUIRED'];
 
 // Only serializes client callbacks; Django is responsible for distributed locks.
 export class CheckoutSession {
-  private value: CheckoutState = { phase: 'idle', intent: null, message: '', reference: null };
+  private value: CheckoutState = { phase: 'idle', intent: null, message: '', reference: null, purchasesDisabled: false };
   private listeners = new Set<() => void>();
   private flight: Promise<string> | null = null;
   private busy = false;
@@ -49,7 +49,8 @@ export class CheckoutSession {
     const e = checkoutError(error);
     if (!this.current() || checkoutGeneration() !== this.generation) return;
     if (['paid', 'cancelled', 'unavailable', 'requote'].includes(this.value.phase)) return;
-    this.update({ phase: e.code === 'CHECKOUT_DISABLED' ? 'unavailable' :
+    this.update({ purchasesDisabled: this.value.purchasesDisabled || e.code === 'CHECKOUT_DISABLED',
+      phase: e.code === 'CHECKOUT_DISABLED' ? 'unavailable' :
       ['QUOTE_EXPIRED', 'QUOTE_CHANGED', 'QUOTE_ALREADY_USED'].includes(e.code) ? 'requote' :
       this.value.reference ? 'pending' : 'attention', message: e.message });
   }
@@ -61,6 +62,7 @@ export class CheckoutSession {
   }
   private async startOnce(quote: CheckoutQuote): Promise<string> {
     this.guard();
+    if (this.value.purchasesDisabled) throw new CheckoutError('CHECKOUT_DISABLED', 503);
     if (!quote.selected_rate_id || !quote.total || Date.parse(quote.expires_at) <= Date.now()) throw new CheckoutError('QUOTE_EXPIRED', 409);
     if (['paid', 'cancelled', 'attention', 'unavailable', 'requote'].includes(this.value.phase)) throw new CheckoutError('CHECKOUT_BLOCKED');
     if (this.value.reference && this.value.reference.quoteId !== quote.quote_id) throw new CheckoutError('CHECKOUT_ALREADY_ACTIVE', 409);
@@ -93,6 +95,7 @@ export class CheckoutSession {
   }
   async approve(orderId: string): Promise<void> {
     this.guard(); if (this.busy) return;
+    if (this.value.purchasesDisabled) return;
     const intent = this.value.intent;
     if (!intent || intent.state !== 'PAYPAL_ORDER_CREATED' || this.value.phase !== 'awaiting_approval') return;
     if (orderId !== intent.paypal_order_id) { this.failed(new CheckoutError('PAYPAL_ORDER_ID_MISMATCH')); return; }
@@ -103,6 +106,7 @@ export class CheckoutSession {
   }
   async resumeOrder(): Promise<string> {
     this.guard();
+    if (this.value.purchasesDisabled) throw new CheckoutError('CHECKOUT_DISABLED', 503);
     if (!this.value.reference?.intentId || this.busy) throw new CheckoutError('CHECKOUT_BUSY');
     this.busy = true;
     try {
@@ -153,6 +157,13 @@ export class CheckoutSession {
     if (this.value.reference) throw new CheckoutError('CHECKOUT_ALREADY_ACTIVE');
     this.save(parseRecovery(code, this.accountId)); this.update({ phase: 'pending', intent: null, message: '' });
   }
+  adoptDiscovered(intent: DiscoveredIntent) {
+    this.guard();
+    if (this.busy || this.value.reference) throw new CheckoutError('CHECKOUT_ALREADY_ACTIVE');
+    this.save({ version: 1, accountId: this.accountId, quoteId: intent.quote_id,
+      key: intent.idempotency_key, intentId: intent.intent_id });
+    this.accept(intent);
+  }
   acknowledgePaid() {
     this.guard(); if (this.value.phase !== 'paid' || !this.value.intent?.order_id) return;
     recoveryStore.remove(this.accountId); this.update({ reference: null });
@@ -160,7 +171,7 @@ export class CheckoutSession {
   retryQuote() {
     this.guard();
     if (this.value.reference || !['attention', 'requote', 'unavailable'].includes(this.value.phase)) return;
-    this.update({ phase: 'idle', message: '', intent: null });
+    this.update({ phase: 'idle', message: '', intent: null, purchasesDisabled: false });
   }
   gatewayError() { this.failed(new CheckoutError('PAYPAL_RESULT_UNKNOWN')); }
 }

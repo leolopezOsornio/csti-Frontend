@@ -1,5 +1,12 @@
 # Fase 3 — integración local del checkout React con Django
 
+**Adenda fase 4:** ahora se ejecutaron 12 pruebas Axios HTTPS con Django y
+PostgreSQL reales; se implementó listado autenticado de intentos activos para
+recuperar después de logout sin código. El bloqueo CHECKOUT_DISABLED se conserva
+tras GET y permite recuperar operaciones existentes. Ver
+[resultado fase 4](15_FASE4_INTEGRACION_FRONTEND.md). Las limitaciones y pruebas
+de fase 3 siguientes son históricas; sandbox/SDK DOM continúan pendientes.
+
 2026-11-24. Repositorio C:\Users\TI\cstiFrontend, rama
 `fix/seguridad-envios-preproduccion`, HEAD
 `ba824d62c93fc6eb5ec1538db63c2151c30f1ad6`. Cambios sin commit.
