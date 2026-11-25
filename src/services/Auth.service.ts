@@ -1,4 +1,5 @@
 import api from './Api.service';
+import { clearCheckoutRecovery } from './CheckoutRecovery';
 
 export const authService = {
     login: async (email: string, password: string, rememberMe: boolean = false) => {
@@ -23,6 +24,7 @@ export const authService = {
     },
 
     logout: () => {
+        clearCheckoutRecovery();
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         sessionStorage.removeItem('access_token');

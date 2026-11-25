@@ -25,7 +25,7 @@ const CartItem = ({ item, onUpdateQty, onRemove }: CartItemProps) => {
         toast: true,
         position: 'top-end',
         icon: 'error',
-        title: `Solo hay ${producto.disponible} unidades disponibles`,
+        titleText: `Solo hay ${producto.disponible} unidades disponibles`,
         showConfirmButton: false,
         timer: 3000,
       });

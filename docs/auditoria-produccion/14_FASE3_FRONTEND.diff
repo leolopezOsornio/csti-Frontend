@@ -1,0 +1,1791 @@
+diff --git a/scripts/build-checkout-offline.mjs b/scripts/build-checkout-offline.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/build-checkout-offline.mjs
+@@ -0,0 +1,11 @@
++// Same TypeScript project build and Vite pipeline, without loading any .env file.
++import { execFileSync } from 'node:child_process';
++import { fileURLToPath } from 'node:url';
++import { resolve } from 'node:path';
++import { build } from 'vite';
++const root = fileURLToPath(new URL('../', import.meta.url));
++for (const name of Object.keys(process.env)) if (name.startsWith('VITE_')) delete process.env[name];
++process.env.VITE_API_BASE_URL = 'http://127.0.0.1:8000';
++process.env.VITE_PAYPAL_CLIENT_ID = 'synthetic-client-not-commercial';
++execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-b'], { cwd: root, stdio: 'inherit' });
++await build({ root, envDir: false, mode: 'checkout-offline', build: { outDir: 'node_modules/.cache/checkout-offline-dist' } });
+diff --git a/src/components/CheckoutPayPal.tsx b/src/components/CheckoutPayPal.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/components/CheckoutPayPal.tsx
+@@ -0,0 +1,18 @@
++import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
++import { checkoutCallbacks } from '../services/CheckoutCallbacks';
++import { CheckoutError } from '../services/Checkout.service';
++import type { CheckoutQuote } from '../services/Checkout.service';
++import type { CheckoutSession } from '../services/CheckoutSession';
++
++export default function CheckoutPayPal({ session, prepareQuote, disabled, clientId }: {
++  session: CheckoutSession; prepareQuote: () => Promise<CheckoutQuote>; disabled: boolean; clientId: string;
++}) {
++  if (!clientId) return <p role="status">El pago está temporalmente no disponible.</p>;
++  const callbacks = checkoutCallbacks(session, async () => {
++    if (disabled && !session.snapshot().reference) throw new CheckoutError('CHECKOUT_BLOCKED');
++    return prepareQuote();
++  });
++  return <PayPalScriptProvider options={{ clientId, currency: 'MXN', intent: 'capture' }}>
++    <PayPalButtons disabled={disabled} style={{ layout: 'vertical', color: 'gold', label: 'pay' }} {...callbacks} />
++  </PayPalScriptProvider>;
++}
+diff --git a/src/components/CheckoutStatus.tsx b/src/components/CheckoutStatus.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/components/CheckoutStatus.tsx
+@@ -0,0 +1,18 @@
++import { displayMoney } from '../services/Checkout.service';
++import type { CheckoutState } from '../services/CheckoutSession';
++
++const labels = { idle: 'Selecciona una tarifa para continuar.', creating_intent: 'Preparando tu compra…',
++  creating_paypal: 'Preparando la aprobación en PayPal…', awaiting_approval: 'Esperando tu aprobación en PayPal.',
++  capturing: 'Confirmando el pago…', pending: 'Tu compra está pendiente de confirmación. No inicies otra compra.',
++  reconciling: 'Consultando el resultado de tu compra…', paid: 'Pago confirmado', cancelled: 'Compra cancelada antes del cobro.',
++  attention: 'Tu compra requiere atención.', unavailable: 'Las compras están temporalmente no disponibles.',
++  requote: 'La cotización cambió o venció. Debes cotizar de nuevo.' };
++export default function CheckoutStatus({ state }: { state: CheckoutState }) {
++  const confirmed = state.phase === 'paid' && state.intent?.state === 'CAPTURED' && state.intent.order_id;
++  return <section role="status" aria-live="polite">
++    <h2>{confirmed ? `Pago confirmado. Pedido #${state.intent!.order_id}` : state.phase === 'paid' ? 'Tu compra requiere atención.' : labels[state.phase]}</h2>
++    {state.message && <p>{state.message}</p>}
++    {state.intent && <p>Importe registrado: {displayMoney(state.intent.total)}</p>}
++    {state.intent?.fulfillment_state === 'REQUIRES_MANUAL_RECONCILIATION' && <p>El pago está registrado. La preparación del pedido requiere revisión por nuestro equipo.</p>}
++  </section>;
++}
+diff --git a/src/components/ShippingQuoteGate.tsx b/src/components/ShippingQuoteGate.tsx
+--- a/src/components/ShippingQuoteGate.tsx
++++ b/src/components/ShippingQuoteGate.tsx
+@@ -8,7 +8,8 @@
+   selectedRateId: string | null;
+   children: ReactNode;
+ }) {
+-  if (!isQuoteCurrent(quote, context) || !quote.rates.some(rate => rate.id === selectedRateId)) {
++  if (!isQuoteCurrent(quote, context) || quote.total === null || quote.selected_rate_id !== selectedRateId ||
++      !quote.rates.some(rate => rate.id === selectedRateId)) {
+     return <p role="status">El pago está bloqueado hasta obtener una cotización válida.</p>;
+   }
+   return children;
+diff --git a/src/contexts/AuthContext.tsx b/src/contexts/AuthContext.tsx
+--- a/src/contexts/AuthContext.tsx
++++ b/src/contexts/AuthContext.tsx
+@@ -1,5 +1,6 @@
+ import { createContext, useState, useEffect } from 'react';
+ import type { ReactNode } from 'react';
++import { setCheckoutAccount } from '../services/CheckoutRecovery';
+ import { authService } from '../services/Auth.service';
+ 
+ export interface User {
+@@ -36,6 +37,7 @@
+   const fetchUserProfile = async () => {
+     try {
+       const userData = await authService.getUserProfile();
++      setCheckoutAccount(userData.id);
+       setUser(userData);
+       setIsAuthenticated(true);
+     } catch (error) {
+@@ -63,6 +65,7 @@
+     storage.setItem('access_token', token);
+     try {
+       const userData = await authService.getUserProfile();
++      setCheckoutAccount(userData.id);
+       setUser(userData);
+       setIsAuthenticated(true);
+       return userData;
+diff --git a/src/hooks/useShippingQuote.ts b/src/hooks/useShippingQuote.ts
+--- a/src/hooks/useShippingQuote.ts
++++ b/src/hooks/useShippingQuote.ts
+@@ -1,8 +1,9 @@
+ import { useEffect, useMemo, useState } from 'react';
+ import { isQuoteCurrent, shippingService } from '../services/Shipping.service';
+ import type { QuoteContext, ShippingCartItem, ShippingQuote } from '../services/Shipping.service';
++import { checkoutError } from '../services/Checkout.service';
+ 
+-export function useShippingQuote(context: QuoteContext, items: ShippingCartItem[], addressVersion: string) {
++export function useShippingQuote(context: QuoteContext, items: ShippingCartItem[], addressVersion: string, enabled = true) {
+   // Depend on quote-relevant values, not a parent's newly allocated array.
+   // Freeze the same snapshot used in the request and its effect identity.
+   const snapshot = JSON.stringify(items.map(item => ({
+@@ -12,43 +13,55 @@
+   })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+   const quoteItems = useMemo(() => JSON.parse(snapshot) as ShippingCartItem[], [snapshot]);
+   const [attempt, setAttempt] = useState(0);
+-  const key = JSON.stringify([context.addressId, context.cartKey, addressVersion, snapshot, attempt]);
++  const key = JSON.stringify([context.addressId, context.cartKey, addressVersion, snapshot, attempt, enabled]);
+   const [result, setResult] = useState<{
+-    key: string; quote: ShippingQuote | null; selectedId: string | null; error: string | null;
++    key: string; quote: ShippingQuote | null; selectedId: string | null; error: string | null; selecting?: boolean;
+   }>({ key: '', quote: null, selectedId: null, error: null });
+ 
+   useEffect(() => {
+     let active = true;
+     let expiry: ReturnType<typeof setTimeout>;
+     const quoteContext = { addressId: context.addressId, cartKey: context.cartKey };
++    if (!enabled || !context.addressId) return;
+     const preferredId = shippingService.getSelectedRateId(quoteContext);
+-    shippingService.getQuote(quoteContext, quoteItems).then(quote => {
++    shippingService.getQuote(quoteContext, quoteItems).then(async quote => {
+       if (!active) return;
+       const preferred = quote.rates.find(rate => rate.id === preferredId);
+-      const selected = preferred ?? quote.rates.reduce((a, b) => a.price <= b.price ? a : b);
+-      setResult({ key, quote, selectedId: selected.id, error: null });
++      const selected = preferred ?? quote.rates.reduce((a, b) => BigInt(a.price.replace('.', '')) <= BigInt(b.price.replace('.', '')) ? a : b);
++      const confirmed = await shippingService.selectQuoteRate(quote, selected.id);
++      if (!active) return;
++      if (confirmed.expiresAt <= Date.now()) throw new Error('QUOTE_EXPIRED');
++      setResult({ key, quote: confirmed, selectedId: selected.id, error: null });
+       shippingService.saveSelectedRate(selected, quoteContext);
+-      expiry = setTimeout(() => setAttempt(value => value + 1), Math.max(0, quote.expiresAt - Date.now()));
+-    }).catch(() => {
++      expiry = setTimeout(() => setAttempt(value => value + 1), Math.max(0, confirmed.expiresAt - Date.now()));
++    }).catch(error => {
+       if (!active) return;
+       shippingService.clearSelectedRate();
+       setResult({ key, quote: null, selectedId: null,
+-        error: context.addressId > 0 ? 'No fue posible obtener una cotización válida. Intenta de nuevo.' : 'Agrega una dirección válida para cotizar el envío.' });
++        error: checkoutError(error).message });
+     });
+     return () => { active = false; clearTimeout(expiry); };
+-  }, [context.addressId, context.cartKey, quoteItems, addressVersion, key]);
++  }, [context.addressId, context.cartKey, quoteItems, addressVersion, key, enabled]);
+ 
+   const matches = result.key === key;
+-  const quote = matches && isQuoteCurrent(result.quote, context) ? result.quote : null;
++  const quote = enabled && matches && !result.selecting && isQuoteCurrent(result.quote, context) ? result.quote : null;
+   const selectedRate = quote?.rates.find(rate => rate.id === result.selectedId) ?? null;
+   return {
+-    quote, selectedRate, loading: !matches, error: matches ? result.error : null,
++    quote, selectedRate, loading: enabled && context.addressId > 0 && (!matches || !!result.selecting),
++    error: context.addressId <= 0 && enabled ? 'Agrega una dirección válida para cotizar el envío.' : matches ? result.error : null,
+     retry: () => setAttempt(value => value + 1),
+-    selectRate: (id: string) => {
++    selectRate: async (id: string) => {
+       const rate = quote?.rates.find(candidate => candidate.id === id);
+       if (!rate) return;
+-      setResult(previous => ({ ...previous, selectedId: id }));
+-      shippingService.saveSelectedRate(rate, context);
++      setResult(previous => ({ ...previous, selectedId: id, selecting: true }));
++      try {
++        const confirmed = await shippingService.selectQuoteRate(quote!, id);
++        setResult(previous => previous.key === key && previous.selectedId === id
++          ? { key, quote: confirmed, selectedId: id, error: null } : previous);
++      } catch (error) {
++        setResult(previous => previous.key === key && previous.selectedId === id
++          ? { key, quote: null, selectedId: null, error: checkoutError(error).message } : previous);
++      }
+     },
+   };
+ }
+diff --git a/src/pages/cart/components/CartSummary/CartSummary.tsx b/src/pages/cart/components/CartSummary/CartSummary.tsx
+--- a/src/pages/cart/components/CartSummary/CartSummary.tsx
++++ b/src/pages/cart/components/CartSummary/CartSummary.tsx
+@@ -1,6 +1,8 @@
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useContext } from 'react';
++import { AuthContext } from '../../../../contexts/AuthContext';
+ import { useNavigate } from 'react-router-dom';
+ import { addressService } from '../../../../services/Address.service';
++import { displayMoney } from '../../../../services/Checkout.service';
+ import { cartQuoteKey } from '../../../../services/Shipping.service';
+ import { useShippingQuote } from '../../../../hooks/useShippingQuote';
+ import type { ShippingCartItem } from '../../../../services/Shipping.service';
+@@ -13,6 +15,8 @@
+ 
+ const CartSummary = ({ total, items }: CartSummaryProps) => {
+   const navigate = useNavigate();
++  const { user } = useContext(AuthContext);
++  const accountId = user?.id ?? null;
+   
+   const [address, setAddress] = useState<{ id: number; codigo_postal: string } | null>(null);
+   const [addressError, setAddressError] = useState<string | null>(null);
+@@ -20,7 +24,7 @@
+   const [isAtBottom, setIsAtBottom] = useState(false);
+   const context = { addressId: address?.id ?? 0, cartKey: cartQuoteKey(items, total) };
+   const { quote, selectedRate: shippingRate, loading: loadingShipping, error: quoteError } =
+-    useShippingQuote(context, items, JSON.stringify(address));
++    useShippingQuote(context, items, JSON.stringify([accountId, address]), accountId !== null);
+ 
+   useEffect(() => {
+     let active = true;
+@@ -39,7 +43,7 @@
+       setAddressError('No se pudieron cargar tus direcciones. Intenta de nuevo.');
+     });
+     return () => { active = false; };
+-  }, [addressAttempt]);
++  }, [addressAttempt, accountId]);
+ 
+   useEffect(() => {
+     const invalidate = () => { setAddress(null); setAddressAttempt(value => value + 1); };
+@@ -72,7 +76,7 @@
+     if (quote && shippingRate && address) navigate('/payment');
+   };
+ 
+-  const finalTotal = Number(total) + (shippingRate?.price || 0);
++
+ 
+   return (
+     <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>
+@@ -82,7 +86,7 @@
+         <div className={styles.summaryRow}>
+           <span>Productos</span>
+           <span>
+-            ${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
++            {displayMoney(quote?.items_total)}
+           </span>
+         </div>
+ 
+@@ -91,7 +95,7 @@
+           {loadingShipping ? (
+             <span style={{color: '#64748b', fontSize: '0.9rem'}}>Calculando...</span>
+           ) : shippingRate ? (
+-            <span>${shippingRate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
++            <span>{displayMoney(quote?.shipping_total)}</span>
+           ) : (
+             <span>Pendiente</span>
+           )}
+@@ -106,7 +110,7 @@
+         <div className={`${styles.summaryRow} ${styles.total}`}>
+           <span className={styles.labelTotal}>Total</span>
+           <span className={styles.valueTotal}>
+-            {shippingRate ? `$${Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}
++            {displayMoney(quote?.total)}
+           </span>
+         </div>
+ 
+diff --git a/src/pages/Payment/Payment.tsx b/src/pages/Payment/Payment.tsx
+--- a/src/pages/Payment/Payment.tsx
++++ b/src/pages/Payment/Payment.tsx
+@@ -1,349 +1,126 @@
+-import { useState, useEffect, useContext, useRef } from 'react';
+-import { useNavigate, Link } from 'react-router-dom';
+-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+-import Swal from 'sweetalert2';
++import { useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
++import { Link } from 'react-router-dom';
++import { AuthContext } from '../../contexts/AuthContext';
+ import { CartContext } from '../../contexts/CartContext';
+ import { cartService } from '../../services/Cart.service';
+-import { paymentService } from '../../services/Payment.service';
+-import { cartQuoteKey, shippingService } from '../../services/Shipping.service';
++import { addressService } from '../../services/Address.service';
++import { cartQuoteKey, isQuoteCurrent } from '../../services/Shipping.service';
++import type { ShippingCartItem } from '../../services/Shipping.service';
++import { CheckoutError, displayMoney } from '../../services/Checkout.service';
++import { checkoutAccount } from '../../services/CheckoutRecovery';
++import { CheckoutSession } from '../../services/CheckoutSession';
+ import { revalidateCheckoutShipping } from '../../services/CheckoutShipping.service';
+ import { useShippingQuote } from '../../hooks/useShippingQuote';
+-import ShippingQuoteGate from '../../components/ShippingQuoteGate';
+-import type { ShippingRate, ShippingCartItem } from '../../services/Shipping.service';
+-import { addressService } from '../../services/Address.service';
++import CheckoutPayPal from '../../components/CheckoutPayPal';
++import CheckoutStatus from '../../components/CheckoutStatus';
+ import styles from './Payment.module.css';
+ 
+-const EMPTY_ITEMS: ShippingCartItem[] = [];
++interface Address { id: number; destinatario: string; calle: string; numero_exterior: string; codigo_postal: string; es_principal?: boolean }
++interface Cart { items: ShippingCartItem[]; total: string | number }
++const EMPTY: ShippingCartItem[] = [];
+ 
+-const Payment = () => {
+-  const navigate = useNavigate();
++function AccountCheckout({ accountId }: { accountId: number }) {
+   const { refreshCart } = useContext(CartContext);
++  const session = useMemo(() => new CheckoutSession(accountId, () => checkoutAccount() === accountId), [accountId]);
++  const state = useSyncExternalStore(session.subscribe, session.snapshot, session.snapshot);
++  const [cart, setCart] = useState<Cart | null>(null);
++  const [addresses, setAddresses] = useState<Address[]>([]);
++  const [addressId, setAddressId] = useState(0);
++  const [load, setLoad] = useState(0);
++  const [loaded, setLoaded] = useState(-1);
++  const [error, setError] = useState('');
++  const [code, setCode] = useState('');
++  const address = addresses.find(candidate => candidate.id === addressId);
++  const items = cart?.items ?? EMPTY;
++  const context = { addressId, cartKey: cartQuoteKey(items, cart?.total ?? '') };
++  const canQuote = loaded === load && !state.reference && state.phase === 'idle';
++  const shipping = useShippingQuote(context, items, JSON.stringify(address), canQuote);
++  const quote = shipping.quote;
++  const quoteReady = !!quote && isQuoteCurrent(quote, context) && !!quote.selected_rate_id && quote.total !== null;
++  const busy = ['creating_intent', 'creating_paypal', 'capturing', 'reconciling'].includes(state.phase);
++  const resumeReady = !!state.reference?.intentId && ['CREATED', 'PAYPAL_ORDER_CREATED'].includes(state.intent?.state ?? '');
+ 
+-  const [cartData, setCartData] = useState<any>(null);
+-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+-  const [addressDetails, setAddressDetails] = useState<any>(null);
+-  const [loadAttempt, setLoadAttempt] = useState(0);
+-  const [loadedAttempt, setLoadedAttempt] = useState(-1);
+-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+-  const paymentInProgress = useRef(false);
+-  const [showShippingOptions, setShowShippingOptions] = useState(false);
+-
+-  const items: ShippingCartItem[] = cartData?.items ?? EMPTY_ITEMS;
+-  const context = { addressId: selectedAddressId ?? 0, cartKey: cartQuoteKey(items, cartData?.total ?? '') };
+-  const { quote, selectedRate: shippingRate, loading: loadingQuote, error: quoteError, retry, selectRate } =
+-    useShippingQuote(context, items, JSON.stringify([addressDetails, loadAttempt]));
+-  const availableRates = quote?.rates ?? [];
+-  const loading = loadedAttempt !== loadAttempt;
+-
++  useEffect(() => { void session.restore(); }, [session]);
+   useEffect(() => {
+     let active = true;
+-    const fetchData = async () => {
+-      try {
+-        const [cart, addresses] = await Promise.all([cartService.getCart(), addressService.getAddresses()]);
+-        if (!active) return;
+-        let savedId: number | null = null;
+-        try {
+-          const value = localStorage.getItem('selectedAddressId') || '';
+-          if (/^[1-9]\d*$/.test(value)) savedId = Number(value);
+-        } catch { /* Storage is optional. */ }
+-        const address = addresses.find((candidate: { id: number }) => candidate.id === savedId) ??
+-          addresses.find((candidate: { es_principal?: boolean }) => candidate.es_principal) ?? addresses[0];
+-        setCartData(cart);
+-        setSelectedAddressId(address?.id ?? null);
+-        setAddressDetails(address ?? null);
+-        setCheckoutError(address ? null : 'Agrega una dirección válida en tu perfil para continuar.');
+-      } catch {
+-        if (!active) return;
+-        setCartData(null);
+-        setSelectedAddressId(null);
+-        setAddressDetails(null);
+-        setCheckoutError('No se pudieron cargar los datos del checkout. Intenta de nuevo.');
+-      } finally {
+-        if (active) setLoadedAttempt(loadAttempt);
+-      }
+-    };
+-    void fetchData();
++    Promise.all([cartService.getCart(), addressService.getAddresses()]).then(([data, rows]: [Cart, Address[]]) => {
++      if (!active) return;
++      setCart(data); setAddresses(rows);
++      let preferred = 0;
++      try { preferred = Number(localStorage.getItem('selectedAddressId')); } catch { /* Optional preference. */ }
++      setAddressId((rows.find(row => row.id === preferred) ?? rows.find(row => row.es_principal) ?? rows[0])?.id ?? 0);
++      setError('');
++    }).catch(() => { if (active) setError('No se pudieron cargar carrito y direcciones. La recuperación de compra sigue disponible.'); })
++      .finally(() => { if (active) setLoaded(load); });
+     return () => { active = false; };
+-  }, [loadAttempt]);
++  }, [load]);
++  useEffect(() => {
++    const invalidate = () => { if (!session.snapshot().reference) setLoad(value => value + 1); };
++    window.addEventListener('focus', invalidate); window.addEventListener('storage', invalidate);
++    return () => { window.removeEventListener('focus', invalidate); window.removeEventListener('storage', invalidate); };
++  }, [session]);
++  useEffect(() => { if (state.phase === 'paid') void refreshCart(); }, [state.phase, refreshCart]);
+ 
+-  useEffect(() => {
+-    const invalidate = () => {
+-      if (!paymentInProgress.current) setLoadAttempt(value => value + 1);
+-    };
+-    window.addEventListener('focus', invalidate);
+-    window.addEventListener('storage', invalidate);
+-    return () => { window.removeEventListener('focus', invalidate); window.removeEventListener('storage', invalidate); };
+-  }, []);
+-
+-  if (loading) {
+-    return (
+-      <div className={styles.loaderContainer}>
+-        <div className={styles.spinner}></div>
+-        <p>Cargando detalles de tu pago...</p>
+-      </div>
+-    );
+-  }
+-
+-  if (checkoutError) {
+-    return <div className={styles.paymentContainer} role="alert">
+-      <p>{checkoutError}</p>
+-      <button type="button" onClick={() => setLoadAttempt(value => value + 1)}>Reintentar</button>
+-      <Link to="/perfil/direcciones">Revisar direcciones</Link>
+-    </div>;
+-  }
+-
+-  if (!cartData || !cartData.items || cartData.items.length === 0) {
+-    return (
+-      <div className={styles.paymentContainer}>
+-        <div className={styles.noAddresses}>
+-          <h3>Tu carrito está vacío</h3>
+-          <p>Agrega algunos productos antes de proceder al pago.</p>
+-          <Link to="/home" className={styles.linkProfile}>Volver a la tienda</Link>
+-        </div>
+-      </div>
+-    );
+-  }
+-
+-  const subtotal = Number(cartData.total);
+-  const shippingCost = shippingRate?.price || 0;
+-  const total = subtotal + shippingCost;
+-
+-  const handleSelectRate = (rate: ShippingRate) => {
+-    selectRate(rate.id);
+-    setShowShippingOptions(false);
++  const prepareQuote = async () => {
++    if (!quoteReady || !quote || !address) throw new CheckoutError('QUOTE_EXPIRED', 409);
++    try { await revalidateCheckoutShipping(quote, context, quote.selected_rate_id!, address); }
++    catch { setError('Cambió el carrito o la dirección. Revisa una nueva cotización.'); setLoad(value => value + 1); throw new CheckoutError('QUOTE_CHANGED', 409); }
++    return quote;
+   };
+-
+-  return (
+-    <div className={styles.paymentContainer}>
+-      <h1 className={styles.paymentTitle}>Finalizar Compra</h1>
+-
+-      <div className={styles.paymentLayout}>
+-        <div className={styles.paymentMain}>
+-          <section>
+-            <h2 className={styles.sectionTitle}>
+-              <i className="fa-solid fa-truck"></i> Información de Envío
+-            </h2>
+-
+-            {addressDetails && (
+-              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '2px solid #eaeaea', marginBottom: '1rem' }}>
+-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>Entregar a: {addressDetails.destinatario}</h3>
+-                <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>
+-                  {addressDetails.calle} {addressDetails.numero_exterior}{addressDetails.numero_interior ? `, Int. ${addressDetails.numero_interior}` : ''}
+-                  <br />
+-                  {addressDetails.colonia}, CP: {addressDetails.codigo_postal}
+-                  <br />
+-                  {addressDetails.ciudad_municipio}, {addressDetails.estado}
+-                </p>
+-                <div style={{ marginTop: '1rem' }}>
+-                  <Link to="/perfil/direcciones" style={{ color: '#00b4d8', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem' }}>
+-                    <i className="fa-solid fa-pen"></i> Cambiar Dirección
+-                  </Link>
+-                </div>
+-              </div>
+-            )}
+-
+-            {shippingRate && (
+-              <div style={{ background: '#f0fdf4', padding: '1.5rem', borderRadius: '12px', border: '2px solid #10b981' }}>
+-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+-                    <div style={{
+-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+-                      width: '40px', height: '40px', borderRadius: '50%',
+-                      backgroundColor: shippingRate.type === 'express' ? '#fef3c7' : '#f1f5f9',
+-                      color: shippingRate.type === 'express' ? '#d97706' : '#64748b',
+-                      fontSize: '1.2rem'
+-                    }}>
+-                      {shippingRate.type === 'express' ? (
+-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+-                        </svg>
+-                      ) : (
+-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+-                          <rect x="1" y="3" width="15" height="13"></rect>
+-                          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+-                          <circle cx="5.5" cy="18.5" r="2.5"></circle>
+-                          <circle cx="18.5" cy="18.5" r="2.5"></circle>
+-                        </svg>
+-                      )}
+-                    </div>
+-                    <div>
+-                      <strong style={{ display: 'block', color: '#1f2937' }}>{shippingRate.title}</strong>
+-                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{shippingRate.description}</span>
+-                    </div>
+-                  </div>
+-                  <div style={{ fontWeight: 600, color: '#10b981' }}>
+-                    ${shippingCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+-                  </div>
+-                </div>
+-
+-                {availableRates.length > 1 && (
+-                  <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+-                    {!showShippingOptions ? (
+-                      <button
+-                        onClick={() => setShowShippingOptions(true)}
+-                        style={{ background: 'none', border: 'none', color: '#00b4d8', fontWeight: 500, cursor: 'pointer', padding: 0 }}
+-                      >
+-                        Elegir otra opción de envío
+-                      </button>
+-                    ) : (
+-                      <div>
+-                        <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem' }}>Otras opciones disponibles:</h4>
+-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+-                          {availableRates.map((rate) => (
+-                            <div
+-                              key={rate.id}
+-                              onClick={() => handleSelectRate(rate)}
+-                              style={{
+-                                display: 'flex', justifyContent: 'space-between', padding: '0.75rem',
+-                                border: rate.id === shippingRate.id ? '1px solid #10b981' : '1px solid #cbd5e1',
+-                                borderRadius: '8px', cursor: 'pointer', background: rate.id === shippingRate.id ? '#f0fdf4' : 'white'
+-                              }}
+-                            >
+-                              <span style={{ fontWeight: rate.id === shippingRate.id ? 600 : 400 }}>{rate.title}</span>
+-                              <span>${rate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+-                            </div>
+-                          ))}
+-                        </div>
+-                        <button
+-                          onClick={() => setShowShippingOptions(false)}
+-                          style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.85rem', cursor: 'pointer', marginTop: '1rem', padding: 0 }}
+-                        >
+-                          Cancelar
+-                        </button>
+-                      </div>
+-                    )}
+-                  </div>
+-                )}
+-              </div>
+-            )}
+-          </section>
+-
+-          <section className={styles.cartPreview} style={{ marginTop: '2.5rem' }}>
+-            <h2 className={styles.sectionTitle}>
+-              <i className="fa-solid fa-basket-shopping"></i> Resumen de Productos
+-            </h2>
+-            <div className={styles.productsList}>
+-              {cartData.items.map((item: any) => (
+-                <div key={item.id} className={styles.productCard}>
+-                  <div className={styles.productImageContainer}>
+-                    <img
+-                      src={item.producto.imagen || '/img/no-image.png'}
+-                      alt={item.producto.descripcion}
+-                      className={styles.productImage}
+-                    />
+-                  </div>
+-                  <div className={styles.productDetails}>
+-                    <span className={styles.productDescription}>{item.producto.descripcion}</span>
+-                    <span className={styles.productQuantity}>Cantidad: {item.cantidad}</span>
+-                  </div>
+-                  <div className={styles.productPriceContainer}>
+-                    <span className={styles.productPrice}>
+-                      ${(item.precio_unitario * item.cantidad).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+-                    </span>
+-                  </div>
+-                </div>
+-              ))}
+-            </div>
+-          </section>
+-        </div>
+-
+-        <aside className={styles.paymentSidebar}>
+-          <div className={styles.orderTotalSection}>
+-            <div className={styles.totalRow}>
+-              <span>Subtotal</span>
+-              <span>${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+-            </div>
+-            <div className={styles.totalRow}>
+-              <span>Envío ({shippingRate?.title})</span>
+-              <span>{shippingRate ? `$${shippingCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}</span>
+-            </div>
+-            <div className={styles.totalRow}>
+-              <span>IVA (16%)</span>
+-              <span>Incluido</span>
+-            </div>
+-            <div className={`${styles.totalRow} ${styles.grandTotal}`}>
+-              <span>Total a Pagar</span>
+-              <span>{shippingRate ? `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}</span>
+-            </div>
+-          </div>
+-
+-          {(quoteError || loadingQuote) && <div role="status">
+-            <p>{quoteError || 'Cotizando envío...'}</p>
+-            {quoteError && <button type="button" onClick={retry}>Reintentar cotización</button>}
+-          </div>}
+-          <ShippingQuoteGate quote={quote} context={context} selectedRateId={shippingRate?.id ?? null}>
+-          {selectedAddressId && shippingRate && (
+-            <div className={styles.paypalContainer}>
+-              <PayPalScriptProvider options={{
+-                clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+-                currency: "MXN"
+-              }}>
+-                <PayPalButtons
+-                  style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
+-                  forceReRender={[selectedAddressId, cartData, total, shippingRate.id, shippingRate.internalProvider, quote?.expiresAt]}
+-                  onClick={() => { paymentInProgress.current = true; }}
+-                  onCancel={() => { paymentInProgress.current = false; }}
+-                  createOrder={async (_data, actions) => {
+-                    try {
+-                      await revalidateCheckoutShipping(quote, context, shippingRate.id, addressDetails);
+-                      return await actions.order.create({
+-                      intent: "CAPTURE",
+-                      purchase_units: [
+-                        {
+-                          amount: {
+-                            value: total.toFixed(2).toString(),
+-                            currency_code: "MXN"
+-                          },
+-                          description: `Compra en CSTI - ${cartData?.items?.length || 0} productos`
+-                        }
+-                      ]
+-                      });
+-                    } catch (error) {
+-                      paymentInProgress.current = false;
+-                      shippingService.clearSelectedRate();
+-                      setLoadAttempt(value => value + 1);
+-                      throw error;
+-                    }
+-                  }}
+-                  onApprove={async (data, _actions) => {
+-                    try {
+-                      const carrierName = shippingRate.internalProvider;
+-                      await paymentService.verifyPayment(data.orderID, selectedAddressId, shippingCost, carrierName);
+-
+-                      shippingService.clearSelectedRate();
+-                      localStorage.removeItem('selectedAddressId');
+-
+-                      await refreshCart();
+-                      Swal.fire({
+-                        title: '¡Pago Exitoso!',
+-                        text: 'Tu orden ha sido procesada y creada correctamente.',
+-                        icon: 'success',
+-                        confirmButtonColor: '#00b4d8',
+-                      }).then(() => {
+-                        navigate('/perfil/pedidos');
+-                      });
+-                    } catch (error: any) {
+-                      console.error("Error en la verificación:", error);
+-                      const errorMsg = error.response?.data?.error || 'El pago se autorizó pero hubo un problema al registrarlo.';
+-                      Swal.fire({ title: 'Error', text: errorMsg, icon: 'error' });
+-                    } finally {
+-                      paymentInProgress.current = false;
+-                    }
+-                  }}
+-                  onError={(err) => {
+-                    paymentInProgress.current = false;
+-                    console.error("PayPal Error:", err);
+-                    Swal.fire('Error', 'Ocurrió un error con la pasarela de PayPal.', 'error');
+-                  }}
+-                />
+-              </PayPalScriptProvider>
+-            </div>
+-          )}
+-          </ShippingQuoteGate>
+-        </aside>
+-      </div>
+-    </div>
+-  );
+-};
+-
+-export default Payment;
++  const showPayPal = quoteReady || resumeReady || ['creating_intent', 'creating_paypal', 'awaiting_approval', 'capturing'].includes(state.phase);
++  return <div className={styles.paymentContainer}>
++    <h1 className={styles.paymentTitle}>Finalizar compra</h1>
++    <CheckoutStatus state={state} />
++    {state.reference && <section>
++      <p>Guarda este código de recuperación antes de cerrar sesión. Contiene referencias de la compra, no datos de pago.</p>
++      <textarea aria-label="Código de recuperación de esta compra" readOnly value={JSON.stringify(state.reference)} rows={4} />
++      {state.phase !== 'paid' && <button disabled={busy} onClick={() => void session.recover()}>Consultar y recuperar compra</button>}
++      {state.phase !== 'paid' && <button disabled={busy} onClick={() => void session.cancel()}>Solicitar cancelación</button>}
++    </section>}
++    {state.phase === 'paid' && state.intent?.order_id && <Link to="/perfil/pedidos" onClick={() => session.acknowledgePaid()}>Ver mi pedido confirmado</Link>}
++    {state.phase === 'cancelled' && <button onClick={() => window.location.reload()}>Volver a cotizar</button>}
++    {!state.reference && ['attention', 'requote', 'unavailable'].includes(state.phase) &&
++      <button onClick={() => { session.retryQuote(); setLoad(value => value + 1); }}>Volver a cotizar</button>}
++    {!state.reference && state.phase !== 'paid' && <details><summary>Recuperar una compra con mi código</summary>
++      <textarea aria-label="Código de recuperación guardado" value={code} onChange={event => setCode(event.target.value)} />
++      <button onClick={() => { try { session.importCode(code); setCode(''); void session.restore(); } catch { setError('El código no es válido para esta cuenta.'); } }}>Recuperar referencia</button>
++    </details>}
++    {error && <div role="alert"><p>{error}</p><button onClick={() => setLoad(value => value + 1)}>Reintentar carga</button></div>}
++    {!state.reference && state.phase === 'idle' && <div className={styles.paymentLayout}>
++      <section className={styles.paymentMain}>
++        <h2>Dirección de entrega</h2>
++        <select aria-label="Dirección de entrega" value={addressId} onChange={event => setAddressId(Number(event.target.value))}>
++          <option value={0}>Selecciona una dirección</option>
++          {addresses.map(row => <option key={row.id} value={row.id}>{row.destinatario} — {row.calle} {row.numero_exterior}, CP {row.codigo_postal}</option>)}
++        </select>
++        <Link to="/perfil/direcciones">Revisar direcciones</Link>
++        <h2>Envío</h2>
++        {shipping.loading && <p role="status">Cotizando y confirmando tarifa…</p>}
++        {shipping.error && <div role="alert"><p>{shipping.error}</p><button onClick={shipping.retry}>Reintentar cotización</button></div>}
++        {quote?.rates.map(rate => <button key={rate.id} type="button" aria-pressed={quote.selected_rate_id === rate.id}
++          onClick={() => void shipping.selectRate(rate.id)}>{rate.carrier} — {rate.service}: {displayMoney(rate.price)}</button>)}
++        <h2>Productos cotizados</h2>
++        {quote?.lines.map(line => <p key={line.item_id}>{line.description} · Cantidad: {line.quantity} · Precio unitario: {displayMoney(line.unit_price)}</p>)}
++        {loaded === load && !items.length && <p>Tu carrito está vacío.</p>}
++      </section>
++      <aside className={styles.paymentSidebar}>
++        <p>Productos: {displayMoney(quote?.items_total)}</p>
++        <p>Envío: {displayMoney(quote?.shipping_total)}</p>
++        <p>IVA de productos incluido: {displayMoney(quote?.items_tax)}</p>
++        <p>IVA de envío incluido: {displayMoney(quote?.shipping_tax)}</p>
++        <strong>Total a pagar: {displayMoney(quote?.total)}</strong>
++        {quote && <p>Vigente hasta {new Date(quote.expires_at).toLocaleString()}</p>}
++      </aside>
++    </div>}
++    {showPayPal && <div className={styles.paypalContainer}>
++      <CheckoutPayPal session={session} prepareQuote={prepareQuote} disabled={busy || (!quoteReady && !resumeReady)} clientId={import.meta.env.VITE_PAYPAL_CLIENT_ID ?? ''} />
++    </div>}
++    {!showPayPal && state.phase === 'idle' && <p>El pago está bloqueado hasta obtener una cotización válida.</p>}
++  </div>;
++}
++export default function Payment() {
++  const { user, isLoading } = useContext(AuthContext);
++  if (isLoading) return <p role="status">Validando sesión…</p>;
++  if (!user) return <p>Inicia sesión con la cuenta de tu compra para continuar. <Link to="/login">Iniciar sesión</Link></p>;
++  return <AccountCheckout key={user.id} accountId={user.id} />;
++}
+diff --git a/src/services/Api.service.ts b/src/services/Api.service.ts
+--- a/src/services/Api.service.ts
++++ b/src/services/Api.service.ts
+@@ -5,6 +5,7 @@
+   interface AxiosRequestConfig {
+     /** Fiscal downloads surface terminal 401 in the UI instead of navigating. */
+     redirectOnAuthFailure?: boolean;
++    checkoutSessionToken?: string | null;
+   }
+ }
+ 
+@@ -18,6 +19,10 @@
+ api.interceptors.request.use(
+   (config) => {
+     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
++
++    if (config.checkoutSessionToken !== undefined && (!token || config.checkoutSessionToken !== token)) {
++      return Promise.reject(new Error('SESSION_CHANGED'));
++    }
+ 
+     if (token) {
+       config.headers['Authorization'] = `Bearer ${token}`;
+@@ -34,7 +39,13 @@
+   async (error) => {
+     const originalRequest = error.config;
+ 
+-    if (error.response?.status === 401 && !originalRequest._retry) {
++    if (!originalRequest) return Promise.reject(error);
++    const checkoutRequest = originalRequest.checkoutSessionToken !== undefined;
++    const currentToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
++    // Never replay a checkout POST under a different login after an async 401.
++    if (checkoutRequest && originalRequest.checkoutSessionToken !== currentToken) return Promise.reject(error);
++
++    if (error.response?.status === 401 && !originalRequest._retry && !checkoutRequest) {
+       originalRequest._retry = true;
+ 
+       try {
+diff --git a/src/services/Auth.service.ts b/src/services/Auth.service.ts
+--- a/src/services/Auth.service.ts
++++ b/src/services/Auth.service.ts
+@@ -1,4 +1,5 @@
+ import api from './Api.service';
++import { clearCheckoutRecovery } from './CheckoutRecovery';
+ 
+ export const authService = {
+     login: async (email: string, password: string, rememberMe: boolean = false) => {
+@@ -23,6 +24,7 @@
+     },
+ 
+     logout: () => {
++        clearCheckoutRecovery();
+         localStorage.removeItem('access_token');
+         localStorage.removeItem('refresh_token');
+         sessionStorage.removeItem('access_token');
+diff --git a/src/services/Checkout.service.ts b/src/services/Checkout.service.ts
+new file mode 100644
+--- /dev/null
++++ b/src/services/Checkout.service.ts
+@@ -0,0 +1,128 @@
++import api from './Api.service';
++
++export type Money = string;
++export interface CheckoutRate { id: string; carrier: string; service: string; price: Money; tax: Money; currency: 'MXN' }
++export interface CheckoutLine {
++  item_id: number; product_id: number; sku: string; description: string; sat_code: string; quantity: number;
++  list_price: Money; base_unit_price: Money; unit_price: Money; unit_tax: Money; discount: Money;
++  weight: string; length: string; width: string; height: string;
++}
++export interface CheckoutQuote {
++  quote_id: string; expires_at: string; currency: 'MXN'; items_total: Money; items_tax: Money;
++  shipping_total: Money; shipping_tax: Money; total: Money | null; selected_rate_id: string | null;
++  rates: CheckoutRate[]; lines: CheckoutLine[];
++}
++export const financialStates = ['CREATED', 'PAYPAL_ORDER_PENDING', 'PAYPAL_ORDER_CREATED', 'CAPTURE_PENDING',
++  'CAPTURE_UNKNOWN', 'CAPTURED', 'FAILED', 'RECONCILIATION_REQUIRED'] as const;
++export type FinancialState = typeof financialStates[number];
++export type FulfillmentState = 'PENDING' | 'DISPATCHING' | 'CONFIRMED' | 'REJECTED' | 'REQUIRES_MANUAL_RECONCILIATION';
++export interface CheckoutIntent {
++  intent_id: string; quote_id: string; state: FinancialState; total: Money; currency: 'MXN';
++  paypal_order_id: string | null; capture_id: string | null; order_id: number | null;
++  last_error_code: string; fulfillment_state: FulfillmentState | null; created_at: string; updated_at: string;
++}
++export class CheckoutError extends Error {
++  code: string; status: number;
++  constructor(code: string, status = 0) {
++    super(code === 'CHECKOUT_DISABLED' ? 'Las compras están temporalmente no disponibles.' :
++      ['QUOTE_EXPIRED', 'QUOTE_CHANGED', 'QUOTE_ALREADY_USED'].includes(code) ? 'La cotización cambió o venció. Solicita una nueva cotización.' :
++      code === 'SESSION_CHANGED' ? 'La sesión cambió. Inicia sesión con la cuenta de esta compra para recuperarla.' :
++      code === 'RECOVERY_LIMIT' ? 'Espera antes de volver a consultar. Si continúa pendiente, contacta a soporte con tu referencia.' :
++      code === 'STORAGE_UNAVAILABLE' ? 'No se pudo guardar la referencia de recuperación. Habilita el almacenamiento antes de pagar.' :
++      'No se pudo confirmar la operación. Conserva tu referencia y consulta su estado; evita iniciar otra compra.');
++    this.name = 'CheckoutError'; this.code = code; this.status = status;
++  }
++}
++export const isUUID = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
++const object = (v: unknown): Record<string, unknown> => {
++  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new CheckoutError('INVALID_RESPONSE');
++  return v as Record<string, unknown>;
++};
++const invalid = (): never => { throw new CheckoutError('INVALID_RESPONSE'); };
++const text = (v: unknown) => typeof v === 'string' ? v : invalid();
++const positive = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v > 0 ? v : invalid();
++export const decimalMoney = (v: unknown): Money => typeof v === 'string' && /^\d{1,10}\.\d{2}$/.test(v) ? v : invalid();
++const date = (v: unknown) => typeof v === 'string' && Number.isFinite(Date.parse(v)) ? v : invalid();
++const id = (v: unknown) => isUUID(v) ? v : invalid();
++const nullableText = (v: unknown) => v === null ? null : text(v) || invalid();
++export function validateCheckoutRates(v: unknown): CheckoutRate[] {
++  if (!Array.isArray(v) || !v.length) return invalid();
++  const ids = new Set<string>();
++  return v.map(raw => {
++    const r = object(raw), rateId = id(r.id);
++    if (ids.has(rateId) || r.currency !== 'MXN' || !text(r.carrier).trim() || !text(r.service).trim()) return invalid();
++    ids.add(rateId);
++    return { id: rateId, carrier: text(r.carrier), service: text(r.service), price: decimalMoney(r.price), tax: decimalMoney(r.tax), currency: 'MXN' };
++  });
++}
++export function validateCheckoutQuote(v: unknown): CheckoutQuote {
++  const q = object(v), rates = validateCheckoutRates(q.rates);
++  if (q.currency !== 'MXN' || !Array.isArray(q.lines) || !q.lines.length) return invalid();
++  const selected = q.selected_rate_id === null ? null : id(q.selected_rate_id);
++  if ((selected === null) !== (q.total === null) || selected && !rates.some(r => r.id === selected)) return invalid();
++  return { quote_id: id(q.quote_id), expires_at: date(q.expires_at), currency: 'MXN',
++    items_total: decimalMoney(q.items_total), items_tax: decimalMoney(q.items_tax),
++    shipping_total: decimalMoney(q.shipping_total), shipping_tax: decimalMoney(q.shipping_tax),
++    total: q.total === null ? null : decimalMoney(q.total), selected_rate_id: selected, rates,
++    lines: q.lines.map(raw => {
++      const r = object(raw);
++      return { item_id: positive(r.item_id), product_id: positive(r.product_id), sku: text(r.sku), description: text(r.description),
++        sat_code: text(r.sat_code), quantity: positive(r.quantity), list_price: decimalMoney(r.list_price),
++        base_unit_price: decimalMoney(r.base_unit_price), unit_price: decimalMoney(r.unit_price), unit_tax: decimalMoney(r.unit_tax),
++        discount: decimalMoney(r.discount), weight: text(r.weight), length: text(r.length), width: text(r.width), height: text(r.height) };
++    }) };
++}
++export function validateCheckoutIntent(v: unknown): CheckoutIntent {
++  const r = object(v);
++  if (r.currency !== 'MXN' || !financialStates.includes(r.state as FinancialState) ||
++      ![null, 'PENDING', 'DISPATCHING', 'CONFIRMED', 'REJECTED', 'REQUIRES_MANUAL_RECONCILIATION'].includes(r.fulfillment_state as string | null)) return invalid();
++  return { intent_id: id(r.intent_id), quote_id: id(r.quote_id), state: r.state as FinancialState,
++    total: decimalMoney(r.total), currency: 'MXN', paypal_order_id: nullableText(r.paypal_order_id), capture_id: nullableText(r.capture_id),
++    order_id: r.order_id === null ? null : positive(r.order_id), last_error_code: text(r.last_error_code),
++    fulfillment_state: r.fulfillment_state as FulfillmentState | null, created_at: date(r.created_at), updated_at: date(r.updated_at) };
++}
++export function checkoutError(error: unknown): CheckoutError {
++  if (error instanceof CheckoutError) return error;
++  const r = error && typeof error === 'object' ? error as { response?: { status?: number; data?: { code?: unknown } } } : {};
++  return new CheckoutError(typeof r.response?.data?.code === 'string' ? r.response.data.code : 'RESULT_UNKNOWN', r.response?.status ?? 0);
++}
++// String formatting only: no conversion to floating-point or financial calculation.
++export const displayMoney = (value: Money | null | undefined) => {
++  if (value == null) return 'Pendiente';
++  const [whole, cents] = value.split('.');
++  return `$${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${cents} MXN`;
++};
++const token = () => localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
++const base = '/api/pagos/checkout/';
++async function request<T>(method: 'get' | 'post', path: string, body: object | undefined,
++  validate: (data: unknown) => T, statuses: number[], key?: string): Promise<T> {
++  try {
++    const config = { timeout: 45000, redirectOnAuthFailure: false, checkoutSessionToken: token(),
++      adapter: 'fetch', fetchOptions: { redirect: 'error' },
++      headers: { 'Content-Type': 'application/json', ...(key ? { 'Idempotency-Key': key } : {}) } };
++    const result = method === 'get' ? await api.get(base + path, config) : await api.post(base + path, body, config);
++    if (!statuses.includes(result.status)) throw new CheckoutError('INVALID_RESPONSE');
++    return validate(result.data);
++  } catch (error) { throw checkoutError(error); }
++}
++const intentPath = (value: string) => { if (!isUUID(value)) throw new CheckoutError('INVALID_REFERENCE'); return `intentos/${value}/`; };
++export const checkoutService = {
++  quote: (addressId: number) => {
++    if (!Number.isSafeInteger(addressId) || addressId <= 0) return Promise.reject(new CheckoutError('INVALID_ADDRESS'));
++    return request('post', 'cotizaciones/', { direccionID: addressId }, validateCheckoutQuote, [201]);
++  },
++  selectRate: (quoteId: string, rateId: string) => {
++    if (!isUUID(quoteId) || !isUUID(rateId)) return Promise.reject(new CheckoutError('INVALID_REFERENCE'));
++    return request('post', `cotizaciones/${quoteId}/tarifa/`, { rate_id: rateId }, validateCheckoutQuote, [200]);
++  },
++  createIntent: (quoteId: string, key: string) => {
++    if (!isUUID(quoteId) || !isUUID(key)) return Promise.reject(new CheckoutError('INVALID_REFERENCE'));
++    return request('post', 'intentos/', { quote_id: quoteId }, validateCheckoutIntent, [200], key);
++  },
++  createPayPal: (intentId: string) => request('post', intentPath(intentId) + 'paypal/', {}, validateCheckoutIntent, [200, 202]),
++  capture: (intentId: string, orderId: string) => request('post', intentPath(intentId) + 'capturar/', { paypal_order_id: orderId }, validateCheckoutIntent, [200, 202]),
++  get: (intentId: string) => request('get', intentPath(intentId), undefined, validateCheckoutIntent, [200]),
++  reconcile: (intentId: string) => request('post', intentPath(intentId) + 'reconciliar/', {}, validateCheckoutIntent, [200, 202]),
++  cancel: (intentId: string) => request('post', intentPath(intentId) + 'cancelar/', {}, validateCheckoutIntent, [200]),
++};
++export type CheckoutAPI = typeof checkoutService;
+diff --git a/src/services/CheckoutCallbacks.ts b/src/services/CheckoutCallbacks.ts
+new file mode 100644
+--- /dev/null
++++ b/src/services/CheckoutCallbacks.ts
+@@ -0,0 +1,14 @@
++import type { CheckoutQuote } from './Checkout.service';
++import type { CheckoutSession } from './CheckoutSession';
++
++export function checkoutCallbacks(session: CheckoutSession, prepareQuote: () => Promise<CheckoutQuote>) {
++  return {
++    createOrder: async () => {
++      if (session.snapshot().reference?.intentId) return session.resumeOrder();
++      return session.start(await prepareQuote());
++    },
++    onApprove: async (data: { orderID: string }) => { await session.approve(data.orderID); },
++    onCancel: async () => { await session.cancel(); },
++    onError: () => { session.gatewayError(); },
++  };
++}
+diff --git a/src/services/CheckoutRecovery.ts b/src/services/CheckoutRecovery.ts
+new file mode 100644
+--- /dev/null
++++ b/src/services/CheckoutRecovery.ts
+@@ -0,0 +1,44 @@
++import { isUUID, CheckoutError } from './Checkout.service';
++
++export interface RecoveryReference { version: 1; accountId: number; quoteId: string; key: string; intentId: string | null }
++const prefix = 'csti.checkout.v1.';
++let generation = 0;
++let activeAccount: number | null = null;
++export const checkoutGeneration = () => generation;
++export const checkoutAccount = () => activeAccount;
++export function setCheckoutAccount(accountId: number | null) {
++  if (activeAccount !== accountId) { activeAccount = accountId; generation++; }
++}
++export function parseRecovery(value: string, accountId: number): RecoveryReference {
++  const r: unknown = JSON.parse(value);
++  if (!r || typeof r !== 'object') throw new CheckoutError('INVALID_REFERENCE');
++  const v = r as RecoveryReference;
++  if (v.version !== 1 || v.accountId !== accountId || !isUUID(v.quoteId) || !isUUID(v.key) ||
++      (v.intentId !== null && !isUUID(v.intentId))) throw new CheckoutError('INVALID_REFERENCE');
++  return { version: 1, accountId, quoteId: v.quoteId, key: v.key, intentId: v.intentId };
++}
++export const recoveryStore = {
++  read(accountId: number): RecoveryReference | null {
++    const saved = localStorage.getItem(prefix + accountId);
++    return saved ? parseRecovery(saved, accountId) : null;
++  },
++  write(value: RecoveryReference) {
++    try { localStorage.setItem(prefix + value.accountId, JSON.stringify(value)); }
++    catch { throw new CheckoutError('STORAGE_UNAVAILABLE'); }
++  },
++  remove(accountId: number) { localStorage.removeItem(prefix + accountId); },
++};
++export function clearCheckoutRecovery() {
++  generation++;
++  activeAccount = null;
++  for (const storage of [localStorage, sessionStorage]) {
++    try {
++    storage.removeItem('selectedShippingRate');
++    storage.removeItem('selectedAddressId');
++    for (let index = storage.length - 1; index >= 0; index--) {
++      const key = storage.key(index);
++      if (key?.startsWith(prefix)) storage.removeItem(key);
++    }
++    } catch { /* A blocked storage must not prevent logout or retain live callbacks. */ }
++  }
++}
+diff --git a/src/services/CheckoutSession.ts b/src/services/CheckoutSession.ts
+new file mode 100644
+--- /dev/null
++++ b/src/services/CheckoutSession.ts
+@@ -0,0 +1,166 @@
++import { checkoutService, CheckoutError, checkoutError } from './Checkout.service';
++import type { CheckoutAPI, CheckoutIntent, CheckoutQuote } from './Checkout.service';
++import { checkoutGeneration, parseRecovery, recoveryStore } from './CheckoutRecovery';
++import type { RecoveryReference } from './CheckoutRecovery';
++
++export type CheckoutPhase = 'idle' | 'creating_intent' | 'creating_paypal' | 'awaiting_approval' | 'capturing' |
++  'pending' | 'reconciling' | 'paid' | 'cancelled' | 'attention' | 'unavailable' | 'requote';
++export interface CheckoutState { phase: CheckoutPhase; intent: CheckoutIntent | null; message: string; reference: RecoveryReference | null }
++const pendingStates = ['PAYPAL_ORDER_PENDING', 'CAPTURE_PENDING', 'CAPTURE_UNKNOWN', 'RECONCILIATION_REQUIRED'];
++
++// Only serializes client callbacks; Django is responsible for distributed locks.
++export class CheckoutSession {
++  private value: CheckoutState = { phase: 'idle', intent: null, message: '', reference: null };
++  private listeners = new Set<() => void>();
++  private flight: Promise<string> | null = null;
++  private busy = false;
++  private lastRecovery = -Infinity;
++  private recoveries = 0;
++  private generation = checkoutGeneration();
++  private accountId: number;
++  private current: () => boolean;
++  private api: CheckoutAPI;
++  constructor(accountId: number, current: () => boolean, api: CheckoutAPI = checkoutService) {
++    this.accountId = accountId; this.current = current; this.api = api;
++    try {
++      const reference = recoveryStore.read(accountId);
++      if (reference) this.value = { ...this.value, reference, phase: 'pending' };
++    } catch { this.value = { ...this.value, phase: 'attention', message: 'La referencia guardada no es válida. Recupera con tu código o contacta a soporte.' }; }
++  }
++  subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
++  snapshot = () => this.value;
++  private guard() { if (!this.current() || checkoutGeneration() !== this.generation) throw new CheckoutError('SESSION_CHANGED'); }
++  private update(patch: Partial<CheckoutState>) {
++    this.guard(); this.value = { ...this.value, ...patch }; this.listeners.forEach(listener => listener());
++  }
++  private save(reference: RecoveryReference) { this.guard(); recoveryStore.write(reference); this.update({ reference }); }
++  private accept(intent: CheckoutIntent) {
++    this.guard();
++    const ref = this.value.reference;
++    if (!ref || intent.quote_id !== ref.quoteId || ref.intentId && intent.intent_id !== ref.intentId) throw new CheckoutError('INVALID_RESPONSE');
++    this.save({ ...ref, intentId: intent.intent_id });
++    const phase: CheckoutPhase = intent.state === 'CAPTURED' ? (intent.order_id ? 'paid' : 'attention') :
++      intent.state === 'FAILED' ? 'cancelled' : pendingStates.includes(intent.state) ? 'pending' : 'awaiting_approval';
++    this.update({ intent, phase, message: phase === 'attention' ? 'El pago requiere revisión: falta la orden local confirmada.' :
++      intent.state === 'RECONCILIATION_REQUIRED' ? 'La compra requiere verificación por nuestro equipo. Conserva tu código y contacta a soporte; no vuelvas a pagar.' : '' });
++    if (intent.state === 'FAILED') { recoveryStore.remove(this.accountId); this.update({ reference: null }); }
++  }
++  private failed(error: unknown) {
++    const e = checkoutError(error);
++    if (!this.current() || checkoutGeneration() !== this.generation) return;
++    if (['paid', 'cancelled', 'unavailable', 'requote'].includes(this.value.phase)) return;
++    this.update({ phase: e.code === 'CHECKOUT_DISABLED' ? 'unavailable' :
++      ['QUOTE_EXPIRED', 'QUOTE_CHANGED', 'QUOTE_ALREADY_USED'].includes(e.code) ? 'requote' :
++      this.value.reference ? 'pending' : 'attention', message: e.message });
++  }
++  start(quote: CheckoutQuote): Promise<string> {
++    if (this.flight) return this.flight;
++    if (this.busy) return Promise.reject(new CheckoutError('CHECKOUT_BUSY'));
++    this.flight = this.startOnce(quote).finally(() => { this.flight = null; });
++    return this.flight;
++  }
++  private async startOnce(quote: CheckoutQuote): Promise<string> {
++    this.guard();
++    if (!quote.selected_rate_id || !quote.total || Date.parse(quote.expires_at) <= Date.now()) throw new CheckoutError('QUOTE_EXPIRED', 409);
++    if (['paid', 'cancelled', 'attention', 'unavailable', 'requote'].includes(this.value.phase)) throw new CheckoutError('CHECKOUT_BLOCKED');
++    if (this.value.reference && this.value.reference.quoteId !== quote.quote_id) throw new CheckoutError('CHECKOUT_ALREADY_ACTIVE', 409);
++    this.busy = true;
++    try {
++      let ref = this.value.reference;
++      if (!ref) { ref = { version: 1, accountId: this.accountId, quoteId: quote.quote_id, key: crypto.randomUUID(), intentId: null }; this.save(ref); }
++      this.update({ phase: 'creating_intent', message: '' });
++      this.guard();
++      const intent = ref.intentId ? await this.api.get(ref.intentId) : await this.api.createIntent(ref.quoteId, ref.key);
++      this.accept(intent);
++      let result = intent;
++      if (intent.state === 'CREATED') {
++        this.update({ phase: 'creating_paypal' }); this.guard();
++        result = await this.api.createPayPal(intent.intent_id); this.accept(result);
++      }
++      if (result.state !== 'PAYPAL_ORDER_CREATED' || !result.paypal_order_id) throw new CheckoutError('PAYPAL_PENDING');
++      return result.paypal_order_id;
++    } catch (error) {
++      const e = checkoutError(error);
++      // A definitive rejection of intent creation cannot have reached PayPal.
++      // Existing or ambiguous intents always retain their recovery reference.
++      if (this.current() && checkoutGeneration() === this.generation && !this.value.reference?.intentId &&
++          ['QUOTE_EXPIRED', 'QUOTE_CHANGED', 'QUOTE_ALREADY_USED'].includes(e.code) && e.status === 409) {
++        recoveryStore.remove(this.accountId); this.update({ reference: null });
++      }
++      this.failed(error); throw error;
++    }
++    finally { this.busy = false; }
++  }
++  async approve(orderId: string): Promise<void> {
++    this.guard(); if (this.busy) return;
++    const intent = this.value.intent;
++    if (!intent || intent.state !== 'PAYPAL_ORDER_CREATED' || this.value.phase !== 'awaiting_approval') return;
++    if (orderId !== intent.paypal_order_id) { this.failed(new CheckoutError('PAYPAL_ORDER_ID_MISMATCH')); return; }
++    this.busy = true;
++    try { this.update({ phase: 'capturing' }); this.accept(await this.api.capture(intent.intent_id, orderId)); }
++    catch (error) { this.failed(error); }
++    finally { this.busy = false; }
++  }
++  async resumeOrder(): Promise<string> {
++    this.guard();
++    if (!this.value.reference?.intentId || this.busy) throw new CheckoutError('CHECKOUT_BUSY');
++    this.busy = true;
++    try {
++      let intent = await this.api.get(this.value.reference.intentId); this.accept(intent);
++      if (intent.state === 'CREATED') { this.guard(); intent = await this.api.createPayPal(intent.intent_id); this.accept(intent); }
++      if (intent.state !== 'PAYPAL_ORDER_CREATED' || !intent.paypal_order_id) throw new CheckoutError('PAYPAL_PENDING');
++      return intent.paypal_order_id;
++    } catch (error) { this.failed(error); throw error; }
++    finally { this.busy = false; }
++  }
++  async restore(): Promise<void> {
++    this.guard(); if (this.busy || !this.value.reference?.intentId) return;
++    this.busy = true;
++    try { this.accept(await this.api.get(this.value.reference.intentId)); }
++    catch (error) { this.failed(error); }
++    finally { this.busy = false; }
++  }
++  async recover(): Promise<void> {
++    this.guard(); if (this.busy || !this.value.reference || this.value.phase === 'paid' || this.value.phase === 'cancelled') return;
++    if (Date.now() - this.lastRecovery < 10000 || this.recoveries >= 5) { this.failed(new CheckoutError('RECOVERY_LIMIT')); return; }
++    this.lastRecovery = Date.now(); this.recoveries++; this.busy = true;
++    try {
++      this.update({ phase: 'reconciling', message: '' });
++      const ref = this.value.reference!;
++      let intent = ref.intentId ? await this.api.get(ref.intentId) : await this.api.createIntent(ref.quoteId, ref.key);
++      this.accept(intent);
++      if (pendingStates.includes(intent.state)) { this.guard(); intent = await this.api.reconcile(intent.intent_id); this.accept(intent); }
++    } catch (error) { this.failed(error); }
++    finally { this.busy = false; }
++  }
++  async cancel(): Promise<void> {
++    this.guard(); if (this.busy) return;
++    const intent = this.value.intent;
++    if (!intent || !['CREATED', 'PAYPAL_ORDER_CREATED'].includes(intent.state) || !['awaiting_approval', 'requote'].includes(this.value.phase)) {
++      if (this.value.reference) this.update({ phase: 'pending', message: 'La cancelación visual no confirma el resultado. Consulta el estado de tu compra.' });
++      return;
++    }
++    this.busy = true;
++    try {
++      const result = await this.api.cancel(intent.intent_id);
++      this.accept(result);
++      if (result.state === 'FAILED') { recoveryStore.remove(this.accountId); this.update({ reference: null }); }
++    } catch (error) { this.failed(error); }
++    finally { this.busy = false; }
++  }
++  importCode(code: string) {
++    this.guard();
++    if (this.value.reference) throw new CheckoutError('CHECKOUT_ALREADY_ACTIVE');
++    this.save(parseRecovery(code, this.accountId)); this.update({ phase: 'pending', intent: null, message: '' });
++  }
++  acknowledgePaid() {
++    this.guard(); if (this.value.phase !== 'paid' || !this.value.intent?.order_id) return;
++    recoveryStore.remove(this.accountId); this.update({ reference: null });
++  }
++  retryQuote() {
++    this.guard();
++    if (this.value.reference || !['attention', 'requote', 'unavailable'].includes(this.value.phase)) return;
++    this.update({ phase: 'idle', message: '', intent: null });
++  }
++  gatewayError() { this.failed(new CheckoutError('PAYPAL_RESULT_UNKNOWN')); }
++}
+diff --git a/src/services/CheckoutShipping.service.ts b/src/services/CheckoutShipping.service.ts
+--- a/src/services/CheckoutShipping.service.ts
++++ b/src/services/CheckoutShipping.service.ts
+@@ -1,6 +1,6 @@
+ import { addressService } from './Address.service';
+ import { cartService } from './Cart.service';
+-import { cartQuoteKey, isQuoteCurrent, shippingService, ShippingError } from './Shipping.service';
++import { cartQuoteKey, isQuoteCurrent, ShippingError } from './Shipping.service';
+ import type { QuoteContext, ShippingQuote } from './Shipping.service';
+ 
+ const addressKey = (value: unknown) => value && typeof value === 'object'
+@@ -18,12 +18,10 @@
+   if (!address || addressKey(address) !== addressKey(selectedAddress) || cartQuoteKey(cart.items, cart.total) !== context.cartKey) {
+     throw new ShippingError('Cambió el carrito o la dirección. Revisa una nueva cotización.');
+   }
+-  const rates = await shippingService.getRates(context.addressId, cart.items);
+-  const fresh = rates.find(rate => rate.id === selectedRateId);
+-  if (!fresh || fresh.price !== selected.price || fresh.internalProvider !== selected.internalProvider) {
+-    throw new ShippingError('La tarifa cambió. Revisa una nueva cotización.');
++  if (quote.selected_rate_id !== selectedRateId || quote.total === null) {
++    throw new ShippingError('Selecciona una tarifa confirmada por el backend.');
+   }
+   // A slow request may have crossed the local freshness boundary.
+   if (!isQuoteCurrent(quote, context)) throw new ShippingError('La cotización venció. Cotiza de nuevo.');
+-  return fresh;
++  return selected;
+ }
+diff --git a/src/services/Payment.service.ts b/src/services/Payment.service.ts
+--- a/src/services/Payment.service.ts
++++ b/src/services/Payment.service.ts
+@@ -1,18 +1,2 @@
+-import api from './Api.service';
+-
+-export const paymentService = {
+-  verifyPayment: async (orderID: string, direccionID: number, shippingCost: number = 0, shippingCarrier: string = "FedEx Express") => {
+-    try {
+-      const response = await api.post('/api/pagos/verificar/', {
+-        orderID,
+-        direccionID,
+-        shippingCost,
+-        shippingCarrier
+-      });
+-      return response.data;
+-    } catch (error) {
+-      console.error("Error al verificar el pago:", error);
+-      throw error;
+-    }
+-  }
+-};
++// Compatibility export: the removed verifier can never perform a payment.
++export { checkoutService as paymentService } from './Checkout.service';
+diff --git a/src/services/Shipping.service.ts b/src/services/Shipping.service.ts
+--- a/src/services/Shipping.service.ts
++++ b/src/services/Shipping.service.ts
+@@ -1,14 +1,9 @@
+ import api from './Api.service';
+ 
+-export interface ShippingRate {
+-  id: string;
+-  type: 'standard' | 'express';
+-  title: string;
+-  description: string;
+-  days: number | null;
+-  price: number;
+-  internalProvider: string;
+-}
++import { checkoutService, validateCheckoutRates, CheckoutError } from './Checkout.service';
++import type { CheckoutQuote, CheckoutRate } from './Checkout.service';
++
++export type ShippingRate = CheckoutRate;
+ export interface ShippingCartItem {
+   id?: number;
+   producto?: { id: number };
+@@ -17,7 +12,7 @@
+   precio_unitario?: number | string;
+ }
+ export interface QuoteContext { addressId: number; cartKey: string }
+-export interface ShippingQuote extends QuoteContext { rates: ShippingRate[]; expiresAt: number }
++export interface ShippingQuote extends QuoteContext, CheckoutQuote { expiresAt: number }
+ export interface TrackingData {
+   carrier: string | null;
+   tracking_number: string | null;
+@@ -33,32 +28,12 @@
+ const record = (value: unknown): Record<string, unknown> =>
+   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+ const text = (value: unknown): string | null => typeof value === 'string' && value.trim() ? value.trim() : null;
+-const money = (value: unknown): number | null => {
+-  if (typeof value !== 'number' && !(typeof value === 'string' && /^\d+(\.\d{1,2})?$/.test(value))) return null;
+-  const amount = Number(value);
+-  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+-};
+ export function cartQuoteKey(items: ShippingCartItem[], total: number | string): string {
+   return JSON.stringify([String(total), items.map(item => [item.producto?.id ?? item.product?.id ?? item.id,
+     item.cantidad, String(item.precio_unitario ?? '')]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))]);
+ }
+ export function validateRates(data: unknown): ShippingRate[] {
+-  const rates = record(data).rates;
+-  if (!Array.isArray(rates)) throw new ShippingError('La respuesta de cotización no es válida. Intenta de nuevo.');
+-  if (!rates.length) throw new ShippingError('No hay envíos disponibles para esta dirección y carrito.');
+-  const ids = new Set<string>();
+-  return rates.map(value => {
+-    const rate = record(value);
+-    const id = text(rate.id) ?? (typeof rate.id === 'number' && Number.isSafeInteger(rate.id) && rate.id > 0 ? String(rate.id) : null);
+-    const title = text(rate.title), carrier = text(rate.carrier), price = money(rate.price);
+-    if (!id || !title || !carrier || price === null || ids.has(id)) throw new ShippingError('La cotización contiene tarifas inválidas. Intenta de nuevo.');
+-    ids.add(id);
+-    const days = typeof rate.estimated_days === 'number' && Number.isFinite(rate.estimated_days) && rate.estimated_days >= 0 ? rate.estimated_days : null;
+-    const estimate = text(rate.estimated_days) ?? (days !== null ? String(days) : null);
+-    return { id, title, price, internalProvider: carrier,
+-      type: title.toLowerCase().includes('express') ? 'express' : 'standard',
+-      description: estimate ? `Entrega estimada: ${estimate}` : 'Plazo no informado por la paquetería.', days };
+-  });
++  return validateCheckoutRates(record(data).rates);
+ }
+ export function isQuoteCurrent(quote: ShippingQuote | null, context: QuoteContext): quote is ShippingQuote {
+   return !!quote && quote.addressId === context.addressId && quote.cartKey === context.cartKey &&
+@@ -78,25 +53,23 @@
+   return candidate && Number.isFinite(Date.parse(candidate)) ? candidate : null;
+ };
+ export const shippingService = {
+-  getRates: async (addressId: number, cartItems: ShippingCartItem[] = []): Promise<ShippingRate[]> => {
+-    if (!Number.isSafeInteger(addressId) || addressId <= 0) throw new ShippingError('Selecciona una dirección válida para cotizar.');
+-    try {
+-      const productIds = cartItems.map(item => item.product?.id ?? item.producto?.id ?? item.id).filter(id => Number.isSafeInteger(id) && Number(id) > 0);
+-      const response = await api.post('/api/pagos/envios/cotizar/', { direccionID: addressId, productos: productIds }, { timeout: 15000 });
+-      return validateRates(response.data);
+-    } catch (error) {
+-      if (error instanceof ShippingError) throw error;
+-      throw new ShippingError('No fue posible cotizar el envío. Revisa tu conexión e intenta de nuevo.');
+-    }
++  getRates: async (addressId: number, _cartItems: ShippingCartItem[] = []): Promise<ShippingRate[]> => {
++    void _cartItems; // Cart products are read exclusively by Django.
++    return (await checkoutService.quote(addressId)).rates;
+   },
+-  getQuote: async (context: QuoteContext, items: ShippingCartItem[]): Promise<ShippingQuote> => ({
+-    ...context, rates: await shippingService.getRates(context.addressId, items),
+-    // Client freshness limit; backend must still validate its own quote expiry.
+-    expiresAt: Date.now() + 5 * 60 * 1000,
+-  }),
++  getQuote: async (context: QuoteContext, _items: ShippingCartItem[]): Promise<ShippingQuote> => {
++    void _items; // Used by callers only to invalidate their local view.
++    const quote = await checkoutService.quote(context.addressId);
++    return { ...quote, ...context, expiresAt: Date.parse(quote.expires_at) };
++  },
++  selectQuoteRate: async (quote: ShippingQuote, rateId: string): Promise<ShippingQuote> => {
++    const selected = await checkoutService.selectRate(quote.quote_id, rateId);
++    if (selected.quote_id !== quote.quote_id || selected.selected_rate_id !== rateId) throw new CheckoutError('INVALID_RESPONSE');
++    return { ...selected, addressId: quote.addressId, cartKey: quote.cartKey, expiresAt: Date.parse(selected.expires_at) };
++  },
+   getDefaultRate: async (addressId: number, items: ShippingCartItem[] = []): Promise<ShippingRate> => {
+     const rates = await shippingService.getRates(addressId, items);
+-    return rates.reduce((prev, curr) => prev.price <= curr.price ? prev : curr);
++    return rates.reduce((a, b) => BigInt(a.price.replace('.', '')) <= BigInt(b.price.replace('.', '')) ? a : b);
+   },
+   saveSelectedRate: (rate: ShippingRate, context: QuoteContext) => {
+     try { localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: rate.id, ...context })); }
+diff --git a/tests/checkout-auth.test.mjs b/tests/checkout-auth.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/checkout-auth.test.mjs
+@@ -0,0 +1,31 @@
++import './register.mjs';
++import test, { beforeEach } from 'node:test';
++import assert from 'node:assert/strict';
++import axios from 'axios';
++import { memoryStorage, quoteFixture } from './checkout-fixtures.mjs';
++globalThis.__realApiForTests = true;
++let calls, respond;
++axios.defaults.adapter = 'fetch';
++axios.defaults.env = { ...axios.defaults.env, fetch: async request => { calls.push(request); return respond(request); } };
++const { checkoutService } = await import('../src/services/Checkout.service.ts');
++beforeEach(() => {
++  globalThis.localStorage = memoryStorage(); globalThis.sessionStorage = memoryStorage();
++  localStorage.setItem('access_token', 'synthetic-A'); localStorage.setItem('refresh_token', 'synthetic-refresh-A');
++  calls = [];
++  respond = async () => new Response(JSON.stringify(quoteFixture()), { status: 201, headers: { 'Content-Type': 'application/json' } });
++});
++test('real authenticated Axios sends JWT and exact JSON for a quote, without financial input', async () => {
++  await checkoutService.quote(12); assert.equal(calls.length, 1);
++  assert.equal(calls[0].headers.get('authorization'), 'Bearer synthetic-A');
++  assert.deepEqual(await calls[0].json(), { direccionID: 12 });
++});
++test('checkout 401 is terminal for this request: no automatic POST replay or refresh under another account', async () => {
++  respond = async () => new Response('{}', { status: 401 });
++  await assert.rejects(checkoutService.quote(12)); assert.equal(calls.length, 1);
++  assert.ok(!calls[0].url.includes('refresh'));
++});
++test('account token changed before Axios dispatch rejects before fetch', async () => {
++  const pending = checkoutService.quote(12);
++  localStorage.setItem('access_token', 'synthetic-B');
++  await assert.rejects(pending); assert.equal(calls.length, 0);
++});
+diff --git a/tests/checkout-fixtures.mjs b/tests/checkout-fixtures.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/checkout-fixtures.mjs
+@@ -0,0 +1,20 @@
++export const quoteId = '11111111-1111-4111-8111-111111111111';
++export const intentId = '22222222-2222-4222-8222-222222222222';
++export const rateId = '33333333-3333-4333-8333-333333333333';
++export const key = '44444444-4444-4444-8444-444444444444';
++export const quoteFixture = (patch = {}) => ({ quote_id: quoteId, currency: 'MXN', expires_at: new Date(Date.now() + 60000).toISOString(),
++  items_total: '200.00', items_tax: '27.58', shipping_total: '0.00', shipping_tax: '0.00', total: null, selected_rate_id: null,
++  rates: [{ id: rateId, carrier: 'Test', service: 'Standard', price: '20.00', tax: '2.76', currency: 'MXN' }],
++  lines: [{ item_id: 1, product_id: 99, sku: 'TEST', description: 'Test product', sat_code: 'TEST', quantity: 2, list_price: '100.00',
++    base_unit_price: '100.00', unit_price: '100.00', unit_tax: '13.79', discount: '0.00', weight: '1.00', length: '20.00', width: '15.00', height: '10.00' }], ...patch });
++export const selectedQuote = () => quoteFixture({ selected_rate_id: rateId, total: '220.00', shipping_total: '20.00', shipping_tax: '2.76' });
++export const intentFixture = (patch = {}) => ({ intent_id: intentId, quote_id: quoteId, state: 'CREATED', total: '220.00', currency: 'MXN',
++  paypal_order_id: null, capture_id: null, order_id: null, last_error_code: '', fulfillment_state: null,
++  created_at: '2026-11-24T18:00:00+00:00', updated_at: '2026-11-24T18:00:00+00:00', ...patch });
++export const readyIntent = () => intentFixture({ state: 'PAYPAL_ORDER_CREATED', paypal_order_id: 'PP-SYNTHETIC' });
++export const paidIntent = () => intentFixture({ ...readyIntent(), state: 'CAPTURED', order_id: 42, capture_id: 'CAP-SYNTHETIC', fulfillment_state: 'PENDING' });
++export function memoryStorage() {
++  const items = new Map();
++  return { get length() { return items.size; }, key: index => [...items.keys()][index] ?? null,
++    getItem: key => items.get(key) ?? null, setItem: (key, value) => items.set(key, String(value)), removeItem: key => items.delete(key) };
++}
+diff --git a/tests/checkout.test.mjs b/tests/checkout.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/checkout.test.mjs
+@@ -0,0 +1,238 @@
++import './register.mjs';
++import test, { beforeEach } from 'node:test';
++import assert from 'node:assert/strict';
++import React from 'react';
++import { renderToStaticMarkup } from 'react-dom/server';
++import { readFileSync } from 'node:fs';
++import { quoteFixture, selectedQuote, intentFixture, readyIntent, paidIntent, memoryStorage, quoteId, intentId, rateId, key } from './checkout-fixtures.mjs';
++
++let handler, http;
++globalThis.__shippingApi = {
++  post: (...args) => { http.push(['post', ...args]); return handler('post', ...args); },
++  get: (...args) => { http.push(['get', ...args]); return handler('get', ...args); },
++};
++const { checkoutService, CheckoutError, validateCheckoutQuote, validateCheckoutIntent, displayMoney } = await import('../src/services/Checkout.service.ts');
++const { CheckoutSession } = await import('../src/services/CheckoutSession.ts');
++const { checkoutCallbacks } = await import('../src/services/CheckoutCallbacks.ts');
++const { recoveryStore, clearCheckoutRecovery, setCheckoutAccount } = await import('../src/services/CheckoutRecovery.ts');
++const { default: CheckoutStatus } = await import('../src/components/CheckoutStatus.tsx');
++const { authService } = await import('../src/services/Auth.service.ts');
++const { shippingService } = await import('../src/services/Shipping.service.ts');
++let current;
++const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
++const render = state => renderToStaticMarkup(React.createElement(CheckoutStatus, { state }));
++function setup() {
++  const calls = [];
++  let server = intentFixture();
++  const api = {
++    quote: async () => quoteFixture(), selectRate: async () => selectedQuote(),
++    createIntent: async (...args) => { calls.push(['intent', ...args]); return server; },
++    createPayPal: async id => { calls.push(['paypal', id]); server = readyIntent(); return server; },
++    get: async id => { calls.push(['get', id]); return server; },
++    capture: async (...args) => { calls.push(['capture', ...args]); server = paidIntent(); return server; },
++    reconcile: async id => { calls.push(['reconcile', id]); return server; },
++    cancel: async id => { calls.push(['cancel', id]); server = intentFixture({ state: 'FAILED' }); return server; },
++  };
++  return { calls, api, session: new CheckoutSession(1, () => current === 1, api), setServer: value => { server = value; } };
++}
++beforeEach(() => {
++  globalThis.localStorage = memoryStorage(); globalThis.sessionStorage = memoryStorage();
++  localStorage.setItem('access_token', 'synthetic-user-1');
++  current = 1; setCheckoutAccount(1); http = [];
++  handler = async () => { throw Error('Unmocked endpoint'); };
++});
++
++test('strict Quote DTO accepts service without title; preserves server decimal totals and expiry', () => {
++  const raw = selectedQuote(), q = validateCheckoutQuote(raw);
++  assert.equal(q.rates[0].service, 'Standard'); assert.equal(q.total, '220.00');
++  assert.equal(q.items_tax, '27.58'); assert.equal(q.shipping_tax, '2.76');
++  assert.equal(q.expires_at, raw.expires_at);
++  for (const change of [{ total: 220 }, { currency: 'USD' }, { quote_id: 'fake' }, { expires_at: 'never' }, { rates: [] }, { selected_rate_id: key }])
++    assert.throws(() => validateCheckoutQuote({ ...selectedQuote(), ...change }));
++});
++test('shipping quote uses only direccionID and official expiry, never productos or client TTL', async () => {
++  const data = quoteFixture();
++  handler = async () => ({ status: 201, data });
++  const q = await shippingService.getQuote({ addressId: 12, cartKey: 'cart' }, [{ cantidad: 100 }]);
++  assert.equal(http[0][1], '/api/pagos/checkout/cotizaciones/'); assert.deepEqual(http[0][2], { direccionID: 12 });
++  assert.equal(q.expiresAt, Date.parse(data.expires_at));
++});
++test('selects rate UUID via Django and displays server total with included taxes without summing again', async () => {
++  handler = async () => ({ status: 200, data: selectedQuote() });
++  const q = await checkoutService.selectRate(quoteId, rateId);
++  assert.equal(http[0][1], `/api/pagos/checkout/cotizaciones/${quoteId}/tarifa/`);
++  assert.deepEqual(http[0][2], { rate_id: rateId }); assert.equal(displayMoney(q.total), '$220.00 MXN');
++  assert.equal(displayMoney('1234567.89'), '$1,234,567.89 MXN');
++});
++test('all eight exact endpoints send JSON/auth config and no client prices', async () => {
++  handler = async (_method, url) => ({ status: url.endsWith('cotizaciones/') ? 201 : 200,
++    data: url.includes('cotizaciones') ? selectedQuote() : readyIntent() });
++  await checkoutService.quote(12); await checkoutService.selectRate(quoteId, rateId);
++  await checkoutService.createIntent(quoteId, key); await checkoutService.createPayPal(intentId);
++  await checkoutService.capture(intentId, 'PP-SYNTHETIC'); await checkoutService.get(intentId);
++  await checkoutService.reconcile(intentId); await checkoutService.cancel(intentId);
++  assert.equal(http.length, 8);
++  assert.deepEqual(http[2][2], { quote_id: quoteId }); assert.equal(http[2][3].headers['Idempotency-Key'], key);
++  assert.deepEqual(http[4][2], { paypal_order_id: 'PP-SYNTHETIC' });
++  for (const [method, url, body, options] of http) {
++    assert.ok(!url.includes('verificar')); const config = method === 'get' ? body : options;
++    assert.equal(config.checkoutSessionToken, 'synthetic-user-1'); assert.equal(config.redirectOnAuthFailure, false);
++    if (method === 'post') assert.doesNotMatch(JSON.stringify(body), /amount|purchase_units|currency_code|shippingCost|total|discount/);
++  }
++});
++test('unexpected HTTP and malformed intent responses fail closed', async () => {
++  handler = async () => ({ status: 204, data: readyIntent() });
++  await assert.rejects(checkoutService.createPayPal(intentId), e => e.code === 'INVALID_RESPONSE');
++  for (const change of [{ total: -1 }, { state: 'PAID' }, { currency: 'USD' }, { order_id: 0 }])
++    assert.throws(() => validateCheckoutIntent({ ...readyIntent(), ...change }));
++});
++test('SDK createOrder returns only backend PayPal ID; SDK actions are never invoked', async () => {
++  const { session, calls } = setup();
++  const callbacks = checkoutCallbacks(session, async () => selectedQuote());
++  const actions = { order: { create: () => assert.fail('SDK create forbidden'), capture: () => assert.fail('SDK capture forbidden') } };
++  assert.equal(await callbacks.createOrder({}, actions), 'PP-SYNTHETIC');
++  assert.equal(calls.filter(c => c[0] === 'intent').length, 1);
++  await callbacks.onApprove({ orderID: 'PP-SYNTHETIC' }, actions);
++  assert.deepEqual(calls.find(c => c[0] === 'capture'), ['capture', intentId, 'PP-SYNTHETIC']);
++  assert.equal(session.snapshot().phase, 'paid');
++});
++test('double click shares one logical intent and one creation request', async () => {
++  const { session, api, calls } = setup(); const pending = deferred();
++  api.createIntent = async (...args) => { calls.push(['intent', ...args]); return pending.promise; };
++  const one = session.start(selectedQuote()), two = session.start(selectedQuote());
++  assert.equal(one, two); pending.resolve(intentFixture()); await one;
++  assert.equal(calls.filter(c => c[0] === 'intent').length, 1);
++});
++test('intent creation timeout persists the same idempotency UUID across reload and explicit recovery', async () => {
++  const { session, api, calls } = setup();
++  api.createIntent = async (...args) => { calls.push(['intent', ...args]); throw Error('timeout'); };
++  await assert.rejects(session.start(selectedQuote()));
++  const ref = recoveryStore.read(1); assert.equal(ref.intentId, null);
++  assert.deepEqual(Object.keys(ref).sort(), ['accountId', 'intentId', 'key', 'quoteId', 'version']);
++  api.createIntent = async (...args) => { calls.push(['intent', ...args]); return intentFixture(); };
++  const reloaded = new CheckoutSession(1, () => current === 1, api); await reloaded.restore();
++  assert.equal(calls.length, 1); await reloaded.recover();
++  assert.equal(calls[0][2], calls[1][2]); assert.equal(ref.key, calls[1][2]);
++  assert.equal(reloaded.snapshot().reference.intentId, intentId);
++});
++test('PayPal creation timeout does not issue a second POST on recovery', async () => {
++  const { session, api, calls, setServer } = setup();
++  api.createPayPal = async id => { calls.push(['paypal', id]); setServer(intentFixture({ state: 'RECONCILIATION_REQUIRED' })); throw Error('timeout'); };
++  await assert.rejects(session.start(selectedQuote())); await session.recover();
++  assert.equal(calls.filter(c => c[0] === 'paypal').length, 1); assert.equal(session.snapshot().phase, 'pending');
++  assert.match(render(session.snapshot()), /nuestro equipo/);
++});
++test('202 response is pending and never displays successful purchase', async () => {
++  handler = async () => ({ status: 202, data: intentFixture({ state: 'CAPTURE_PENDING' }) });
++  const data = await checkoutService.capture(intentId, 'PP-SYNTHETIC');
++  const { session, api } = setup(); await session.start(selectedQuote()); api.capture = async () => data;
++  await session.approve('PP-SYNTHETIC'); assert.equal(session.snapshot().phase, 'pending');
++  assert.doesNotMatch(render(session.snapshot()), /Pago confirmado/); assert.match(render(session.snapshot()), /pendiente/);
++});
++test('200 with CREATED or CAPTURED without local order is not purchase confirmation', async () => {
++  const { session, api } = setup(); await session.start(selectedQuote());
++  api.capture = async () => intentFixture({ state: 'CAPTURED' }); await session.approve('PP-SYNTHETIC');
++  assert.equal(session.snapshot().phase, 'attention'); assert.doesNotMatch(render(session.snapshot()), /Pago confirmado/);
++  assert.doesNotMatch(render({ ...session.snapshot(), phase: 'awaiting_approval', intent: intentFixture() }), /Pago confirmado/);
++});
++test('only CAPTURED plus confirmed local order shows success; references remain until acknowledgement', async () => {
++  const { session } = setup(); await session.start(selectedQuote()); await session.approve('PP-SYNTHETIC');
++  assert.match(render(session.snapshot()), /Pago confirmado. Pedido #42/); assert.ok(recoveryStore.read(1));
++  session.acknowledgePaid(); assert.equal(recoveryStore.read(1), null);
++});
++test('reload restores CAPTURED through GET even when cart is already empty', async () => {
++  const { session, api } = setup(); await session.start(selectedQuote()); api.get = async () => paidIntent();
++  const reloaded = new CheckoutSession(1, () => current === 1, api); await reloaded.restore();
++  assert.equal(reloaded.snapshot().phase, 'paid'); assert.match(render(reloaded.snapshot()), /Pedido #42/);
++});
++test('CAPTURE_UNKNOWN and timeout cannot trigger another frontend capture', async () => {
++  for (const throws of [false, true]) {
++    localStorage.removeItem('csti.checkout.v1.1');
++    const { session, api, calls } = setup(); await session.start(selectedQuote());
++    api.capture = async (...args) => { calls.push(['capture', ...args]); if (throws) throw Error('timeout'); return intentFixture({ state: 'CAPTURE_UNKNOWN' }); };
++    await session.approve('PP-SYNTHETIC'); await session.approve('PP-SYNTHETIC');
++    assert.equal(calls.filter(c => c[0] === 'capture').length, 1); assert.equal(session.snapshot().phase, 'pending');
++  }
++});
++test('reconciliation is explicit, bounded, frequency limited and never captures', async () => {
++  const { session, api, calls, setServer } = setup(); await session.start(selectedQuote());
++  setServer(intentFixture({ state: 'CAPTURE_UNKNOWN' })); await session.recover();
++  await session.recover(); await session.recover();
++  assert.equal(calls.filter(c => c[0] === 'reconcile').length, 1);
++  assert.equal(calls.filter(c => c[0] === 'capture').length, 0);
++  assert.match(session.snapshot().message, /Espera/);
++  api.get = async () => paidIntent(); // A late confirm can be obtained by a later explicit reload/GET.
++  await session.restore(); assert.equal(session.snapshot().phase, 'paid');
++});
++test('reconciliation stops at five explicit attempts even when time advances', async t => {
++  let now = Date.now(); t.mock.method(Date, 'now', () => now);
++  const { session, calls, setServer } = setup(); await session.start(selectedQuote());
++  setServer(intentFixture({ state: 'CAPTURE_UNKNOWN' }));
++  for (let index = 0; index < 8; index++) { await session.recover(); now += 10001; }
++  assert.equal(calls.filter(c => c[0] === 'reconcile').length, 5);
++  assert.equal(session.snapshot().phase, 'pending');
++});
++test('definitive quote expiry 409 before intent creation permits explicit recotization', async () => {
++  const { session, api } = setup(); api.createIntent = async () => { throw new CheckoutError('QUOTE_EXPIRED', 409); };
++  await assert.rejects(session.start(selectedQuote())); assert.equal(session.snapshot().phase, 'requote');
++  assert.equal(recoveryStore.read(1), null); assert.match(render(session.snapshot()), /cotizar de nuevo/);
++  session.retryQuote(); assert.equal(session.snapshot().phase, 'idle');
++});
++test('wrong PayPal identifier never reaches capture endpoint', async () => {
++  const { session, calls } = setup(); await session.start(selectedQuote()); await session.approve('ALTERED');
++  assert.equal(calls.filter(c => c[0] === 'capture').length, 0);
++});
++test('account change during intent response cannot save ID or call PayPal for the other account', async () => {
++  const { session, api, calls } = setup(); const pending = deferred(); api.createIntent = async () => pending.promise;
++  const flight = session.start(selectedQuote()); current = 2; setCheckoutAccount(2); pending.resolve(intentFixture());
++  await assert.rejects(flight, e => e.code === 'SESSION_CHANGED');
++  assert.equal(recoveryStore.read(1).intentId, null); assert.equal(recoveryStore.read(2), null);
++  assert.equal(calls.filter(c => c[0] === 'paypal').length, 0);
++});
++test('logout clears both browser stores, invalidates in-flight callbacks and recovery code requires same account', async () => {
++  const { session, api } = setup(); await session.start(selectedQuote());
++  const code = JSON.stringify(session.snapshot().reference); const pending = deferred(); api.capture = async () => pending.promise;
++  const flight = session.approve('PP-SYNTHETIC'); authService.logout(); current = null;
++  pending.resolve(paidIntent()); await flight; assert.equal(localStorage.getItem('access_token'), null);
++  assert.equal(localStorage.getItem('csti.checkout.v1.1'), null); assert.notEqual(session.snapshot().phase, 'paid');
++  current = 2; setCheckoutAccount(2); const other = new CheckoutSession(2, () => true, api);
++  assert.throws(() => other.importCode(code));
++  current = 1; setCheckoutAccount(1); const original = new CheckoutSession(1, () => true, api);
++  original.importCode(code); api.get = async () => paidIntent(); await original.restore(); assert.equal(original.snapshot().phase, 'paid');
++});
++test('cancel ambiguous 409 conserves references and does not declare terminal failure', async () => {
++  const { session, api } = setup(); await session.start(selectedQuote());
++  const ref = recoveryStore.read(1); api.cancel = async () => { throw new CheckoutError('CHECKOUT_CANNOT_CANCEL_AMBIGUOUS', 409); };
++  await session.cancel(); assert.equal(session.snapshot().phase, 'pending'); assert.deepEqual(recoveryStore.read(1), ref);
++});
++test('pending capture cannot be cancelled by visual SDK dismissal', async () => {
++  const { session, api, calls } = setup(); await session.start(selectedQuote());
++  api.capture = async () => intentFixture({ state: 'CAPTURE_UNKNOWN' }); await session.approve('PP-SYNTHETIC'); await session.cancel();
++  assert.equal(calls.filter(c => c[0] === 'cancel').length, 0); assert.ok(recoveryStore.read(1));
++});
++test('safe backend cancellation releases references only after FAILED', async () => {
++  const { session } = setup(); await session.start(selectedQuote()); await session.cancel();
++  assert.equal(session.snapshot().phase, 'cancelled'); assert.equal(recoveryStore.read(1), null);
++});
++test('lost cancellation response is recovered as FAILED through GET and releases browser reference', async () => {
++  const { session, api } = setup(); await session.start(selectedQuote());
++  api.get = async () => intentFixture({ state: 'FAILED' });
++  const reloaded = new CheckoutSession(1, () => current === 1, api); await reloaded.restore();
++  assert.equal(reloaded.snapshot().phase, 'cancelled'); assert.equal(recoveryStore.read(1), null);
++});
++test('CHECKOUT_DISABLED blocks purchase without a frontend bypass', async () => {
++  handler = async () => { throw { response: { status: 503, data: { code: 'CHECKOUT_DISABLED' } } }; };
++  await assert.rejects(checkoutService.quote(12), e => e.code === 'CHECKOUT_DISABLED');
++  const { session, api, calls } = setup(); api.createIntent = async () => { throw new CheckoutError('CHECKOUT_DISABLED', 503); };
++  await assert.rejects(session.start(selectedQuote())); assert.equal(session.snapshot().phase, 'unavailable');
++  assert.equal(calls.filter(c => c[0] === 'paypal').length, 0);
++});
++test('storage disabled blocks creation before any payment operation', async () => {
++  const { session, calls } = setup(); localStorage.setItem = () => { throw Error('denied'); };
++  await assert.rejects(session.start(selectedQuote()), e => e.code === 'STORAGE_UNAVAILABLE'); assert.equal(calls.length, 0);
++});
++test('frontend source contains no legacy verifier or SDK financial creation/capture calls', () => {
++  for (const path of ['src/pages/Payment/Payment.tsx', 'src/services/Payment.service.ts', 'src/services/CheckoutCallbacks.ts', 'src/components/CheckoutPayPal.tsx']) {
++    const text = readFileSync(path, 'utf8'); assert.doesNotMatch(text, /actions\.order\.(create|capture)|\/api\/pagos\/verificar\/|purchase_units|currency_code/);
++  }
++});
+diff --git a/tests/hook-harness.mjs b/tests/hook-harness.mjs
+--- a/tests/hook-harness.mjs
++++ b/tests/hook-harness.mjs
+@@ -1,3 +1,4 @@
++const { checkoutError } = await import('../src/services/Checkout.service.ts');
+ import { readFileSync } from 'node:fs';
+ import vm from 'node:vm';
+ import ts from 'typescript';
+@@ -38,6 +39,7 @@
+   } }).outputText;
+   vm.runInNewContext(source, { exports,
+     require(name) {
++      if (name.endsWith('Checkout.service')) return { checkoutError };
+       if (name === 'react') return hooks;
+       if (name.endsWith('Shipping.service')) return { shippingService, isQuoteCurrent };
+       throw Error(`Unexpected hook dependency: ${name}`);
+diff --git a/tests/offline-guard.mjs b/tests/offline-guard.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/offline-guard.mjs
+@@ -0,0 +1,8 @@
++import net from 'node:net';
++import { after } from 'node:test';
++import assert from 'node:assert/strict';
++let attempts = 0;
++const deny = () => { attempts++; throw Error('External network is disabled in checkout regression tests'); };
++net.Socket.prototype.connect = deny;
++globalThis.fetch = async () => deny();
++after(() => assert.equal(attempts, 0, 'No real network may be attempted, even if the application catches the error'));
+diff --git a/tests/register.mjs b/tests/register.mjs
+--- a/tests/register.mjs
++++ b/tests/register.mjs
+@@ -1,3 +1,4 @@
++import './offline-guard.mjs';
+ import { registerHooks } from 'node:module';
+ import { readFileSync, existsSync } from 'node:fs';
+ import { fileURLToPath } from 'node:url';
+diff --git a/tests/shipping-hook.test.mjs b/tests/shipping-hook.test.mjs
+--- a/tests/shipping-hook.test.mjs
++++ b/tests/shipping-hook.test.mjs
+@@ -12,11 +12,12 @@
+   items, `address-${addressId}`,
+ ];
+ const quoted = (context, id = 'backend-rate') => ({ ...context, expiresAt: Date.now() + 60000,
+-  rates: [{ id, title: 'Test', internalProvider: 'Test carrier', price: 10, description: '', days: null, type: 'standard' }] });
++  rates: [{ id, title: 'Test', internalProvider: 'Test carrier', price: '10.00', description: '', days: null, type: 'standard' }] });
+ function setup(handler = async context => quoted(context)) {
+   const requests = [], saved = [];
+   const service = {
+     getQuote(context, items) { requests.push({ context, items }); return handler(context, items); },
++    async selectQuoteRate(quote, rateId) { return { ...quote, selected_rate_id: rateId, total: '110.00' }; },
+     getSelectedRateId() { return null; }, clearSelectedRate() {},
+     saveSelectedRate(rate, context) { saved.push({ rate, context }); },
+   };
+diff --git a/tests/shipping-security.test.mjs b/tests/shipping-security.test.mjs
+--- a/tests/shipping-security.test.mjs
++++ b/tests/shipping-security.test.mjs
+@@ -5,6 +5,7 @@
+ import { renderToStaticMarkup } from 'react-dom/server';
+ import { readFileSync, readdirSync } from 'node:fs';
+ import ts from 'typescript';
++import { quoteFixture, rateId } from './checkout-fixtures.mjs';
+ 
+ let posts, gets;
+ globalThis.__shippingApi = { post: (...args) => posts(...args), get: (...args) => gets(...args) };
+@@ -16,20 +17,21 @@
+ const { revalidateCheckoutShipping } = await import('../src/services/CheckoutShipping.service.ts');
+ const item = { id: 1, producto: { id: 99 }, cantidad: 1, precio_unitario: 100 };
+ const context = { addressId: 1, cartKey: cartQuoteKey([item], 100) };
+-const rawRate = { id: 'rate-1', title: 'Envío estándar', carrier: 'CVA', price: 25, estimated_days: '3-5 días' };
++const rawRate = { id: rateId, carrier: 'CVA', service: 'Envío estándar', price: '25.00', tax: '3.45', currency: 'MXN' };
+ const rate = () => validateRates({ rates: [rawRate] })[0];
+-const quote = () => ({ ...context, rates: [rate()], expiresAt: Date.now() + 60000 });
++const quote = () => ({ ...quoteFixture(), ...context, rates: [rate()], selected_rate_id: rateId, total: '225.00', expiresAt: Date.now() + 60000 });
+ const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props));
+ beforeEach(() => {
++  globalThis.sessionStorage = { getItem: () => null };
+   const storage = new Map();
+   globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) };
+-  posts = async () => ({ data: { rates: [rawRate] } });
++  posts = async () => ({ status: 201, data: { ...quoteFixture(), rates: [rawRate] } });
+   gets = async () => { throw Error('offline'); };
+ });
+ test('1. Envia offline rejects rates and default without a fallback', async () => {
+   posts = async () => { throw Error('offline'); };
+-  await assert.rejects(shippingService.getRates(1, [item]), /No fue posible cotizar/);
+-  await assert.rejects(shippingService.getDefaultRate(1, [item]), /No fue posible cotizar/);
++  await assert.rejects(shippingService.getRates(1, [item]), /No se pudo/);
++  await assert.rejects(shippingService.getDefaultRate(1, [item]), /No se pudo/);
+ });
+ test('2. Missing/invalid address cannot quote or call network', async () => {
+   posts = () => { assert.fail('Network must not be called'); };
+@@ -38,16 +40,16 @@
+ test('3. Empty, corrupt, duplicate and invalid tariffs reject entire response', () => {
+   for (const data of [null, {}, { rates: {} }, { rates: [] }, { rates: [null] }, { rates: [rawRate, rawRate] }]) assert.throws(() => validateRates(data));
+   for (const price of [-1, NaN, Infinity, '', ' ', '-1', 'NaN', null, true, {}, '1e2']) assert.throws(() => validateRates({ rates: [{ ...rawRate, price }] }));
+-  for (const change of [{ id: '' }, { id: null }, { title: 1 }, { carrier: '' }]) assert.throws(() => validateRates({ rates: [{ ...rawRate, ...change }] }));
++  for (const change of [{ id: '' }, { id: null }, { service: 1 }, { carrier: '' }]) assert.throws(() => validateRates({ rates: [{ ...rawRate, ...change }] }));
+ });
+-test('Valid quotes normalize decimal strings, accept zero and send product ids', async () => {
+-  assert.equal(validateRates({ rates: [{ ...rawRate, price: '12.50' }] })[0].price, 12.5);
+-  assert.equal(validateRates({ rates: [{ ...rawRate, price: 0 }] })[0].price, 0);
++test('Valid quotes preserve decimal strings, accept zero and send only address ID', async () => {
++  assert.equal(validateRates({ rates: [{ ...rawRate, price: '12.50' }] })[0].price, '12.50');
++  assert.equal(validateRates({ rates: [{ ...rawRate, price: '0.00' }] })[0].price, '0.00');
+   posts = async (url, body, options) => {
+-    assert.match(url, /cotizar/); assert.deepEqual(body, { direccionID: 1, productos: [99] });
+-    assert.equal(options.timeout, 15000); return { data: { rates: [rawRate] } };
++    assert.equal(url, '/api/pagos/checkout/cotizaciones/'); assert.deepEqual(body, { direccionID: 1 });
++    assert.equal(options.timeout, 45000); return { status: 201, data: { ...quoteFixture(), rates: [rawRate] } };
+   };
+-  assert.equal((await shippingService.getQuote(context, [item])).rates[0].price, 25);
++  assert.equal((await shippingService.getQuote(context, [item])).rates[0].price, '25.00');
+ });
+ test('4. Corrupt/legacy/manipulated localStorage never throws or supplies a price', () => {
+   for (const value of ['{', 'null', '[]', JSON.stringify({ ...rawRate, price: -150 }), JSON.stringify({ ...rawRate, price: 1 })]) {
+@@ -55,8 +57,8 @@
+     assert.equal(shippingService.getSelectedRateId(context), null);
+   }
+   shippingService.saveSelectedRate(rate(), context);
+-  assert.deepEqual(JSON.parse(localStorage.getItem('selectedShippingRate')), { version: 1, rateId: 'rate-1', ...context });
+-  assert.equal(shippingService.getSelectedRateId(context), 'rate-1');
++  assert.deepEqual(JSON.parse(localStorage.getItem('selectedShippingRate')), { version: 1, rateId: rateId, ...context });
++  assert.equal(shippingService.getSelectedRateId(context), rateId);
+   assert.equal(shippingService.getSelectedRateId({ ...context, addressId: 2 }), null);
+ });
+ test('Storage access denied is recoverable', () => {
+@@ -69,12 +71,12 @@
+   let renders = 0;
+   const FakePayPal = () => { renders++; return React.createElement('button', null, 'PAYPAL_MOCK'); };
+   for (const candidate of [null, { ...quote(), expiresAt: 0 }, { ...quote(), addressId: 2 }, { ...quote(), cartKey: 'changed' }, { ...quote(), rates: [] }]) {
+-    const html = render(Gate, { quote: candidate, context, selectedRateId: 'rate-1', children: React.createElement(FakePayPal) });
++    const html = render(Gate, { quote: candidate, context, selectedRateId: rateId, children: React.createElement(FakePayPal) });
+     assert.doesNotMatch(html, /PAYPAL_MOCK/); assert.match(html, /bloqueado/);
+   }
+   assert.equal(renders, 0);
+   assert.doesNotMatch(render(Gate, { quote: quote(), context, selectedRateId: 'tampered', children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
+-  assert.match(render(Gate, { quote: quote(), context, selectedRateId: 'rate-1', children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
++  assert.match(render(Gate, { quote: quote(), context, selectedRateId: rateId, children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
+   assert.equal(renders, 1);
+ });
+ test('Cart quantity, price, total and address changes invalidate previous quote', () => {
+@@ -83,27 +85,24 @@
+ });
+ const address = { id: 1, codigo_postal: '76120', calle: 'Calle de prueba' };
+ const checkoutGets = async url => ({ data: url.includes('mi-carrito') ? { items: [item], total: 100 } : [address] });
+-test('Checkout revalidates current cart, address and backend rate before proceeding', async () => {
++test('Checkout revalidates current cart, address and durable selected backend rate before proceeding', async () => {
+   gets = checkoutGets;
+-  assert.equal((await revalidateCheckoutShipping(quote(), context, 'rate-1', address)).price, 25);
++  assert.equal((await revalidateCheckoutShipping(quote(), context, rateId, address)).price, '25.00');
+ });
+-test('Checkout rejects changed/removed cart, address and rate or provider offline', async () => {
++test('Checkout rejects changed cart/address and unconfirmed or expired durable rate', async () => {
+   gets = async url => ({ data: url.includes('mi-carrito') ? { items: [{ ...item, cantidad: 2 }], total: 200 } : [address] });
+-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address), /carrito o la dirección/);
++  await assert.rejects(revalidateCheckoutShipping(quote(), context, rateId, address), /carrito o la dirección/);
+   gets = checkoutGets;
+-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', { ...address, codigo_postal: '00000' }));
+-  for (const rates of [[], [{ ...rawRate, price: 99 }], [{ ...rawRate, id: 'new' }]]) {
+-    posts = async () => ({ data: { rates } });
+-    await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address));
++  await assert.rejects(revalidateCheckoutShipping(quote(), context, rateId, { ...address, codigo_postal: '00000' }));
++  for (const change of [{ selected_rate_id: null }, { total: null }, { expiresAt: 0 }]) {
++    await assert.rejects(revalidateCheckoutShipping({ ...quote(), ...change }, context, rateId, address));
+   }
+-  posts = async () => { throw Error('offline'); };
+-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address));
+ });
+ test('A valid-looking stored price cannot replace fresh backend rate', async () => {
+-  localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: 'rate-1', ...context, price: 0 }));
++  localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: rateId, ...context, price: 0 }));
+   const preferred = shippingService.getSelectedRateId(context);
+   const fresh = await shippingService.getQuote(context, [item]);
+-  assert.equal(fresh.rates.find(candidate => candidate.id === preferred).price, 25);
++  assert.equal(fresh.rates.find(candidate => candidate.id === preferred).price, '25.00');
+ });
+ test('6/7. Ancient EN_TRANSITO stays in transit offline without invented guide/carrier/events', async () => {
+   const data = await shippingService.getTracking('1', { estado_envio: 'EN_TRANSITO', creado_en: '2000-01-01', actualizado_en: '2000-01-02' });

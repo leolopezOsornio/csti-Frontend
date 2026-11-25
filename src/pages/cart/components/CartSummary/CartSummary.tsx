@@ -1,49 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { addressService } from '../../../../services/Address.service';
-import { shippingService } from '../../../../services/Shipping.service';
-import type { ShippingRate } from '../../../../services/Shipping.service';
+import { displayMoney } from '../../../../services/Checkout.service';
+import { cartQuoteKey } from '../../../../services/Shipping.service';
+import { useShippingQuote } from '../../../../hooks/useShippingQuote';
+import type { ShippingCartItem } from '../../../../services/Shipping.service';
 import styles from '../CartSummary/CartSummary.module.css';
 
 interface CartSummaryProps {
   total: number;
-  items: any[];
+  items: ShippingCartItem[];
 }
 
 const CartSummary = ({ total, items }: CartSummaryProps) => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const accountId = user?.id ?? null;
   
-  const [shippingRate, setShippingRate] = useState<ShippingRate | null>(null);
-  const [address, setAddress] = useState<any>(null);
-  const [loadingShipping, setLoadingShipping] = useState(true);
+  const [address, setAddress] = useState<{ id: number; codigo_postal: string } | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [addressAttempt, setAddressAttempt] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(false);
-  
-  const itemsKey = items?.map((i: any) => `${i.id}-${i.cantidad}`).join(',');
+  const context = { addressId: address?.id ?? 0, cartKey: cartQuoteKey(items, total) };
+  const { quote, selectedRate: shippingRate, loading: loadingShipping, error: quoteError } =
+    useShippingQuote(context, items, JSON.stringify([accountId, address]), accountId !== null);
 
   useEffect(() => {
-    const fetchDefaultShipping = async () => {
-      setLoadingShipping(true);
+    let active = true;
+    addressService.getAddresses().then((addresses: { id: number; codigo_postal: string; es_principal?: boolean }[]) => {
+      if (!active) return;
+      const principal = addresses.find(candidate => candidate.es_principal) ?? addresses[0] ?? null;
+      setAddress(principal);
+      setAddressError(principal ? null : 'Agrega una dirección en tu perfil para continuar.');
       try {
-        const addresses = await addressService.getAddresses();
-        if (addresses && addresses.length > 0) {
-          const principal = addresses.find((a: any) => a.es_principal) || addresses[0];
-          setAddress(principal);
+        if (principal) localStorage.setItem('selectedAddressId', String(principal.id));
+        else localStorage.removeItem('selectedAddressId');
+      } catch { /* Storage is optional. */ }
+    }).catch(() => {
+      if (!active) return;
+      setAddress(null);
+      setAddressError('No se pudieron cargar tus direcciones. Intenta de nuevo.');
+    });
+    return () => { active = false; };
+  }, [addressAttempt, accountId]);
 
-          const defaultRate = await shippingService.getDefaultRate(principal.id, items);
-          setShippingRate(defaultRate);
-          
-          shippingService.saveSelectedRate(defaultRate);
-          localStorage.setItem('selectedAddressId', principal.id.toString());
-        }
-      } catch (error) {
-        console.error("Error obteniendo envío por defecto:", error);
-      } finally {
-        setLoadingShipping(false);
-      }
-    };
+  useEffect(() => {
+    const invalidate = () => { setAddress(null); setAddressAttempt(value => value + 1); };
+    window.addEventListener('focus', invalidate);
+    window.addEventListener('storage', invalidate);
+    return () => { window.removeEventListener('focus', invalidate); window.removeEventListener('storage', invalidate); };
+  }, []);
 
-    fetchDefaultShipping();
-  }, [itemsKey]);
 
   useEffect(() => {
     const marker = document.getElementById('cart-bottom-marker');
@@ -65,10 +73,10 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
   }, [total]);
 
   const handleCheckout = () => {
-    navigate('/payment');
+    if (quote && shippingRate && address) navigate('/payment');
   };
 
-  const finalTotal = Number(total) + (shippingRate?.price || 0);
+
 
   return (
     <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>
@@ -78,7 +86,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
         <div className={styles.summaryRow}>
           <span>Productos</span>
           <span>
-            ${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {displayMoney(quote?.items_total)}
           </span>
         </div>
 
@@ -87,7 +95,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
           {loadingShipping ? (
             <span style={{color: '#64748b', fontSize: '0.9rem'}}>Calculando...</span>
           ) : shippingRate ? (
-            <span>${shippingRate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span>{displayMoney(quote?.shipping_total)}</span>
           ) : (
             <span>Pendiente</span>
           )}
@@ -102,14 +110,18 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
         <div className={`${styles.summaryRow} ${styles.total}`}>
           <span className={styles.labelTotal}>Total</span>
           <span className={styles.valueTotal}>
-            ${Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {displayMoney(quote?.total)}
           </span>
         </div>
 
-        <button 
+        {(addressError || quoteError) && <div role="alert">
+          <p>{addressError || quoteError}</p>
+          <button type="button" onClick={() => { setAddress(null); setAddressAttempt(value => value + 1); }}>Reintentar cotización</button>
+        </div>}
+        <button
           className={styles.btnCheckout} 
           onClick={handleCheckout}
-          disabled={loadingShipping}
+          disabled={loadingShipping || !quote || !shippingRate || !address}
         >
           {loadingShipping ? 'Espere...' : 'Continuar'}
         </button>

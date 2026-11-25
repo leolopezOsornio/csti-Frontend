@@ -1,6 +1,14 @@
 import axios from 'axios';
 import { appConfig } from '../config/appConfig';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Fiscal downloads surface terminal 401 in the UI instead of navigating. */
+    redirectOnAuthFailure?: boolean;
+    checkoutSessionToken?: string | null;
+  }
+}
+
 const api = axios.create({
   baseURL: appConfig.apiBaseUrl,
   headers: {
@@ -11,6 +19,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+    if (config.checkoutSessionToken !== undefined && (!token || config.checkoutSessionToken !== token)) {
+      return Promise.reject(new Error('SESSION_CHANGED'));
+    }
 
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -27,7 +39,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (!originalRequest) return Promise.reject(error);
+    const checkoutRequest = originalRequest.checkoutSessionToken !== undefined;
+    const currentToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    // Never replay a checkout POST under a different login after an async 401.
+    if (checkoutRequest && originalRequest.checkoutSessionToken !== currentToken) return Promise.reject(error);
+
+    if (error.response?.status === 401 && !originalRequest._retry && !checkoutRequest) {
       originalRequest._retry = true;
 
       try {
@@ -55,7 +73,7 @@ api.interceptors.response.use(
         localStorage.removeItem('refresh_token');
         sessionStorage.removeItem('access_token');
         sessionStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (originalRequest.redirectOnAuthFailure !== false) window.location.href = '/login';
       }
     }
     return Promise.reject(error);

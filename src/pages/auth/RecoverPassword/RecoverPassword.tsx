@@ -161,7 +161,7 @@ const RecoverPassword = () => {
       let titulo = 'Contraseña insegura';
 
       if (error.response?.data?.errores) {
-        mensajeError = error.response.data.errores.join('<br>');
+        mensajeError = error.response.data.errores.join('\n');
       } else if (error.response?.data?.error) {
         mensajeError = error.response.data.error;
         if (mensajeError.toLowerCase().includes('actual') || mensajeError.toLowerCase().includes('anterior')) {
@@ -172,7 +172,7 @@ const RecoverPassword = () => {
       Swal.fire({
         icon: 'warning',
         title: titulo,
-        html: mensajeError,
+        text: mensajeError,
         confirmButtonColor: '#00b8d4',
       });
     } finally {

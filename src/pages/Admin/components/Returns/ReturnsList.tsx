@@ -1,3 +1,8 @@
+import { showReactAlert } from '../../../../utils/reactAlert';
+import { safeMediaUrl } from '../../../../utils/safeMediaUrl';
+import ReturnDetailsContent from './ReturnDetailsContent';
+import { formatMotivo } from '../../../../utils/returnDisplay';
+import type { ReturnDetails } from './ReturnDetailsContent';
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -33,85 +38,12 @@ const ReturnsList = () => {
         fetchReturns();
     }, []);
 
-    const formatMotivo = (motivo: string) => {
-        if (!motivo) return 'No especificado';
-        const dict: Record<string, string> = {
-            'Dano_envio': 'Daño en envío',
-            'Arrepentimiento': 'Arrepentimiento',
-            'Defecto_fabrica': 'Defecto de fábrica',
-            'Error_producto': 'Producto incorrecto'
-        };
-        return dict[motivo] || motivo.replace(/_/g, ' ');
-    };
-
-    const verDetalles = (ret: any) => {
-        const fotos = ret.evidencias ? ret.evidencias.map((e: any) => e.imagen) : [];
-        const comentarios = ret.comentarios || 'El cliente no dejó comentarios adicionales.';
-        const motivo = formatMotivo(ret.motivo);
-        const cliente = ret.cliente_nombre || 'Cliente';
-        const email = ret.cliente_email || 'Sin correo';
-        
-        let htmlContent = '';
-        
-        const detallesHtml = `
-            <div style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
-                <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <h5 style="margin: 0 0 8px 0; color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Información del Cliente</h5>
-                    <div style="color: #0f172a; font-weight: 500; font-size: 1rem; display: flex; alignItems: center; gap: 8px;">
-                        <span style="display: inline-block; width: 32px; height: 32px; background: #eff6ff; color: #3b82f6; border-radius: 50%; text-align: center; line-height: 32px; font-weight: bold; font-size: 0.9rem;">${cliente.charAt(0)}</span>
-                        <div>
-                            <div>${cliente}</div>
-                            <div style="font-size: 0.85rem; color: #64748b; font-weight: 400;">${email}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <h5 style="margin: 0 0 8px 0; color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Motivo Declarado</h5>
-                    <div style="color: #0f172a; font-weight: 600; font-size: 1.05rem;">
-                        ${motivo}
-                    </div>
-                </div>
-
-                <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-grow: 1;">
-                    <h5 style="margin: 0 0 8px 0; color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Detalles Adicionales</h5>
-                    <div style="color: #475569; font-size: 0.95rem; white-space: pre-wrap; line-height: 1.6; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px dashed #cbd5e1; text-align: left;">${comentarios}</div>
-                </div>
-            </div>
-        `;
-        
-        if (fotos.length > 0) {
-            const imagesHtml = fotos.map((f: string) => `<div style="background: #f1f5f9; padding: 8px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;"><img src="${f}" style="max-width:100%; border-radius:4px; display: block;" /></div>`).join('');
-            htmlContent = `
-                <div style="display: flex; gap: 24px; text-align: left; max-height: 600px; padding-top: 10px;">
-                    <div style="flex: 1; overflow-y: auto; padding-right: 12px;">
-                        <h4 style="margin-top:0; margin-bottom:16px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Evidencia Fotográfica</h4>
-                        ${imagesHtml}
-                    </div>
-                    <div style="flex: 1; overflow-y: auto;">
-                        <h4 style="margin-top:0; margin-bottom:16px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Desglose de la Solicitud</h4>
-                        ${detallesHtml}
-                    </div>
-                </div>
-            `;
-        } else {
-             htmlContent = `
-                <div style="text-align: left; padding-top: 10px;">
-                    <h4 style="margin-top:0; margin-bottom:16px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Desglose de la Solicitud (Sin Fotos)</h4>
-                    ${detallesHtml}
-                </div>
-            `;
-        }
-
-        Swal.fire({
+    const verDetalles = (ret: ReturnDetails) => {
+        void showReactAlert(<ReturnDetailsContent details={ret} />, {
             title: 'Detalles de la Devolución',
-            html: htmlContent,
-            width: fotos.length > 0 ? '900px' : '550px',
-            confirmButtonText: 'Cerrar',
-            confirmButtonColor: '#0f172a',
-            customClass: {
-                popup: 'swal-wide-popup'
-            }
+            width: Array.isArray(ret.evidencias) && ret.evidencias.length > 0 ? '900px' : '550px',
+            confirmButtonText: 'Cerrar', confirmButtonColor: '#0f172a',
+            customClass: { popup: 'swal-wide-popup' },
         });
     };
 
@@ -189,7 +121,7 @@ const ReturnsList = () => {
                 }
             }
         } catch (error: any) {
-            Swal.fire('Error', error.response?.data?.error || 'Ocurrió un error al actualizar el estado', 'error');
+            Swal.fire({ title: 'Error', text: error.response?.data?.error || 'Ocurrió un error al actualizar el estado', icon: 'error' });
         }
     };
 
@@ -319,13 +251,13 @@ const ReturnsList = () => {
                                                     Atendido por: <strong style={{ color: '#475569' }}>{ret.atendido_por_nombre}</strong>
                                                 </span>
                                             )}
-                                            {ret.estado === 'EN_TRANSITO' && ret.url_guia && (
-                                                <a href={ret.url_guia} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#0ea5e9', textDecoration: 'none', fontWeight: 600 }}>
+                                            {ret.estado === 'EN_TRANSITO' && safeMediaUrl(ret.url_guia) && (
+                                                <a href={safeMediaUrl(ret.url_guia)!} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#0ea5e9', textDecoration: 'none', fontWeight: 600 }}>
                                                     Ver Guía Inversa
                                                 </a>
                                             )}
-                                            {ret.estado === 'RECHAZADA' && ret.url_guia_rechazo && (
-                                                <a href={ret.url_guia_rechazo} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#ef4444', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {ret.estado === 'RECHAZADA' && safeMediaUrl(ret.url_guia_rechazo) && (
+                                                <a href={safeMediaUrl(ret.url_guia_rechazo)!} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#ef4444', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     Descargar Guía Retorno
                                                 </a>
                                             )}

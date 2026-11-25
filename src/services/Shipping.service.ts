@@ -1,235 +1,105 @@
 import api from './Api.service';
 
-export interface ShippingRate {
-  id: string;
-  type: 'standard' | 'express';
-  title: string;
-  description: string;
-  days: number;
-  price: number;
-  internalProvider: string;
+import { checkoutService, validateCheckoutRates, CheckoutError } from './Checkout.service';
+import type { CheckoutQuote, CheckoutRate } from './Checkout.service';
+
+export type ShippingRate = CheckoutRate;
+export interface ShippingCartItem {
+  id?: number;
+  producto?: { id: number };
+  product?: { id: number };
+  cantidad: number;
+  precio_unitario?: number | string;
 }
-
-const mockRates: ShippingRate[] = [
-  {
-    id: 'estandar_cva',
-    type: 'standard',
-    title: 'Envío Estándar Nacional',
-    description: 'Llega entre 3 a 5 días hábiles.',
-    days: 4,
-    price: 150.0,
-    internalProvider: 'CVA'
-  }
-];
-
-export const shippingService = {
-  getRates: async (addressId: number, cartItems: any[] = []): Promise<ShippingRate[]> => {
-    if (!addressId) {
-      return mockRates;
-    }
-    try {
-      const productIds = cartItems.map(item => item.product?.id || item.producto?.id || item.id).filter(id => id);
-      const response = await api.post('/api/pagos/envios/cotizar/', { 
-        direccionID: addressId,
-        productos: productIds 
-      });
-      if (response.data && response.data.rates && response.data.rates.length > 0) {
-        return response.data.rates.map((rate: any) => ({
-          id: rate.id,
-          type: (rate.title.toLowerCase().includes('express') || rate.price > 170) ? 'express' : 'standard',
-          title: rate.title,
-          description: `Entrega estimada: ${rate.estimated_days}`,
-          days: rate.title.toLowerCase().includes('express') ? 1 : 4,
-          price: rate.price,
-          internalProvider: rate.carrier
-        }));
-      }
-    } catch (err) {
-      console.warn("No se pudieron cotizar tarifas de Envia en vivo, usando respaldo:", err);
-    }
-    return mockRates;
-  },
-
-  getDefaultRate: async (addressId: number, cartItems: any[] = []): Promise<ShippingRate> => {
-    try {
-      const rates = await shippingService.getRates(addressId, cartItems);
-      if (rates && rates.length > 0) {
-        return rates.reduce((prev, curr) => prev.price < curr.price ? prev : curr);
-      }
-    } catch (e) {
-      console.warn("Error getting default rate, falling back to mock");
-    }
-    return mockRates[0];
-  },
-
-  saveSelectedRate: (rate: ShippingRate) => {
-    localStorage.setItem('selectedShippingRate', JSON.stringify(rate));
-  },
-
-  getSelectedRate: (): ShippingRate | null => {
-    const rate = localStorage.getItem('selectedShippingRate');
-    return rate ? JSON.parse(rate) : null;
-  },
-
-  clearSelectedRate: () => {
+export interface QuoteContext { addressId: number; cartKey: string }
+export interface ShippingQuote extends QuoteContext, CheckoutQuote { expiresAt: number }
+export interface TrackingData {
+  carrier: string | null;
+  tracking_number: string | null;
+  status: string | null;
+  estimated_delivery: string | null;
+  delivered_date: string | null;
+  source: 'tracking' | 'order' | 'unavailable';
+  message: string | null;
+}
+export class ShippingError extends Error {
+  constructor(message: string) { super(message); this.name = 'ShippingError'; }
+}
+const record = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+const text = (value: unknown): string | null => typeof value === 'string' && value.trim() ? value.trim() : null;
+export function cartQuoteKey(items: ShippingCartItem[], total: number | string): string {
+  return JSON.stringify([String(total), items.map(item => [item.producto?.id ?? item.product?.id ?? item.id,
+    item.cantidad, String(item.precio_unitario ?? '')]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))]);
+}
+export function validateRates(data: unknown): ShippingRate[] {
+  return validateCheckoutRates(record(data).rates);
+}
+export function isQuoteCurrent(quote: ShippingQuote | null, context: QuoteContext): quote is ShippingQuote {
+  return !!quote && quote.addressId === context.addressId && quote.cartKey === context.cartKey &&
+    quote.expiresAt > Date.now() && quote.rates.length > 0;
+}
+// Storage is a method preference only. Prices are never restored from it.
+const readPreference = (context: QuoteContext): string | null => {
+  try {
+    const value = record(JSON.parse(localStorage.getItem('selectedShippingRate') || 'null'));
+    if (value.version === 1 && value.addressId === context.addressId && value.cartKey === context.cartKey && text(value.rateId)) return value.rateId as string;
     localStorage.removeItem('selectedShippingRate');
+  } catch { /* Storage disabled or corrupt: fresh quotes still work. */ }
+  return null;
+};
+const dateText = (value: unknown): string | null => {
+  const candidate = text(value);
+  return candidate && Number.isFinite(Date.parse(candidate)) ? candidate : null;
+};
+export const shippingService = {
+  getRates: async (addressId: number, _cartItems: ShippingCartItem[] = []): Promise<ShippingRate[]> => {
+    void _cartItems; // Cart products are read exclusively by Django.
+    return (await checkoutService.quote(addressId)).rates;
   },
-
-  getTracking: async (orderId: string, orderData?: any) => {
-    return new Promise(async (resolve) => {
-      const carrier = orderData?.paqueteria || 'FedEx Express';
-      const tracking_number = orderData?.numero_de_guia || '782349102384';
-      let status = orderData?.estado_envio || 'CREADO';
-      const url_guia = orderData?.url_guia || null;
-
-      try {
-        if (orderId && orderId !== 'undefined') {
-          const res = await api.get(`/api/pagos/envios/rastrear/${orderId}/`);
-          if (res.data && res.data.live_tracking) {
-            console.log("📍 [Envia.com API] Datos de rastreo en vivo recibidos:", res.data.live_tracking);
-            if (res.data.status) status = res.data.status;
-          }
-        }
-      } catch (err) {
-        console.log("Nota: Consultando rastreo (usando respaldo logístico para Sandbox):", err);
-      }
-
-      const baseDate = orderData?.creado_en ? new Date(orderData.creado_en) : new Date();
-      const carrierLower = String(carrier || '').toLowerCase();
-
-      let deliveryDays = 3;
-      if (carrierLower.includes('dhl') || carrierLower.includes('siguiente') || carrierLower.includes('domestic')) {
-        deliveryDays = 1;
-      } else if (carrierLower.includes('fedex') || carrierLower.includes('saver') || carrierLower.includes('express')) {
-        deliveryDays = 2;
-      } else if (carrierLower.includes('estafeta') || carrierLower.includes('terrestre') || carrierLower.includes('estándar')) {
-        deliveryDays = 4;
-      }
-
-      const t_creado = new Date(baseDate.getTime());
-      const t_recolectado = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 2 : 4));
-      const t_transito_1 = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 8 : 14));
-      const t_transito_2 = new Date(baseDate.getTime() + 1000 * 60 * 60 * (deliveryDays === 1 ? 16 : deliveryDays * 12));
-
-      const estimatedDeliveryDate = new Date(baseDate.getTime() + 86400000 * deliveryDays);
-      const t_entregado = orderData?.actualizado_en ? new Date(orderData.actualizado_en) : new Date(baseDate.getTime() + 86400000 * deliveryDays);
-
-      const addressStr = orderData?.direccion_envio || "";
-      let destinationCity = "tu ciudad";
-      if (addressStr.includes(',')) {
-        const parts = addressStr.split(',');
-        if (parts.length >= 2) {
-          destinationCity = parts[parts.length - 2].trim() || parts[parts.length - 1].replace(/CP:.*$/, '').trim();
-        }
-      }
-
-      const currentDate = new Date();
-      if ((status === 'EN_TRANSITO' || status === 'CREADO') && currentDate >= estimatedDeliveryDate) {
-        status = 'ENTREGADO';
-      }
-
-      let m1Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'COMPLETED';
-      let m2Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'PENDING';
-      let m3Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'PENDING';
-      let m4Status: 'COMPLETED' | 'ACTIVE' | 'PENDING' = 'PENDING';
-
-      if (status === 'CREADO') {
-        m1Status = 'ACTIVE';
-        m2Status = 'PENDING';
-        m3Status = 'PENDING';
-        m4Status = 'PENDING';
-      } else if (status === 'RECOLECTADO') {
-        m1Status = 'COMPLETED';
-        m2Status = 'ACTIVE';
-        m3Status = 'PENDING';
-        m4Status = 'PENDING';
-      } else if (status === 'EN_TRANSITO') {
-        m1Status = 'COMPLETED';
-        m2Status = 'COMPLETED';
-        m3Status = 'ACTIVE';
-        m4Status = 'PENDING';
-      } else if (status === 'ENTREGADO' || status === 'COMPLETADO') {
-        m1Status = 'COMPLETED';
-        m2Status = 'COMPLETED';
-        m3Status = 'COMPLETED';
-        m4Status = 'COMPLETED';
-      }
-
-      const milestones = [
-        {
-          id: '1',
-          title: 'En preparación',
-          status: m1Status,
-          date: t_creado.toISOString(),
-          location: 'Centro de Distribución',
-          details: [
-            'Tu pedido ha sido confirmado y el pago autorizado por el sistema.',
-            'Estamos empaquetando tus productos con protección de alta seguridad.',
-            `La etiqueta de envío de ${carrier} ha sido generada con guía ${tracking_number}.`
-          ]
-        },
-        {
-          id: '2',
-          title: 'En camino',
-          status: m2Status,
-          date: (m2Status !== 'PENDING' ? t_transito_1 : t_recolectado).toISOString(),
-          location: `Centro Logístico Regional - ${carrier}`,
-          details: m2Status !== 'PENDING' ? [
-            `El paquete fue recolectado por el mensajero de ${carrier} en el Centro de Distribución.`,
-            'Salió del centro de distribución regional y sigue en viaje por carretera.',
-            `En tránsito interurbano hacia el centro logístico de tu zona (${destinationCity}).`
-          ] : [`El paquete será recolectado y transportado por ${carrier}.`]
-        },
-        {
-          id: '3',
-          title: 'En el último tramo del recorrido',
-          status: m3Status,
-          date: (m3Status !== 'PENDING' ? t_transito_2 : new Date(t_transito_2.getTime() + 3600000)).toISOString(),
-          location: `Sucursal Destino - ${destinationCity}`,
-          details: m3Status !== 'PENDING' ? [
-            `Llegó a la central de distribución local de ${carrier} en ${destinationCity}.`,
-            'Tu paquete está muy cerca. El mensajero ha cargado tu envío en la unidad de reparto.',
-            'En reparto a tu domicilio. Recuerda tener a la mano una identificación para recibirlo.'
-          ] : [`Pendiente de arribo al centro de distribución en ${destinationCity}.`]
-        },
-        {
-          id: '4',
-          title: 'Entregado',
-          status: m4Status,
-          date: (m4Status === 'COMPLETED' ? t_entregado : estimatedDeliveryDate).toISOString(),
-          location: 'Domicilio del receptor',
-          details: m4Status === 'COMPLETED' ? [
-            `Entregamos el paquete con éxito en tu dirección (${destinationCity}).`,
-            `Firma y confirmación electrónica registrada por el operador de ${carrier}.`,
-            '¡Gracias por tu confianza y compra en CSTI!'
-          ] : [`Llegada estimada: ${new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).format(estimatedDeliveryDate)}.`]
-        }
-      ];
-
-      setTimeout(() => {
-        resolve({
-          carrier,
-          tracking_number,
-          url_guia,
-          status,
-          estimated_delivery: estimatedDeliveryDate.toISOString(),
-          delivered_date: m4Status === 'COMPLETED' ? t_entregado.toISOString() : null,
-          destination_city: destinationCity,
-          milestones,
-          events: [
-            {
-              date: t_creado.toISOString(),
-              status: 'CREADO',
-              description: 'La etiqueta de envío ha sido generada en Envia.com.'
-            },
-            ...(status !== 'CREADO' ? [{
-              date: new Date().toISOString(),
-              status: status,
-              description: `El paquete está actualmente en estado: ${status}.`
-            }] : [])
-          ]
-        });
-      }, 300);
-    });
-  }
+  getQuote: async (context: QuoteContext, _items: ShippingCartItem[]): Promise<ShippingQuote> => {
+    void _items; // Used by callers only to invalidate their local view.
+    const quote = await checkoutService.quote(context.addressId);
+    return { ...quote, ...context, expiresAt: Date.parse(quote.expires_at) };
+  },
+  selectQuoteRate: async (quote: ShippingQuote, rateId: string): Promise<ShippingQuote> => {
+    const selected = await checkoutService.selectRate(quote.quote_id, rateId);
+    if (selected.quote_id !== quote.quote_id || selected.selected_rate_id !== rateId) throw new CheckoutError('INVALID_RESPONSE');
+    return { ...selected, addressId: quote.addressId, cartKey: quote.cartKey, expiresAt: Date.parse(selected.expires_at) };
+  },
+  getDefaultRate: async (addressId: number, items: ShippingCartItem[] = []): Promise<ShippingRate> => {
+    const rates = await shippingService.getRates(addressId, items);
+    return rates.reduce((a, b) => BigInt(a.price.replace('.', '')) <= BigInt(b.price.replace('.', '')) ? a : b);
+  },
+  saveSelectedRate: (rate: ShippingRate, context: QuoteContext) => {
+    try { localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: rate.id, ...context })); }
+    catch { /* Persistence is optional. */ }
+  },
+  getSelectedRateId: readPreference,
+  clearSelectedRate: () => {
+    try { localStorage.removeItem('selectedShippingRate'); } catch { /* Optional storage. */ }
+  },
+  getTracking: async (orderId: string, orderData: unknown = {}): Promise<TrackingData> => {
+    const order = record(orderData);
+    const fallback: TrackingData = {
+      carrier: text(order.paqueteria), tracking_number: text(order.numero_de_guia), status: text(order.estado_envio),
+      estimated_delivery: null, delivered_date: null, source: 'order',
+      message: 'Rastreo temporalmente no disponible. Se muestra el último estado confirmado por el backend.',
+    };
+    try {
+      if (!orderId || orderId === 'undefined') throw new Error('Missing order');
+      const response = await api.get(`/api/pagos/envios/rastrear/${encodeURIComponent(orderId)}/`, { timeout: 15000 });
+      const data = record(response.data);
+      // Unknown provider payloads must not be interpreted as proof of delivery.
+      const status = text(data.status), tracking = text(data.tracking_number);
+      if (!status && !tracking) throw new Error('No confirmed tracking fields');
+      return { carrier: text(data.carrier) ?? fallback.carrier, tracking_number: tracking ?? fallback.tracking_number,
+        status: status ?? fallback.status, estimated_delivery: dateText(data.estimated_delivery),
+        delivered_date: status === 'ENTREGADO' ? dateText(data.delivered_date) : null, source: 'tracking', message: null };
+    } catch {
+      return fallback.status || fallback.tracking_number ? fallback : {
+        ...fallback, source: 'unavailable', message: 'Rastreo temporalmente no disponible',
+      };
+    }
+  },
 };

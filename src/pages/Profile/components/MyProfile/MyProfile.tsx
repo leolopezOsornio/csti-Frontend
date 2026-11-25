@@ -68,7 +68,7 @@ const MyProfile = () => {
         timer: 2000,
       });
     } catch (error: any) {
-      Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar', 'error');
+      Swal.fire({ title: 'Error', text: error.response?.data?.error || 'No se pudo actualizar', icon: 'error' });
     }
   };
 
@@ -93,7 +93,7 @@ const MyProfile = () => {
         error.response?.data?.errores ||
         (error.response?.data?.error ? [error.response.data.error] : ['Ocurrió un error']);
 
-      const mensaje = errMsgs.join('<br/>');
+      const mensaje = errMsgs.join('\n');
       let titulo = 'Error de seguridad';
 
       if (mensaje.toLowerCase().includes('anterior') || mensaje.toLowerCase().includes('actual')) {
@@ -103,7 +103,7 @@ const MyProfile = () => {
       Swal.fire({
         icon: 'warning',
         title: titulo,
-        html: mensaje,
+        text: mensaje,
         confirmButtonColor: '#00b8d4',
       });
     }

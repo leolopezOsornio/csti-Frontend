@@ -42,7 +42,7 @@ export const appToast = (
     toast: true,
     position: 'top-end',
     icon,
-    title,
+    titleText: title,
     text,
     timer,
     timerProgressBar: true,
@@ -54,7 +54,7 @@ export const appLoadingToast = (title: string, text?: string) =>
   Swal.fire({
     toast: true,
     position: 'top-end',
-    title,
+    titleText: title,
     text,
     allowEscapeKey: false,
     showConfirmButton: false,
