@@ -8,4 +8,4 @@ for (const name of Object.keys(process.env)) if (name.startsWith('VITE_')) delet
 process.env.VITE_API_BASE_URL = 'http://127.0.0.1:8000';
 process.env.VITE_PAYPAL_CLIENT_ID = 'synthetic-client-not-commercial';
 execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-b'], { cwd: root, stdio: 'inherit' });
-await build({ root, envDir: false, mode: 'checkout-offline', build: { outDir: 'node_modules/.cache/checkout-offline-dist' } });
+await build({ root, envDir: false, mode: 'checkout-offline', build: { outDir: process.argv.includes('--release-artifact') ? 'dist' : 'node_modules/.cache/checkout-offline-dist' } });

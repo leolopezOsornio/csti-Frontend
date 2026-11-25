@@ -24,3 +24,16 @@ dist-ssr
 *.sw?
 
 .env
+
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+*.crt
+*.p12
+*.dump
+*.backup
+*.sqlite3
+backups/
+.release-private/
