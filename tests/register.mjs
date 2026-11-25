@@ -1,3 +1,4 @@
+import './offline-guard.mjs';
 import { registerHooks } from 'node:module';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

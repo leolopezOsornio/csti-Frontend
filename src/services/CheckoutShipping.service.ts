@@ -1,6 +1,6 @@
 import { addressService } from './Address.service';
 import { cartService } from './Cart.service';
-import { cartQuoteKey, isQuoteCurrent, shippingService, ShippingError } from './Shipping.service';
+import { cartQuoteKey, isQuoteCurrent, ShippingError } from './Shipping.service';
 import type { QuoteContext, ShippingQuote } from './Shipping.service';
 
 const addressKey = (value: unknown) => value && typeof value === 'object'
@@ -18,12 +18,10 @@ export async function revalidateCheckoutShipping(quote: ShippingQuote | null, co
   if (!address || addressKey(address) !== addressKey(selectedAddress) || cartQuoteKey(cart.items, cart.total) !== context.cartKey) {
     throw new ShippingError('Cambió el carrito o la dirección. Revisa una nueva cotización.');
   }
-  const rates = await shippingService.getRates(context.addressId, cart.items);
-  const fresh = rates.find(rate => rate.id === selectedRateId);
-  if (!fresh || fresh.price !== selected.price || fresh.internalProvider !== selected.internalProvider) {
-    throw new ShippingError('La tarifa cambió. Revisa una nueva cotización.');
+  if (quote.selected_rate_id !== selectedRateId || quote.total === null) {
+    throw new ShippingError('Selecciona una tarifa confirmada por el backend.');
   }
   // A slow request may have crossed the local freshness boundary.
   if (!isQuoteCurrent(quote, context)) throw new ShippingError('La cotización venció. Cotiza de nuevo.');
-  return fresh;
+  return selected;
 }

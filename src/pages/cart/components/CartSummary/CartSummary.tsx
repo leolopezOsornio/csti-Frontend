@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { addressService } from '../../../../services/Address.service';
+import { displayMoney } from '../../../../services/Checkout.service';
 import { cartQuoteKey } from '../../../../services/Shipping.service';
 import { useShippingQuote } from '../../../../hooks/useShippingQuote';
 import type { ShippingCartItem } from '../../../../services/Shipping.service';
@@ -13,6 +15,8 @@ interface CartSummaryProps {
 
 const CartSummary = ({ total, items }: CartSummaryProps) => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const accountId = user?.id ?? null;
   
   const [address, setAddress] = useState<{ id: number; codigo_postal: string } | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -20,7 +24,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
   const [isAtBottom, setIsAtBottom] = useState(false);
   const context = { addressId: address?.id ?? 0, cartKey: cartQuoteKey(items, total) };
   const { quote, selectedRate: shippingRate, loading: loadingShipping, error: quoteError } =
-    useShippingQuote(context, items, JSON.stringify(address));
+    useShippingQuote(context, items, JSON.stringify([accountId, address]), accountId !== null);
 
   useEffect(() => {
     let active = true;
@@ -39,7 +43,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
       setAddressError('No se pudieron cargar tus direcciones. Intenta de nuevo.');
     });
     return () => { active = false; };
-  }, [addressAttempt]);
+  }, [addressAttempt, accountId]);
 
   useEffect(() => {
     const invalidate = () => { setAddress(null); setAddressAttempt(value => value + 1); };
@@ -72,7 +76,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
     if (quote && shippingRate && address) navigate('/payment');
   };
 
-  const finalTotal = Number(total) + (shippingRate?.price || 0);
+
 
   return (
     <aside className={`${styles.cartSummaryCol} ${isAtBottom ? styles.atBottom : ''}`}>
@@ -82,7 +86,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
         <div className={styles.summaryRow}>
           <span>Productos</span>
           <span>
-            ${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {displayMoney(quote?.items_total)}
           </span>
         </div>
 
@@ -91,7 +95,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
           {loadingShipping ? (
             <span style={{color: '#64748b', fontSize: '0.9rem'}}>Calculando...</span>
           ) : shippingRate ? (
-            <span>${shippingRate.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span>{displayMoney(quote?.shipping_total)}</span>
           ) : (
             <span>Pendiente</span>
           )}
@@ -106,7 +110,7 @@ const CartSummary = ({ total, items }: CartSummaryProps) => {
         <div className={`${styles.summaryRow} ${styles.total}`}>
           <span className={styles.labelTotal}>Total</span>
           <span className={styles.valueTotal}>
-            {shippingRate ? `$${Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente de cotización'}
+            {displayMoney(quote?.total)}
           </span>
         </div>
 

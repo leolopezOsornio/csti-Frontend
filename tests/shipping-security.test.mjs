@@ -5,6 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync, readdirSync } from 'node:fs';
 import ts from 'typescript';
+import { quoteFixture, rateId } from './checkout-fixtures.mjs';
 
 let posts, gets;
 globalThis.__shippingApi = { post: (...args) => posts(...args), get: (...args) => gets(...args) };
@@ -16,20 +17,21 @@ const { safeMediaUrl } = await import('../src/utils/safeMediaUrl.ts');
 const { revalidateCheckoutShipping } = await import('../src/services/CheckoutShipping.service.ts');
 const item = { id: 1, producto: { id: 99 }, cantidad: 1, precio_unitario: 100 };
 const context = { addressId: 1, cartKey: cartQuoteKey([item], 100) };
-const rawRate = { id: 'rate-1', title: 'Envío estándar', carrier: 'CVA', price: 25, estimated_days: '3-5 días' };
+const rawRate = { id: rateId, carrier: 'CVA', service: 'Envío estándar', price: '25.00', tax: '3.45', currency: 'MXN' };
 const rate = () => validateRates({ rates: [rawRate] })[0];
-const quote = () => ({ ...context, rates: [rate()], expiresAt: Date.now() + 60000 });
+const quote = () => ({ ...quoteFixture(), ...context, rates: [rate()], selected_rate_id: rateId, total: '225.00', expiresAt: Date.now() + 60000 });
 const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props));
 beforeEach(() => {
+  globalThis.sessionStorage = { getItem: () => null };
   const storage = new Map();
   globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) };
-  posts = async () => ({ data: { rates: [rawRate] } });
+  posts = async () => ({ status: 201, data: { ...quoteFixture(), rates: [rawRate] } });
   gets = async () => { throw Error('offline'); };
 });
 test('1. Envia offline rejects rates and default without a fallback', async () => {
   posts = async () => { throw Error('offline'); };
-  await assert.rejects(shippingService.getRates(1, [item]), /No fue posible cotizar/);
-  await assert.rejects(shippingService.getDefaultRate(1, [item]), /No fue posible cotizar/);
+  await assert.rejects(shippingService.getRates(1, [item]), /No se pudo/);
+  await assert.rejects(shippingService.getDefaultRate(1, [item]), /No se pudo/);
 });
 test('2. Missing/invalid address cannot quote or call network', async () => {
   posts = () => { assert.fail('Network must not be called'); };
@@ -38,16 +40,16 @@ test('2. Missing/invalid address cannot quote or call network', async () => {
 test('3. Empty, corrupt, duplicate and invalid tariffs reject entire response', () => {
   for (const data of [null, {}, { rates: {} }, { rates: [] }, { rates: [null] }, { rates: [rawRate, rawRate] }]) assert.throws(() => validateRates(data));
   for (const price of [-1, NaN, Infinity, '', ' ', '-1', 'NaN', null, true, {}, '1e2']) assert.throws(() => validateRates({ rates: [{ ...rawRate, price }] }));
-  for (const change of [{ id: '' }, { id: null }, { title: 1 }, { carrier: '' }]) assert.throws(() => validateRates({ rates: [{ ...rawRate, ...change }] }));
+  for (const change of [{ id: '' }, { id: null }, { service: 1 }, { carrier: '' }]) assert.throws(() => validateRates({ rates: [{ ...rawRate, ...change }] }));
 });
-test('Valid quotes normalize decimal strings, accept zero and send product ids', async () => {
-  assert.equal(validateRates({ rates: [{ ...rawRate, price: '12.50' }] })[0].price, 12.5);
-  assert.equal(validateRates({ rates: [{ ...rawRate, price: 0 }] })[0].price, 0);
+test('Valid quotes preserve decimal strings, accept zero and send only address ID', async () => {
+  assert.equal(validateRates({ rates: [{ ...rawRate, price: '12.50' }] })[0].price, '12.50');
+  assert.equal(validateRates({ rates: [{ ...rawRate, price: '0.00' }] })[0].price, '0.00');
   posts = async (url, body, options) => {
-    assert.match(url, /cotizar/); assert.deepEqual(body, { direccionID: 1, productos: [99] });
-    assert.equal(options.timeout, 15000); return { data: { rates: [rawRate] } };
+    assert.equal(url, '/api/pagos/checkout/cotizaciones/'); assert.deepEqual(body, { direccionID: 1 });
+    assert.equal(options.timeout, 45000); return { status: 201, data: { ...quoteFixture(), rates: [rawRate] } };
   };
-  assert.equal((await shippingService.getQuote(context, [item])).rates[0].price, 25);
+  assert.equal((await shippingService.getQuote(context, [item])).rates[0].price, '25.00');
 });
 test('4. Corrupt/legacy/manipulated localStorage never throws or supplies a price', () => {
   for (const value of ['{', 'null', '[]', JSON.stringify({ ...rawRate, price: -150 }), JSON.stringify({ ...rawRate, price: 1 })]) {
@@ -55,8 +57,8 @@ test('4. Corrupt/legacy/manipulated localStorage never throws or supplies a pric
     assert.equal(shippingService.getSelectedRateId(context), null);
   }
   shippingService.saveSelectedRate(rate(), context);
-  assert.deepEqual(JSON.parse(localStorage.getItem('selectedShippingRate')), { version: 1, rateId: 'rate-1', ...context });
-  assert.equal(shippingService.getSelectedRateId(context), 'rate-1');
+  assert.deepEqual(JSON.parse(localStorage.getItem('selectedShippingRate')), { version: 1, rateId: rateId, ...context });
+  assert.equal(shippingService.getSelectedRateId(context), rateId);
   assert.equal(shippingService.getSelectedRateId({ ...context, addressId: 2 }), null);
 });
 test('Storage access denied is recoverable', () => {
@@ -69,12 +71,12 @@ test('5. PayPal child never mounts without fresh current quote and selected rate
   let renders = 0;
   const FakePayPal = () => { renders++; return React.createElement('button', null, 'PAYPAL_MOCK'); };
   for (const candidate of [null, { ...quote(), expiresAt: 0 }, { ...quote(), addressId: 2 }, { ...quote(), cartKey: 'changed' }, { ...quote(), rates: [] }]) {
-    const html = render(Gate, { quote: candidate, context, selectedRateId: 'rate-1', children: React.createElement(FakePayPal) });
+    const html = render(Gate, { quote: candidate, context, selectedRateId: rateId, children: React.createElement(FakePayPal) });
     assert.doesNotMatch(html, /PAYPAL_MOCK/); assert.match(html, /bloqueado/);
   }
   assert.equal(renders, 0);
   assert.doesNotMatch(render(Gate, { quote: quote(), context, selectedRateId: 'tampered', children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
-  assert.match(render(Gate, { quote: quote(), context, selectedRateId: 'rate-1', children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
+  assert.match(render(Gate, { quote: quote(), context, selectedRateId: rateId, children: React.createElement(FakePayPal) }), /PAYPAL_MOCK/);
   assert.equal(renders, 1);
 });
 test('Cart quantity, price, total and address changes invalidate previous quote', () => {
@@ -83,27 +85,24 @@ test('Cart quantity, price, total and address changes invalidate previous quote'
 });
 const address = { id: 1, codigo_postal: '76120', calle: 'Calle de prueba' };
 const checkoutGets = async url => ({ data: url.includes('mi-carrito') ? { items: [item], total: 100 } : [address] });
-test('Checkout revalidates current cart, address and backend rate before proceeding', async () => {
+test('Checkout revalidates current cart, address and durable selected backend rate before proceeding', async () => {
   gets = checkoutGets;
-  assert.equal((await revalidateCheckoutShipping(quote(), context, 'rate-1', address)).price, 25);
+  assert.equal((await revalidateCheckoutShipping(quote(), context, rateId, address)).price, '25.00');
 });
-test('Checkout rejects changed/removed cart, address and rate or provider offline', async () => {
+test('Checkout rejects changed cart/address and unconfirmed or expired durable rate', async () => {
   gets = async url => ({ data: url.includes('mi-carrito') ? { items: [{ ...item, cantidad: 2 }], total: 200 } : [address] });
-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address), /carrito o la dirección/);
+  await assert.rejects(revalidateCheckoutShipping(quote(), context, rateId, address), /carrito o la dirección/);
   gets = checkoutGets;
-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', { ...address, codigo_postal: '00000' }));
-  for (const rates of [[], [{ ...rawRate, price: 99 }], [{ ...rawRate, id: 'new' }]]) {
-    posts = async () => ({ data: { rates } });
-    await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address));
+  await assert.rejects(revalidateCheckoutShipping(quote(), context, rateId, { ...address, codigo_postal: '00000' }));
+  for (const change of [{ selected_rate_id: null }, { total: null }, { expiresAt: 0 }]) {
+    await assert.rejects(revalidateCheckoutShipping({ ...quote(), ...change }, context, rateId, address));
   }
-  posts = async () => { throw Error('offline'); };
-  await assert.rejects(revalidateCheckoutShipping(quote(), context, 'rate-1', address));
 });
 test('A valid-looking stored price cannot replace fresh backend rate', async () => {
-  localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: 'rate-1', ...context, price: 0 }));
+  localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: rateId, ...context, price: 0 }));
   const preferred = shippingService.getSelectedRateId(context);
   const fresh = await shippingService.getQuote(context, [item]);
-  assert.equal(fresh.rates.find(candidate => candidate.id === preferred).price, 25);
+  assert.equal(fresh.rates.find(candidate => candidate.id === preferred).price, '25.00');
 });
 test('6/7. Ancient EN_TRANSITO stays in transit offline without invented guide/carrier/events', async () => {
   const data = await shippingService.getTracking('1', { estado_envio: 'EN_TRANSITO', creado_en: '2000-01-01', actualizado_en: '2000-01-02' });

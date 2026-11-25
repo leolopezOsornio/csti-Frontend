@@ -1,3 +1,4 @@
+const { checkoutError } = await import('../src/services/Checkout.service.ts');
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
@@ -38,6 +39,7 @@ export function hookHarness(sourcePath, shippingService, isQuoteCurrent) {
   } }).outputText;
   vm.runInNewContext(source, { exports,
     require(name) {
+      if (name.endsWith('Checkout.service')) return { checkoutError };
       if (name === 'react') return hooks;
       if (name.endsWith('Shipping.service')) return { shippingService, isQuoteCurrent };
       throw Error(`Unexpected hook dependency: ${name}`);

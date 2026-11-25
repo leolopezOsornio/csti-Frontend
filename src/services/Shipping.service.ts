@@ -1,14 +1,9 @@
-﻿import api from './Api.service';
+import api from './Api.service';
 
-export interface ShippingRate {
-  id: string;
-  type: 'standard' | 'express';
-  title: string;
-  description: string;
-  days: number | null;
-  price: number;
-  internalProvider: string;
-}
+import { checkoutService, validateCheckoutRates, CheckoutError } from './Checkout.service';
+import type { CheckoutQuote, CheckoutRate } from './Checkout.service';
+
+export type ShippingRate = CheckoutRate;
 export interface ShippingCartItem {
   id?: number;
   producto?: { id: number };
@@ -17,7 +12,7 @@ export interface ShippingCartItem {
   precio_unitario?: number | string;
 }
 export interface QuoteContext { addressId: number; cartKey: string }
-export interface ShippingQuote extends QuoteContext { rates: ShippingRate[]; expiresAt: number }
+export interface ShippingQuote extends QuoteContext, CheckoutQuote { expiresAt: number }
 export interface TrackingData {
   carrier: string | null;
   tracking_number: string | null;
@@ -33,32 +28,12 @@ export class ShippingError extends Error {
 const record = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const text = (value: unknown): string | null => typeof value === 'string' && value.trim() ? value.trim() : null;
-const money = (value: unknown): number | null => {
-  if (typeof value !== 'number' && !(typeof value === 'string' && /^\d+(\.\d{1,2})?$/.test(value))) return null;
-  const amount = Number(value);
-  return Number.isFinite(amount) && amount >= 0 ? amount : null;
-};
 export function cartQuoteKey(items: ShippingCartItem[], total: number | string): string {
   return JSON.stringify([String(total), items.map(item => [item.producto?.id ?? item.product?.id ?? item.id,
     item.cantidad, String(item.precio_unitario ?? '')]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))]);
 }
 export function validateRates(data: unknown): ShippingRate[] {
-  const rates = record(data).rates;
-  if (!Array.isArray(rates)) throw new ShippingError('La respuesta de cotización no es válida. Intenta de nuevo.');
-  if (!rates.length) throw new ShippingError('No hay envíos disponibles para esta dirección y carrito.');
-  const ids = new Set<string>();
-  return rates.map(value => {
-    const rate = record(value);
-    const id = text(rate.id) ?? (typeof rate.id === 'number' && Number.isSafeInteger(rate.id) && rate.id > 0 ? String(rate.id) : null);
-    const title = text(rate.title), carrier = text(rate.carrier), price = money(rate.price);
-    if (!id || !title || !carrier || price === null || ids.has(id)) throw new ShippingError('La cotización contiene tarifas inválidas. Intenta de nuevo.');
-    ids.add(id);
-    const days = typeof rate.estimated_days === 'number' && Number.isFinite(rate.estimated_days) && rate.estimated_days >= 0 ? rate.estimated_days : null;
-    const estimate = text(rate.estimated_days) ?? (days !== null ? String(days) : null);
-    return { id, title, price, internalProvider: carrier,
-      type: title.toLowerCase().includes('express') ? 'express' : 'standard',
-      description: estimate ? `Entrega estimada: ${estimate}` : 'Plazo no informado por la paquetería.', days };
-  });
+  return validateCheckoutRates(record(data).rates);
 }
 export function isQuoteCurrent(quote: ShippingQuote | null, context: QuoteContext): quote is ShippingQuote {
   return !!quote && quote.addressId === context.addressId && quote.cartKey === context.cartKey &&
@@ -78,25 +53,23 @@ const dateText = (value: unknown): string | null => {
   return candidate && Number.isFinite(Date.parse(candidate)) ? candidate : null;
 };
 export const shippingService = {
-  getRates: async (addressId: number, cartItems: ShippingCartItem[] = []): Promise<ShippingRate[]> => {
-    if (!Number.isSafeInteger(addressId) || addressId <= 0) throw new ShippingError('Selecciona una dirección válida para cotizar.');
-    try {
-      const productIds = cartItems.map(item => item.product?.id ?? item.producto?.id ?? item.id).filter(id => Number.isSafeInteger(id) && Number(id) > 0);
-      const response = await api.post('/api/pagos/envios/cotizar/', { direccionID: addressId, productos: productIds }, { timeout: 15000 });
-      return validateRates(response.data);
-    } catch (error) {
-      if (error instanceof ShippingError) throw error;
-      throw new ShippingError('No fue posible cotizar el envío. Revisa tu conexión e intenta de nuevo.');
-    }
+  getRates: async (addressId: number, _cartItems: ShippingCartItem[] = []): Promise<ShippingRate[]> => {
+    void _cartItems; // Cart products are read exclusively by Django.
+    return (await checkoutService.quote(addressId)).rates;
   },
-  getQuote: async (context: QuoteContext, items: ShippingCartItem[]): Promise<ShippingQuote> => ({
-    ...context, rates: await shippingService.getRates(context.addressId, items),
-    // Client freshness limit; backend must still validate its own quote expiry.
-    expiresAt: Date.now() + 5 * 60 * 1000,
-  }),
+  getQuote: async (context: QuoteContext, _items: ShippingCartItem[]): Promise<ShippingQuote> => {
+    void _items; // Used by callers only to invalidate their local view.
+    const quote = await checkoutService.quote(context.addressId);
+    return { ...quote, ...context, expiresAt: Date.parse(quote.expires_at) };
+  },
+  selectQuoteRate: async (quote: ShippingQuote, rateId: string): Promise<ShippingQuote> => {
+    const selected = await checkoutService.selectRate(quote.quote_id, rateId);
+    if (selected.quote_id !== quote.quote_id || selected.selected_rate_id !== rateId) throw new CheckoutError('INVALID_RESPONSE');
+    return { ...selected, addressId: quote.addressId, cartKey: quote.cartKey, expiresAt: Date.parse(selected.expires_at) };
+  },
   getDefaultRate: async (addressId: number, items: ShippingCartItem[] = []): Promise<ShippingRate> => {
     const rates = await shippingService.getRates(addressId, items);
-    return rates.reduce((prev, curr) => prev.price <= curr.price ? prev : curr);
+    return rates.reduce((a, b) => BigInt(a.price.replace('.', '')) <= BigInt(b.price.replace('.', '')) ? a : b);
   },
   saveSelectedRate: (rate: ShippingRate, context: QuoteContext) => {
     try { localStorage.setItem('selectedShippingRate', JSON.stringify({ version: 1, rateId: rate.id, ...context })); }

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { setCheckoutAccount } from '../services/CheckoutRecovery';
 import { authService } from '../services/Auth.service';
 
 export interface User {
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async () => {
     try {
       const userData = await authService.getUserProfile();
+      setCheckoutAccount(userData.id);
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
@@ -63,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     storage.setItem('access_token', token);
     try {
       const userData = await authService.getUserProfile();
+      setCheckoutAccount(userData.id);
       setUser(userData);
       setIsAuthenticated(true);
       return userData;

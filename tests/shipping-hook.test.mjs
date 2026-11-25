@@ -12,11 +12,12 @@ const input = (items = [structuredClone(item)], addressId = 1) => [
   items, `address-${addressId}`,
 ];
 const quoted = (context, id = 'backend-rate') => ({ ...context, expiresAt: Date.now() + 60000,
-  rates: [{ id, title: 'Test', internalProvider: 'Test carrier', price: 10, description: '', days: null, type: 'standard' }] });
+  rates: [{ id, title: 'Test', internalProvider: 'Test carrier', price: '10.00', description: '', days: null, type: 'standard' }] });
 function setup(handler = async context => quoted(context)) {
   const requests = [], saved = [];
   const service = {
     getQuote(context, items) { requests.push({ context, items }); return handler(context, items); },
+    async selectQuoteRate(quote, rateId) { return { ...quote, selected_rate_id: rateId, total: '110.00' }; },
     getSelectedRateId() { return null; }, clearSelectedRate() {},
     saveSelectedRate(rate, context) { saved.push({ rate, context }); },
   };
